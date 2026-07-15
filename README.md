@@ -133,6 +133,8 @@ To make this production-ready for unseen customer drawings:
 5. Keep confidence-based validation so uncertain results are sent for manual review instead of forced.
 6. Expand benchmark coverage and require regression tests before every change.
 
+The active production backlog is tracked in [ROADMAP.md](ROADMAP.md).
+
 ## Repository Status
 
 This repository contains the final milestone code and documentation for showcasing the work completed on the offline engineering drawing bubble and dimension detection system.
