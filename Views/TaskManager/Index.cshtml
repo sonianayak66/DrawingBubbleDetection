@@ -1,0 +1,10 @@
+﻿@{
+    ViewData["Title"] = "Task Manager";
+    var userGuid = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var taskManagerUrl = ViewData["TaskManagerUrl"];
+}
+
+<iframe id="taskManagerFrame"
+        src="@($"{taskManagerUrl}?userGuid={userGuid}")"
+        style="width: 100%; height: 800px; border: none;">
+</iframe>

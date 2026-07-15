@@ -1,0 +1,27 @@
+﻿@model IEnumerable<MPCRS.ViewModels.BL_Engine_Approvers>
+
+@{
+    Layout = null;
+}
+
+<div class="text-center">
+    <img class="img img-thumbnail" style="border:none" src="~/assets/img/stfe_logo.jpg" />
+</div>
+ 
+
+<div class="row" style="min-height:80px!important;font-weight:bold;">
+    </div>
+
+    @foreach (var item in Model.Where(x => x.ModuleName == "All").OrderByDescending(x => x.RoleName))
+    {
+        <div class="row" style="min-height:130px!important;font-weight:bold;">
+            <div class="col-md-6" style="align-items: baseline">
+                @item.RoleName
+            </div>
+            <div class="col-md-6">
+                <span> @item.Person_Name , @item.Designation</span>
+                <br />
+                @item.Section
+            </div>
+        </div>
+    }

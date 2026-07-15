@@ -1,0 +1,254 @@
+﻿@{
+    ViewData["Title"] = "All Reports";
+    var returnUrl = Url.Action("Index", "AllReports");
+}
+
+<style>
+    .ar-outer-panel {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+        padding: 20px;
+    }
+
+    .ar-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .ar-panel-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+        margin: 0;
+    }
+
+    .ar-search-box {
+        width: 240px;
+        padding: 6px 10px;
+        font-size: 13px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        outline: none;
+        color: #495057;
+    }
+
+        .ar-search-box:focus {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 3px rgba(13,110,253,0.1);
+        }
+
+    /* Group layout */
+    .ar-group-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+
+    @@media (max-width: 1100px) {
+        .ar-group-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 650px) {
+        .ar-group-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .ar-search-box {
+            width: 100%;
+        }
+
+        .ar-panel-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+    }
+
+    /* Group section */
+    .ar-group {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 14px;
+    }
+
+    .ar-group-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #6c757d;
+        margin-bottom: 10px;
+        padding-left: 8px;
+        border-left: 3px solid #0d6efd;
+    }
+
+    /* Report card */
+    .ar-report-card {
+        background: #fff;
+        border: 1px solid #e2e6ea;
+        border-radius: 5px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: box-shadow 0.15s ease, border-color 0.15s ease;
+        text-decoration: none;
+        display: block;
+    }
+
+        .ar-report-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .ar-report-card:hover {
+            border-color: #adb5bd;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            text-decoration: none;
+        }
+
+    .ar-report-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #0d6efd;
+        margin-bottom: 3px;
+    }
+
+    .ar-report-desc {
+        font-size: 12px;
+        color: #6c757d;
+        line-height: 1.4;
+        margin: 0;
+    }
+
+    /* Hide when search filters it out */
+    .ar-report-card.ar-hidden {
+        display: none;
+    }
+
+    .ar-group.ar-group-empty {
+        display: none;
+    }
+</style>
+
+<div class="container-fluid mt-3">
+    <div class="ar-outer-panel">
+
+        <div class="ar-panel-header">
+            <h5 class="ar-panel-title"><i class="uil uil-file-alt me-2 text-muted"></i>All Reports</h5>
+            <input type="text" id="arSearch" class="ar-search-box" placeholder="Search reports..." oninput="arFilter()" />
+        </div>
+
+        <div class="ar-group-grid">
+
+            <!-- GROUP: NCR -->
+            <div class="ar-group" id="grp-ncr">
+                <div class="ar-group-label">NCR</div>
+
+                <a class="ar-report-card"
+                   href="@Url.Action("NCR_PartEngine_Report", "NCR", new { returnUrl = returnUrl })"
+                   target="_blank" rel="noopener noreferrer">
+                    <div class="ar-report-name">NCR Part-Engine Report</div>
+                    <p class="ar-report-desc">Overview of non-conformance reports by status and engine, with part-wise mapping.</p>
+                </a>
+            </div>
+
+            <!-- GROUP: MPL -->
+            <div class="ar-group" id="grp-mpl">
+                <div class="ar-group-label">MPL</div>
+
+                <a class="ar-report-card"
+                   href="@Url.Action("Report", "MPL", new { returnUrl = returnUrl })"
+                   target="_blank" rel="noopener noreferrer">
+                    <div class="ar-report-name">MPL Report</div>
+                    <p class="ar-report-desc">Complete parts list, organized by assembly hierarchy.</p>
+                </a>
+            </div>
+
+            <!-- GROUP: SOP Management -->
+            <div class="ar-group" id="grp-sop">
+                <div class="ar-group-label">SOP Management</div>
+
+                <a class="ar-report-card"
+                   href="@Url.Action("BATLPartsUpdationReport", "SOPManagement", new { returnUrl = returnUrl })"
+                   target="_blank" rel="noopener noreferrer">
+                    <div class="ar-report-name">SOP Data Availability Report – BATL</div>
+                    <p class="ar-report-desc">Shows which parts have SOP data available from BATL vendor for a selected engine build.</p>
+                </a>
+            </div>
+
+            <!-- GROUP: Procurement -->
+            <div class="ar-group" id="grp-procurement">
+                <div class="ar-group-label">Procurement</div>
+
+                <a class="ar-report-card"
+                   href="@Url.Action("ConsolidatedInventoryReport", "report", new { returnUrl = returnUrl })"
+                   target="_blank" rel="noopener noreferrer">
+                    <div class="ar-report-name">Consolidated Inventory Report</div>
+                    @* <p class="ar-report-desc">Raw material inventory, procurement balance, issued quantities, and overall material availability.</p> *@
+                    <p class="ar-report-desc">Raw Material-wise view of quantities ordered, received, issued, and current balance.</p>
+                </a>
+
+                <a class="ar-report-card"
+                   href="@Url.Action("ProductionPlanningReport", "report", new { returnUrl = returnUrl })"
+                   target="_blank" rel="noopener noreferrer">
+                    <div class="ar-report-name">Raw Material Stock Availability</div>
+                    <p class="ar-report-desc">Compares material requirements against available stock for engine production.</p>
+                </a>
+
+                <a class="ar-report-card"
+                   href="@Url.Action("MilestoneReport", "DemandManagement", new { returnUrl = returnUrl })"
+                   target="_blank" rel="noopener noreferrer">
+                    <div class="ar-report-name">Milestone Status Summary</div>
+                    <p class="ar-report-desc">Tracks procurement delivery milestones and highlights overdue items by vendor.</p>
+                </a>
+
+                <a class="ar-report-card"
+                   href="@Url.Action("DemandReceiptsHistory", "DemandManagement", new { returnUrl = returnUrl })"
+                   target="_blank" rel="noopener noreferrer">
+                    <div class="ar-report-name">Demand Receipt Details</div>
+                    <p class="ar-report-desc">History of receipts and quantity splits against procurement demands.</p>
+                </a>
+
+                <a class="ar-report-card"
+                   href="@Url.Action("MaterialIssueReport", "report", new { returnUrl = returnUrl })"
+                   target="_blank" rel="noopener noreferrer">
+                    <div class="ar-report-name">Material Issue Report</div>
+                    <p class="ar-report-desc">Records of raw material issued to vendors, with part and quantity details.</p>
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function arFilter() {
+        var query = document.getElementById('arSearch').value.toLowerCase().trim();
+        var groups = document.querySelectorAll('.ar-group');
+
+        groups.forEach(function (group) {
+            var cards = group.querySelectorAll('.ar-report-card');
+            var anyVisible = false;
+
+            cards.forEach(function (card) {
+                var name = card.querySelector('.ar-report-name').innerText.toLowerCase();
+                var desc = card.querySelector('.ar-report-desc').innerText.toLowerCase();
+                var matches = !query || name.includes(query) || desc.includes(query);
+
+                card.classList.toggle('ar-hidden', !matches);
+                if (matches) anyVisible = true;
+            });
+
+            // Hide entire group if no cards match
+            group.classList.toggle('ar-group-empty', !anyVisible);
+        });
+    }
+</script>

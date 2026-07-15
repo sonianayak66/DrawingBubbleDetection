@@ -1,0 +1,41 @@
+﻿@model List<MPCRS.ViewModels.InspectionReports>
+@{
+Layout = null;	
+} 
+
+<h4>Inspection Reports</h4>
+
+<table class="table table-bordered">
+	<thead>
+		<tr>
+			<td>Revision</td>
+			<td>Quantity</td>
+			<td>Serial No</td>
+			<td>JC No</td>
+			<td>RMC_Number</td>
+			<td>Uploaded On</td>
+			<td>Remarks</td>
+			<td>File</td>
+		</tr>
+	</thead>
+	<tbody>
+		@{
+			foreach (var item in Model)
+			{
+				<tr>
+					<td>@item.Revision</td>
+					<td>@item.UpdatedQty</td>
+					<td>@item.Serial_No</td>
+					<td>@item.Job_No</td>
+					<td>@item.RMC_Number</td>
+					<td>@item.UpdatedOn.ToShortDateString()</td>
+					<td>@item.Remarks</td>
+					<td><a href="@item.File_Location" target="_blank">View</a> </td>
+				</tr>
+			}
+		}
+
+
+	
+	</tbody>
+</table>

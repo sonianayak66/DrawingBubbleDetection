@@ -1,0 +1,32 @@
+﻿@model MPCRS.ViewModels.ProcurementStatusIndicator
+@{
+    Layout = null;
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Do Review</th>
+            <th>Remarks</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            foreach (var History in Model.DemandHistory.OrderBy(x => x.ActionDate))
+            {
+                <tr>
+                    <td>@History.ActionStatus</td>
+                    <td><input type="date" value="@DateTime.Parse(History.ActionDate.ToString()).ToString("yyyy-MM-dd")" /></td>
+                    <td><input type="checkbox" /></td>
+                    <td><input value="@History.Remarks" /></td>
+                    <td></td>
+                </tr>
+            }
+        }
+      
+    </tbody>
+</table>
+

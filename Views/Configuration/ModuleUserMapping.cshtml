@@ -1,0 +1,50 @@
+﻿@model List<MPCRS.ViewModels.ModuleUserMapping>
+@{
+    var userlist = MPCRS.Utilities.Masters.GetUsersList();
+}
+
+<table class="table table-bordered" style="width:70%">
+    <thead>
+         <tr>
+            <th style="width:30%">Module</th>
+            <th style="width:50%">Users</th>
+        </tr>
+    </thead>
+ 
+    <tbody id="ModuleUserMapTblbdy">
+        @{
+            foreach (var item in Model)
+            {
+                <tr>
+                    <th>@item.Master_Name</th>
+                     <td>
+                        <select asp-for="@item.users" data-moduleid="@item.Master_Dbkey" class=" form-control-square multiselect moduleusers" multiple asp-items="@userlist"></select>
+                     </td>
+                </tr>
+            }
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td></td>
+            <td><button class="btn btn-success btn-sm" onclick="SubmitModuleUserMapping()">Save</button></td>
+        </tr>
+    </tfoot>
+</table>
+
+   <script type="text/javascript">
+
+        $(document).ready(function () {
+             var drawingNoElements = document.querySelectorAll('.moduleusers');
+                       drawingNoElements.forEach(function (select) {
+                         new TomSelect(select, {
+                             plugins: ['remove_button'],
+                             sortField: {
+                                 field: "text",
+                                 direction: "asc"
+                             },
+                             search: true
+                         });
+                    });
+        });
+   </script>

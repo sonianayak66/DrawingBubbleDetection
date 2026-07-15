@@ -1,0 +1,183 @@
+﻿@using MPCRS.Utilities
+@using Newtonsoft.Json
+
+@{
+    var hasDownloadwithoutWaterMarkPermission = UserData.IsAuthorized(User, Constants.UserPermissions.Download_WO_waterMark);
+    var hasDownloadPermission = UserData.IsAuthorized(User, Constants.UserPermissions.MPLDocuments_Download);
+}
+<div class="page-header">
+    <h3>MPL Drawings </h3>
+</div>
+
+<div class="col-md-12">
+    <table id="mplDOcs_datatables" class="table table-bordered table-condensed" cellspacing="0" style="width:100%;">
+        <thead>
+            <tr>
+                <th>Part Type</th>
+                <th>Part Code</th>
+                <th>Part Revision</th>
+                <th>Description</th>
+                @* <th>File Type</th> *@
+                <th>File Name</th>
+                <th>File Revision</th>
+                <th>Actions</th>
+
+            </tr>
+        </thead>
+    </table>
+</div>
+
+
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/mpi/mpl.js" asp-append-version="true"></script>
+    <script>
+
+
+        $(function () {
+            GetMPLDocuments();
+        });
+
+        function handleNull(data) {
+            return data === null ? '' : data;
+        }
+
+        var hasDownloadwithoutWaterMarkPermission = @hasDownloadwithoutWaterMarkPermission.ToString().ToLower();
+        var hasDownloadPermission = @hasDownloadPermission.ToString().ToLower();
+
+        var dataTable_MPLDoc;
+        function GetMPLDocuments() {
+            var Windowheight = window.innerHeight;
+            var x = $("#mplDOcs_datatables").position();
+            var tableHeight = (Windowheight - x.top) * 0.75;
+            try {
+                dataTable_MPLDoc.destroy();
+            } catch (e) {
+            }
+
+            dataTable_MPLDoc = $("#mplDOcs_datatables").DataTable({
+                "ajax": {
+                    "url": "/MPL/Get_MPLDocuments?latest=1",
+                    "type": "GET",
+                    "dataSrc": "",
+                    "datatype": "json"
+                },
+
+                responsive: true,
+                scrollY: tableHeight + 'px',
+                paging: false,
+                order: false,
+                "order": [[0, "asc"]],
+                dom: 'Bfrtip',
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem(
+                        'DataTables_' + settings.sInstance,
+                        JSON.stringify(data)
+                    );
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                },
+                buttons: [{
+                    extend: 'excel',
+                    title: 'MPL Drawing Status',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5] //Your Colume value those you want
+                    }
+                }],
+
+                "columns": [
+                    { "data": "Type_Part_Name" },
+                    { "data": "Draw_part_no" },
+                    { "data": "Revision" },
+                    { "data": "Description" },
+                    // { "data": "Attachment_type" },
+                    { "data": "Orginal_File_Name" },
+                    { "data": "File_Revision" },
+                    {
+                        data: null,
+
+                        "render": function (data, type, row) {
+                            var viewButton = '';
+                            if (data.Orginal_File_Name.includes(".pdf") || data.Orginal_File_Name.includes(".tiff") || data.Orginal_File_Name.includes(".tif")) {
+                                var viewButton = '<a href="#" title="View Document" onclick="ViewWatermarkedDocument(' + data.Attachment_Db_Key + ')">' +
+                                    '<i class="fa-solid fa-file"></i>' +
+                                    '</a>';
+                            }
+
+                            var downloadButton = '';
+                            var downloadButtonWOWatermark = '';
+                            if (data.Orginal_File_Name.includes(".zip")) {
+                                downloadButton = '<a title="Extract zip file" href="#" style="color:#3874ff" onclick="ShowExtractedFiles(' + data.Attachment_Db_Key + ')"  style="margin-right:5px;">' +
+                                    '<i class="fa-solid fa-file-export"></i></a>';
+                            }
+                            else if (hasDownloadPermission) {
+                                if (hasDownloadwithoutWaterMarkPermission) {
+                                    downloadButtonWOWatermark = generateDropdownHTML(data.Attachment_Db_Key, true);
+                                } else
+                                    downloadButton = generateDropdownHTML(data.Attachment_Db_Key, false);
+                            }
+                        
+                                // if (hasDownloadPermission) {
+                                //     downloadButton = '<a title="Download Document" href="/DownloadFiles/DownloadRequest?fileKey=' + data.Attachment_Db_Key + '&SourceTable=Attachment&withoutWatermark=false" style="margin-right:5px;">' +
+                                //         '<i class="fas fa-download"></i></a>';
+
+                                //     if (hasDownloadwithoutWaterMarkPermission) {
+                                //         downloadButtonforwithoutwatermark = '<a title="Download without watermark Document" href="/DownloadFiles/DownloadRequest?fileKey=' + data.Attachment_Db_Key + '&SourceTable=Attachment&withoutWatermark=true" style="margin-right:5px;">' +
+                                //             '<i class="fas fa-solid fa-circle-down"></i></a>';
+                                //     }
+                                // }
+
+
+
+                            return '<div class="d-flex justify-content-around">' + viewButton + downloadButton + downloadButtonWOWatermark + '</div>';
+                        }
+                    },
+                ],
+                "columnDefs": [
+                    { "className": "p-2", "targets": [0] } // Apply p-2 class to the first column
+                ],
+            });
+        }
+        //dataTable_MPLDoc.draw();
+
+        function generateDropdownHTML(colValue, withoutWatermark) {
+            if (withoutWatermark) {
+                var data = '<div class="dropdown font-sans-serif">' +
+                    '<a class="fas fa-download  dropdown-toggle text-primary" id="dropdownMenuLink" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="margin-right:5px;"></a > ' +
+                    '<div class="dropdown-menu dropdown-menu-end py-0" aria-labelledby="dropdownMenuLink">' +
+                    '<a title="Download Document" class="dropdown-item" href="/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=false&fileKey=' + colValue + '">Download</a>' +
+                    '<a title="Download w/o watermark Document" class="dropdown-item" href="/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=true&fileKey=' + colValue + '">Download w/o watermark</a>' +
+                    '</div>' +
+                    '</div>';
+            }
+            else {
+                var data = '<a title="Download Document" href="/DownloadFiles/DownloadRequest?fileKey=' + colValue + '&SourceTable=Attachment&withoutWatermark=false" style="margin-right:5px;">' +
+                    '<i class="fas fa-download"></i></a>';
+            }
+            return data;
+        }
+
+        function ViewWatermarkedDocument(docid) {
+            $.ajax({
+                url: '/DownloadFiles/ViewDocument?docid=' + docid + '&sourceTable=Attachment&download=false',
+                dataType: 'html',
+                success: function (data) {
+                    bootbox.dialog({
+                        message: data,
+                        size: 'large',
+                        closeButton: true,
+                        className: 'custom-modal',
+                    });
+                }
+            });
+        }
+
+
+
+    </script>
+
+} 

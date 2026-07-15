@@ -1,0 +1,202 @@
+﻿@using MPCRS.Utilities
+@{
+	ViewData["Title"] = "Configuration";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+	var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.Configuration_Write);
+	var Permission_Read = UserData.IsAuthorized(User, Constants.UserPermissions.Configuration_Read);
+}
+
+<div class="col-12">
+	<div class="row">
+		<div class="col-8">
+			<h3>Configuration</h3>
+		</div>
+
+		<div class="col-4 pull-right">
+			<a class="btn btn-secondary float-end" href="/Home/Index">Back</a>
+
+		</div>
+	</div>
+</div>
+
+<hr />
+
+<div class="col-md-12 col-sm-12 col-sm-12">
+	<ul class="nav nav-underline" id="myTab" role="tablist">
+		<li class="nav-item" style="margin-right:10px" role="presentation" onclick="Get_Config('/Configuration/EmailConfigDetail')">
+			<a class="nav-link active" id="home-tab" data-bs-toggle="tab" href="#tabs-home" role="tab" aria-controls="tabs-home" aria-selected="true">
+				Email Config
+			</a>
+		</li>
+		<li class="nav-item" style="margin-right:10px" role="presentation" onclick="Get_Config('/Configuration/ApproverMailConfigDetail?template=Engine_Parts_Master')">
+			<a class="nav-link" id="MailApprover-tab" data-bs-toggle="tab" href="#tabs-profile" role="tab" aria-controls="tabs-profile" aria-selected="false" tabindex="-1">
+				Approver Mail Format
+			</a>
+		</li>
+		<li class="nav-item" role="presentation" onclick="Get_Config('/Configuration/ApproverMailConfigDetail?template=Procurement_Demand_MileStone')">
+			<a class="nav-link" id="Watermark-tab" data-bs-toggle="tab" href="#tab-documents" role="tab" aria-controls="tab-documents" aria-selected="false" tabindex="-1">
+				Reminder Mail Format
+			</a>
+		</li>
+		<li class="nav-item" role="presentation" onclick="Get_Config('/Configuration/AuditLogDisplayDataConfig?sourcetble=Engine_Parts_Master')">
+			<a class="nav-link" id="AuditLog-tab" data-bs-toggle="tab" href="#tab-documents" role="tab" aria-controls="tab-documents" aria-selected="false" tabindex="-1">
+				Audit Log Display Data Config
+			</a>
+		</li>
+
+		<li class="nav-item" role="presentation" onclick="Get_Config('/Configuration/AuditLogDisplayDataConfig?sourcetble=ExternalMfgStatus')">
+			<a class="nav-link" id="MfgStatus-tab" data-bs-toggle="tab" href="#tab-documents" role="tab" aria-controls="tab-documents" aria-selected="false" tabindex="-1">
+				Mfg Status Display Data Config
+			</a>
+		</li>
+
+		<li class="nav-item" role="presentation" onclick="Get_Config('/Configuration/WatermarkConfigurationDetails')">
+			<a class="nav-link" id="Watermark-tab" data-bs-toggle="tab" href="#tab-documents" role="tab" aria-controls="tab-documents" aria-selected="false" tabindex="-1">
+				Watermark Configuration
+			</a>
+		</li>
+		<li class="nav-item" role="presentation" onclick="Get_Config('/Configuration/ModuleUserMapping')">
+			<a class="nav-link" id="Watermark-tab" data-bs-toggle="tab" href="#tab-documents" role="tab" aria-controls="tab-documents" aria-selected="false" tabindex="-1">
+				Module User Mapping - NCR
+			</a>
+		</li>
+
+
+	</ul>
+
+
+
+
+	<div class="tab-content tab-content-bordered" id="configtabs">
+	</div>
+</div>
+
+
+@section scripts {
+
+	<script type="text/javascript">
+		$(document).ready(function () {
+			Get_Config('/Configuration/EmailConfigDetail');
+		});
+
+
+		function Get_Config(url) {
+			$.ajax({
+				url: url,
+				dataType: 'html',
+				success: function (data) {
+					$('#configtabs').html(data);
+				}
+			});
+		}
+
+
+		function SaveConfiginfo(form) {
+			$.validator.unobtrusive.parse("form");
+			if ($(form).valid()) {
+				$.ajax({
+					type: "POST",
+					url: form.action,
+					data: $(form).serialize(),
+					cache: false,
+					success: function (data) {
+						if (data.success) {
+							window.location.reload();
+							//   window.location="/Configuration/Index"
+						} else {
+							window.location.reload();
+							//  window.location = "/Configuration/Index"
+						}
+					}
+				});
+			}
+			return false;
+		};
+
+
+		function SubmitModuleUserMapping() {
+			var displayArray = new Array();
+
+			$('#ModuleUserMapTblbdy tr').each(function (index, row) {
+				var items = {};
+				$(row).find('select').each(function (index, input) {
+					var field = $(input).data('moduleid');
+					var value = $(input).val();
+					items.Master_Dbkey = field;
+					items.users = value;
+				});
+				displayArray.push(items);
+			});
+			console.log(displayArray);
+			//console.log(JSON.stringify(displayArray));
+
+			$.ajax({
+				type: "POST",
+				url: '/Configuration/SaveModuleUserMapping',
+				contentType: 'application/json',
+				data: JSON.stringify(displayArray),
+				cache: false,
+				success: function (data) {
+					if (data.success) {
+						bootbox.alert('Updated Successfully');
+					} else {
+						bootbox.alert('Encountered an error!');
+					}
+				}
+			});
+		}
+		function sendMail(Id) {
+			var urlinput = "/Configuration/SendTestMail?Id=" + Id;
+			$.get(urlinput).done(function (response) {
+				bootbox.dialog({
+					title: "Test mail",
+					message: response,
+					size: 'medium',
+					closeButton: true,
+				});
+			});
+		}
+
+		function submit1() {
+			var email = document.getElementById("mailId").value;
+			$.ajax({
+				url: '/Configuration/testEmailConfig?emailaddress=' + email,
+				type: 'POST',
+				success: function (response) {
+					if (response.success == true) {
+						alert('Email sent successfully');
+					}
+					else {
+						alert('Error sending email');
+					}
+				},
+				error: function (error) {
+					alert('Error sending email');
+				}
+			});
+		}
+
+		function submit2() {
+			var email = document.getElementById("mailId").value;
+			$.ajax({
+				url: '/Configuration/SendMail_MailKit?emailaddress=' + email,
+				type: 'POST',
+				success: function (response) {
+					if (response.success == true) {
+						alert('Email sent successfully');
+					}
+					else {
+						alert('Error sending email');
+					}
+				},
+				error: function (error) {
+					alert('Error sending email');
+				}
+			});
+		}
+
+	</script>
+
+
+
+}

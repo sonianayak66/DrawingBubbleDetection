@@ -1,0 +1,32 @@
+﻿@model List<MPCRS.ViewModels.Procurement_Demands_VM>
+@{
+	Layout = null;
+}
+
+<table class="table table-bordered table-hover" id="demandListTbl">
+	<thead>
+		<tr>
+			<th>MMG Number</th>
+			<th>Demanding Officer</th>
+			<th>Vendor</th>
+			<th>Description</th>
+			<th>Current Status</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		@{
+			foreach (var item in Model)
+			{
+				<tr>
+					<td class="p-2">@item.MMG_File_No</td>
+					<td>@item.DemandOfficerName</td>
+					<td>@item.VendorName</td>
+					<td>@item.Item_Description</td>
+					<td>@item.CurrentStatus</td>
+					<td class="p-2"><a onclick="ViewDemandByStatus(@item.DemandDbKey)" href="#">View</a></td>
+				</tr>
+			}
+		}				
+	</tbody>
+</table>

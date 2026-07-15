@@ -1,0 +1,48 @@
+﻿@using MPCRS.Utilities
+@model MPCRS.ViewModels.MasterPartViewModel
+
+@{
+
+	var Modules = Masters.GetMaster_General("Module_Part_Breakdown_Structure");
+	var PartType = Masters.GetMaster_General("PartType_Part_Breakdown_Structure");
+}
+
+
+<form id="pbsInfoForm">
+    <input type="hidden" id="partDbkey" value="@Model.Engine_Part_Dbkey" />
+    <input type="hidden" id="partRelationDbkey" value="@Model.Part_relation_dbkey" />
+    
+    <!-- Part Information (Read-only) -->
+    <div class="row">
+        <div class="col-md-6">
+            <label>Part Number:</label>
+            <label>@Model.Draw_part_no</label>
+         </div>
+        <div class="col-md-6">
+            <label>Description:</label>
+            <label>@Model.Description</label>
+         </div>
+    </div>
+    
+    <hr />
+    <div class="row">
+        <div class="col-md-6">
+            <label>Module: <span class="text-danger">*</span></label>
+                <select class="form-select" asp-for="Module_PBS" asp-items="Modules" id="Module_PBS"></select>
+          
+        </div>
+        <div class="col-md-6">
+            <label>Part Type: <span class="text-danger">*</span></label>
+            <select class="form-select" asp-for="PartType_PBS" asp-items="PartType" id="PartType_PBS"></select>
+        </div>
+    </div>
+
+   <br />
+
+    <div class="row">
+        <div class="col-md-12 text-right">
+            <button type="button" class="btn btn-primary btn-small" onclick="SavePBSInfo()">Save Info</button>
+                <button type="button" class="btn btn-secondary btn-small" onclick="$('.bootbox').modal('hide')">Cancel</button>
+        </div>
+    </div>
+</form>

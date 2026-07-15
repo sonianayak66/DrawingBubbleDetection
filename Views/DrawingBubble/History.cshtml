@@ -1,0 +1,359 @@
+﻿@using MPCRS.Utilities
+@model MPCRS.ViewModels.DrawingBubbleHistoryVM
+@{
+    ViewData["Title"] = "Drawing Dimension Extraction";
+}
+
+<style>
+    /* Saved-logs modal: rotate the chevron icon on the multi-page group
+       header so users see the open/closed state at a glance. The native
+       <details> disclosure triangle is hidden via list-style:none + the
+       webkit-specific selector. */
+    #logsModal details > summary::-webkit-details-marker { display: none; }
+    #logsModal details > summary::marker { content: ""; }
+    #logsModal details > summary { list-style: none; }
+    #logsModal details[open] > summary .fa-chevron-down {
+        transform: rotate(180deg);
+        transition: transform .15s ease;
+    }
+    #logsModal details > summary .fa-chevron-down {
+        transition: transform .15s ease;
+    }
+</style>
+
+<div class="page-header d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+        <i class="fas fa-drafting-compass me-2"></i>Drawing Dimension Extraction
+    </h4>
+    <a asp-action="Index" asp-controller="DrawingBubble" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i> New Extraction
+    </a>
+</div>
+
+<div class="card shadow-sm border-0"> 
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="historyTable">
+                <thead class="">
+                    <tr>
+                        <th>Part No.</th>
+                        <th>Description</th>
+                        <th>Revision</th>
+                        <th>Method</th>
+                        <th>Processed By</th>
+                        <th>Processed On</th>
+                        <th class="text-center" style="width:200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rec in Model.Records)
+                    {
+                        <tr class="@(!rec.Is_Active ? "table-secondary opacity-75" : "")">
+                            <td class="fw-bold p-2">@rec.Draw_part_no</td>
+                            <td>
+                                <span class="text-truncate d-inline-block" style="max-width:200px;"
+                                      title="@rec.Description">
+                                    @rec.Description
+                                </span>
+                            </td>
+                            <td>@rec.Revision</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(rec.Detection_Method))
+                                {
+                                    <span class="badge bg-info">@rec.Detection_Method</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>@rec.Processed_By_Name</td>
+                            <td data-order="@rec.Processed_On.ToString("yyyy-MM-dd HH:mm")"> 
+                                @MPGlobals.GetFormattedDate(@rec.Processed_On)
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="ViewResult" asp-controller="DrawingBubble"
+                                   asp-route-inspectionDbkey="@rec.Inspection_Dbkey"
+                                   class="btn btn-sm btn-outline-primary me-1" title="View Extracted Dimensions">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+
+                                @if (!string.IsNullOrEmpty(rec.Annotated_File_Path))
+                                {
+                                    <a href="@rec.Annotated_File_Path" target="_blank"
+                                       class="btn btn-sm btn-outline-secondary me-1" title="View Annotated Drawing">
+                                        <i class="fas fa-image"></i>
+                                    </a>
+                                }
+
+                                @if (!string.IsNullOrEmpty(rec.Original_File_Path))
+                                {
+                                    <a href="@rec.Original_File_Path" target="_blank"
+                                       class="btn btn-sm btn-outline-info me-1" title="View Original Drawing">
+                                        <i class="fas fa-file-image"></i>
+                                    </a>
+                                }
+
+                                <button class="btn btn-sm btn-outline-dark me-1"
+                                        onclick="openLogs(@rec.Engine_Part_Dbkey, '@rec.Draw_part_no', '@rec.Revision')"
+                                        title="View detection logs for this part">
+                                    <i class="fas fa-stream"></i>
+                                </button>
+
+                                @if (rec.Is_Active)
+                                {
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            onclick="deleteRecord(@rec.Inspection_Dbkey, '@rec.Draw_part_no', '@rec.Revision')"
+                                            title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Records.Any())
+        {
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+                <p>No extraction records found.</p>
+                <a asp-action="Index" asp-controller="DrawingBubble" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i> Run First Extraction
+                </a>
+            </div>
+        }
+
+    </div>
+</div>
+
+<!-- ── Saved Logs Picker Modal ─────────────────────────────────────────
+     Lists log snapshots persisted under wwwroot/Uploads/DrawingBubbles/{partKey}/logs/
+     for the row the user clicked. Click any entry to open the full
+     ViewLogs page for that detection run. -->
+<div class="modal fade" id="logsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-stream me-2"></i>
+                    Saved Detection Logs
+                    <small id="logsModalSubtitle" class="ms-2 opacity-75"></small>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" style="max-height:60vh; overflow-y:auto;">
+                <div id="logsModalBody" class="p-3 text-muted small">Loading…</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var table = $('#historyTable').DataTable({
+               // order: [[8, 'desc']],
+                pageLength: 25,
+                // columnDefs: [
+                //     { orderable: false, targets: [9] }
+                // ],
+                language: {
+                    emptyTable: 'No extraction records found.',
+                    search: 'Search:',
+                },
+                initComplete: function () {
+                    var count = this.api().rows().count();
+                    var recordCount = document.getElementById('recordCount');
+                    if (recordCount) recordCount.textContent = count + ' record(s)';
+                }
+            });
+
+            // Update count badge when filtered
+            table.on('search.dt', function () {
+                var count = table.rows({ search: 'applied' }).count();
+                var recordCount = document.getElementById('recordCount');
+                if (recordCount) recordCount.textContent = count + ' record(s)';
+            });
+        });
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+                return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+            });
+        }
+
+        function openLogs(enginePartDbkey, partNo, revision) {
+            var modalEl = document.getElementById('logsModal');
+            var bodyEl  = document.getElementById('logsModalBody');
+            document.getElementById('logsModalSubtitle').textContent =
+                partNo + (revision ? ' — Rev ' + revision : '');
+            bodyEl.innerHTML = '<div class="text-muted">Loading saved log snapshots…</div>';
+            var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+
+            var url = '@Url.Action("LogsList", "DrawingBubble")?enginePartDbkey=' + encodeURIComponent(enginePartDbkey);
+            fetch(url, { cache: 'no-store' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var logs = data.logs || [];
+                    if (!logs.length) {
+                        bodyEl.innerHTML =
+                            '<div class="text-muted p-3">' +
+                            '<i class="fas fa-inbox fa-2x mb-2 opacity-25 d-block"></i>' +
+                            'No saved detection logs for this part yet.' +
+                            '</div>';
+                        return;
+                    }
+                    // Group snapshots by base request id so a multi-page
+                    // PDF appears as one expandable row instead of N flat
+                    // rows. The page suffix is "-pN" appended by Process.
+                    function baseId(rid) {
+                        return String(rid || '').replace(/-p\d+$/i, '');
+                    }
+                    var groups = {};
+                    var groupOrder = [];
+                    for (var i = 0; i < logs.length; i++) {
+                        var l = logs[i];
+                        var bid = baseId(l.request_id);
+                        if (!groups[bid]) {
+                            groups[bid] = [];
+                            groupOrder.push(bid);
+                        }
+                        groups[bid].push(l);
+                    }
+                    // Sort pages within each group by page_number.
+                    for (var k in groups) {
+                        groups[k].sort(function (a, b) {
+                            return (a.page_number || 1) - (b.page_number || 1);
+                        });
+                    }
+
+                    function viewUrlFor(rid) {
+                        return '@Url.Action("ViewLogs", "DrawingBubble")' +
+                               '?enginePartDbkey=' + encodeURIComponent(enginePartDbkey) +
+                               '&requestId='      + encodeURIComponent(rid);
+                    }
+                    function renderPageLink(lp, indented) {
+                        var url = viewUrlFor(lp.request_id);
+                        var cls = indented
+                            ? 'd-flex justify-content-between align-items-center py-2 px-3 ' +
+                              'text-decoration-none border-top'
+                            : 'list-group-item list-group-item-action ' +
+                              'd-flex justify-content-between align-items-center';
+                        return '<a href="' + url + '" target="_blank" class="' + cls + '">' +
+                                 '<div>' +
+                                   (indented
+                                     ? '<small class="fw-semibold">Page ' +
+                                       escapeHtml(lp.page_number || 1) + '</small>'
+                                     : '<div class="fw-semibold">' +
+                                       escapeHtml(lp.captured_at) + '</div>') +
+                                   '<small class="text-muted d-block">' +
+                                     (indented ? '' :
+                                       'Page ' + escapeHtml(lp.page_number || 1) +
+                                       ' &middot; ') +
+                                     escapeHtml(lp.count) + ' entries &middot; ' +
+                                     '<span class="font-monospace">' +
+                                       escapeHtml(lp.request_id) +
+                                     '</span>' +
+                                   '</small>' +
+                                 '</div>' +
+                                 '<i class="fas fa-external-link-alt text-muted small"></i>' +
+                               '</a>';
+                    }
+
+                    var html = '<div class="list-group list-group-flush">';
+                    for (var g = 0; g < groupOrder.length; g++) {
+                        var bid   = groupOrder[g];
+                        var pages = groups[bid];
+                        if (pages.length === 1) {
+                            // Single-page run — unchanged from before.
+                            html += renderPageLink(pages[0], false);
+                            continue;
+                        }
+                        // Multi-page run — wrap in <details> so the user
+                        // can expand to see each page's individual log.
+                        // Use the earliest captured_at as the run's time.
+                        var earliest = pages.reduce(function (min, p) {
+                            return (!min || (p.captured_at && p.captured_at < min))
+                                ? p.captured_at : min;
+                        }, null);
+                        var totalEntries = pages.reduce(function (n, p) {
+                            return n + (parseInt(p.count, 10) || 0);
+                        }, 0);
+                        html +=
+                            '<details class="list-group-item p-0">' +
+                              '<summary class="d-flex justify-content-between ' +
+                                       'align-items-center px-3 py-2" ' +
+                                       'style="cursor:pointer; list-style:none;">' +
+                                '<div>' +
+                                  '<div class="fw-semibold">' +
+                                    escapeHtml(earliest) +
+                                  '</div>' +
+                                  '<small class="text-muted">' +
+                                    '<i class="fas fa-layer-group me-1"></i>' +
+                                    pages.length + ' pages &middot; ' +
+                                    totalEntries + ' total entries &middot; ' +
+                                    '<span class="font-monospace">' +
+                                      escapeHtml(bid) +
+                                    '</span>' +
+                                  '</small>' +
+                                '</div>' +
+                                '<i class="fas fa-chevron-down text-muted small"></i>' +
+                              '</summary>';
+                        for (var p = 0; p < pages.length; p++) {
+                            html += renderPageLink(pages[p], true);
+                        }
+                        html += '</details>';
+                    }
+                    html += '</div>';
+                    bodyEl.innerHTML = html;
+                })
+                .catch(function (e) {
+                    bodyEl.innerHTML = '<div class="text-danger p-3">Failed to load logs: ' + escapeHtml(e.message) + '</div>';
+                });
+        }
+
+        function deleteRecord(dbkey, partNo, revision) {
+            bootbox.confirm({
+                title: 'Delete Record',
+                message: 'Delete extraction record for <strong>' + partNo + '</strong> Rev <strong>' + revision + '</strong>?<br/>' +
+                         '<small class="text-muted">This will mark the record as inactive. Files will be retained.</small>',
+                buttons: {
+                    confirm: { label: '<i class="fas fa-trash me-1"></i>Delete', className: 'btn-danger' },
+                    cancel:  { label: 'Cancel', className: 'btn-secondary' }
+                },
+                callback: function (result) {
+                    if (!result) return;
+
+                    fetch('@Url.Action("Delete", "DrawingBubble")', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'inspectionDbkey=' + dbkey
+                    })
+                    .then(function (r) { return r.json(); })
+                    .then(function (res) {
+                        if (res.success) {
+                            bootbox.alert({
+                                title: 'Deleted',
+                                message: '<i class="fas fa-check-circle text-success me-2"></i>Record deleted.',
+                                size: 'small',
+                                callback: function () { location.reload(); }
+                            });
+                        } else {
+                            bootbox.alert({ title: 'Error', message: res.message, size: 'small' });
+                        }
+                    })
+                    .catch(function () {
+                        bootbox.alert({ title: 'Error', message: 'Connection error. Please try again.', size: 'small' });
+                    });
+                }
+            });
+        }
+    </script>
+}

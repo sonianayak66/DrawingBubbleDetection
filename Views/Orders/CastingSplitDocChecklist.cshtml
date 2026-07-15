@@ -1,0 +1,38 @@
+﻿@model MPCRS.ViewModels.DetailedCastingDataVM
+@using System.Data;
+@using MPCRS.Utilities;
+@using Newtonsoft.Json;
+@{
+	Layout = null;
+	List<MPCRS.ViewModels.SplitDocumentChecklistVM> documentChecklist = new List<MPCRS.ViewModels.SplitDocumentChecklistVM>();
+
+	string cmdstr = $"dbo.[GetCastingSplitDocInfo] @partDbKey={Model.EnginePartDbkey}, @receiptSplitDbKey={Model.SplitId}";
+
+	DataTable dt = MPCRS.Utilities.MPGlobals.GetDataForDatalist(cmdstr);
+	if (dt.Rows.Count > 0)
+	{
+		documentChecklist = JsonConvert.DeserializeObject<List<MPCRS.ViewModels.SplitDocumentChecklistVM>>(JsonConvert.SerializeObject(dt));
+	}
+
+	foreach (var item in documentChecklist)
+	{
+		//var href = item.Attachment_location == null ? "#" : item.Attachment_location + "/" + item.Attachment_FileName;
+		var href = "/Attachment/DownloadfileWithKey/" + item.Attachment_Db_Key;
+		if (item.Attachment_location == null)
+		{		
+				<a class="badge badge-phoenix fs--2 @(item.Attachment_location == null ? "badge-phoenix-danger" :"badge-phoenix-success")">
+				@item.Attachment_Type  
+				</a>
+		}
+		else
+		{
+			<div style="max-width:400px">
+				<a href="@href" target="_blank" class="badge badge-phoenix fs--2 @(item.Attachment_location == null ? "badge-phoenix-danger" :"badge-phoenix-success")">
+					@item.Attachment_Type  
+				</a>
+			</div>
+		}
+
+	}
+}
+

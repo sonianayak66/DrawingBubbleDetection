@@ -1,0 +1,79 @@
+﻿@model string
+@using System.Data
+@using MPCRS.Utilities
+
+<style>
+    .basicinfores {
+        color: #18c68a !important;
+    }
+</style>
+
+@{
+    var dt = MPGlobals.GetDataForDatalist($"[dbo].[Jobcard_Details_SSP] @JobCardNumber = '{Model}'");
+}
+
+@{
+    if (dt.Rows.Count > 0)
+    {
+        <table class="table table-sm table-bordered">
+            <thead>
+                <tr>
+                    <th colspan="9" class="Details text-center" style="background-color: #f8f9fa; font-weight: bold;">JOBCARD DETAILS</th>
+                </tr>
+                <tr style="background-color: #e9ecef;">
+                    <th class="Details">JOBCARD NO.</th>
+                    <th class="Details">ORDER REF NO.</th>
+                    <th class="Details">PART NAME</th>
+                    <th class="Details">RAW MATERIAL</th>
+                    <th class="Details">VENDOR</th>
+                    <th class="Details">QTY</th>
+                    <th class="Details">WEIGHT (KG)</th>
+                    <th class="Details">JOB CARD NUMBER</th>
+                    <th class="Details">FILE</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (DataRow row in dt.Rows)
+                {
+                    <tr>
+                        <td>@row["JobCardNumber"]</td>
+                        <td>@row["Order_Ref_No"]</td>
+                        <td>@row["Part_Name"]</td>
+                        <td>@row["Raw_material_Name"]</td>
+                        <td>
+                            @if (row["Vendor_Name"] != DBNull.Value && !string.IsNullOrEmpty(row["Vendor_Name"].ToString()))
+                            {
+                                <span style="display: inline-block; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; background-color: #fff3e0; color: #e65100; border: 1px solid #ffb74d;">
+                                    @row["Vendor_Name"]
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>@row["Qty"]</td>
+                        <td>@row["Weight_Kg"]</td>
+                        <td>@row["JobCardNumber"]</td>
+                        <td>
+                            @if (row["JobCardBadge"] != DBNull.Value && !string.IsNullOrEmpty(row["JobCardBadge"].ToString()))
+                            {
+                                @Html.Raw(row["JobCardBadge"])
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No job card details available for this job card number.
+        </div>
+    }
+}

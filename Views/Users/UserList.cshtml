@@ -1,0 +1,99 @@
+﻿@model List<MPCRS.ViewModels.PersonVM>
+@using MPCRS.Utilities;
+@{
+    Layout = null;
+    var hasWritePermission = UserData.IsAuthorized(User, Constants.UserPermissions.User_Write);
+}
+
+
+<div class="card shadow-none border border-300 my-4" data-component-card="data-component-card">
+    <div class="card-header p-4 border-bottom border-300 bg-soft">
+        <div class="row g-3 justify-content-between">
+            <h4 class="text-900 mb-0 col-6 col-sm-3" data-anchor="data-anchor" id="sizing">Users </h4>
+            @{
+                if (hasWritePermission)
+                {
+                    <a href="/Users/ManagePerson" class="btn btn-primary btn-sm float-end m-1 col-12 col-sm-2" style="float:right;">
+                        <span class="fas fa-plus pe-2 fs--2"></span>Create New
+                    </a> 
+                } 
+            }
+
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="p-4">
+            <table class="table table-sm fs--1 mb-2" id="userlist" cellspacing="0" style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>
+                            Name
+                        </th>
+                        <th>
+                            Email
+                        </th>
+                        <th>
+                            Roles
+                        </th>
+                        <th>
+                            Department
+                        </th>
+                        <th>
+                            User Type
+                        </th>
+                        <th>
+                           Is Active
+                        </th>
+                        <th>
+                            
+                        </th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @item.name
+                                </td>
+                                <td>
+                                    @item.email_address
+                                </td>
+                                <td>
+                                    @item.roles
+                                </td>
+                                <td>
+                                    @item.departmentName
+                                </td>
+                                <td>
+                                    @item.persontype
+                                </td>
+                                <td>
+                                    @(item.isactive==true?"Yes":"No")
+                                </td>
+                                <td>
+                                   
+                                        @if (hasWritePermission)
+                                        {
+                                            <a href="/Users/ManagePerson/@item.PersonGUID">
+                                                <span class="fas fa-pen pe-2 fs--2"></span>Edit
+                                            </a>
+                                        }
+                                    
+                                </td>
+                            </tr>
+                        }
+                    }
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+ 
+ 
+

@@ -1,0 +1,92 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@model List<MPCRS.ViewModels.CastingDetailViewModel>
+@{
+
+
+
+    var CastingWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Write);
+    var PyroWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Pyro_Write);
+    var ForgingWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Forging_Write);
+
+    var CastingDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Delete);
+    var PyroDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Pyro_Delete);
+    var ForgingDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Forging_Delete);
+
+}
+
+<table class="table table-hover table-bordered table-sm" id="genericOrderlisttbl">
+    <thead>
+        <tr>
+
+            @* <th style="max-width:50px">Demand Number</th> *@
+            <th style="max-width:50px">MMG Number</th>
+            <th style="max-width:50px">Date</th>
+            <th class="partcol">Parts</th>
+            @* <th class="partcol">Vendor</th> *@
+            <th style="max-width:20px">Status</th>
+            <th style="max-width:20px"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            foreach (var item in Model.OrderByDescending(x => x.OrderDate))
+            {
+                <tr>
+                    @* <td>@item.DemandNumber</td>*@
+                    <td>
+                        @{
+                            if (item.MMGOrderNumber != null)
+                            {
+                                foreach (var orderno in @item.MMGOrderNumber.Split(","))
+                                {
+                                    <p style="margin-left:5px">@orderno</p>
+                                }
+                            }
+                        }
+                    </td>
+                    <td>
+                        @MPGlobals.GetFormattedDate(@item.OrderDate)
+                    </td>
+                    <td>
+                        @{
+                            if (item.PartNumber != null)
+                            {
+                                foreach (var part in item.PartNumber.Split(","))
+                                {
+                                    <p class="p-0 m-0"><b>@part.Split("_")[0]</b></p>
+                                     <p>@part.Split("_")[1]</p>
+                                }
+                            }
+                        }
+                    </td>
+                    <td>
+                        <span class="badge badge-phoenix fs--2 @(item.OrderStatus == "Open" || item.OrderStatus == "InProgress"? "badge-phoenix-warning" :"badge-phoenix-success")">
+                            @item.OrderStatus
+                        </span>
+                    </td>
+                    <td>
+                        <div class="font-sans-serif btn-reveal-trigger position-static">
+                            <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs--2" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs--2"></span></button>
+                            <div class="dropdown-menu dropdown-menu-end py-2">
+                                @{
+                                    <a class="dropdown-item" href="/Orders/OrderDetail?OrderType=@ViewBag.Ordertype&Id=@item.castingGUID">View</a>
+
+                                    if ((CastingWriteAccess && ViewBag.Ordertype == "Casting") || (PyroWriteAccess && ViewBag.Ordertype == "Pyro") || (ForgingWriteAccess && ViewBag.Ordertype == "Forging"))
+                                    {
+                                        <a class="dropdown-item" onclick="GetCastingLink('@item.castingGUID')">Custom Access</a>
+                                    }
+
+                                    if ((CastingDeleteAccess && ViewBag.Ordertype == "Casting") || (PyroDeleteAccess && ViewBag.Ordertype == "Pyro") || (ForgingDeleteAccess && ViewBag.Ordertype == "Forging"))
+                                    {
+                                        <a class="dropdown-item" onclick="createRecordDeletionRequest(@item.CastingDbkey,'CastingDetails', '@ViewBag.Ordertype Order')">Delete</a>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

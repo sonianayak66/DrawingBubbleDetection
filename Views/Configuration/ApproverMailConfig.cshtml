@@ -1,0 +1,143 @@
+﻿@model MPCRS.ViewModels.ApproverMailConfigVM
+@using MPCRS.Utilities
+
+@{
+    ViewData["Title"] = "ApproverMailConfig";
+}
+@using (Html.BeginForm("ApproverMailConfig", "Configuration", FormMethod.Post, new { onsubmit = "return SaveConfiginfo(this)" }))
+{
+    <div class="col-12">
+        <form id="CreateApproverMailConfig" class="needs-validation" novalidate="novalidate">
+
+
+            <hr />
+            <input asp-for="Mail_Temp_ID" type="hidden" value="@Model.Mail_Temp_ID" />
+            <input asp-for="Mail_Temp_Name" type="hidden" value="@Model.Mail_Temp_Name" />
+                <input asp-for="Source_table_name" type="hidden" value="@Model.Source_table_name" />
+            <div class="form-group row">
+                <div class="col-6">
+                    <div class="form-floating mb-3">
+                        <input class="form-control" asp-for="Mail_Subject" type="text">
+                        <label asp-for="Mail_Subject"></label>
+                        <span asp-validation-for="Mail_Subject" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+         
+            <div class="form-group row">
+                <div class="col-6">
+                    <div class="form-floating mb-3">
+
+                        <textarea class="form-control" asp-for="Mail_Body" type="text" style="height:150px;"></textarea>
+                        <label asp-for="Mail_Body"></label>
+                        <span asp-validation-for="Mail_Body" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="form-group row">
+                <div class="col-md-6">
+                   
+                        <label>Parameters: </label>
+                      
+                             @{
+                        if (Model.Source_table_name == "Engine_Parts_Master")
+                        {
+                            <p> #PartNumber#,#Revision#,#Requester#</p>
+                        }
+                        else{
+                             <p>#DemandingOfficer#,#DueDays#,#VendorName#,#DemandDetail#,#MilestoneName#,#MilestoneDate# (Demand Detail is a table ,which including details like Project,Demand No,Item Description and Order Nos )</p>
+                            
+                        }
+                    }
+                 
+                </div>
+            </div>
+             <div class="form-group row">
+                <div class="col-6">
+                    <div class="form-floating mb-3">
+                        <input class="form-control" asp-for="Recipients" type="text">
+                        <label asp-for="Recipients"></label>
+                        <span asp-validation-for="Recipients" class="text-danger"></span>
+                    </div>
+                </div>
+                 <div class="col-6">
+
+                    @{
+                        if (Model.Source_table_name == "Engine_Parts_Master")
+                        {
+                            <p>Use "," for multiple email addresses; Write "USER_SELECTION" in case the approvers are to be selected by user</p>
+                        }
+                        else{
+                             <p>Use "," for multiple email addresses; Write "DEMANDING_OFFICER" in case the approvers are to be selected by user</p>
+                            
+                        }
+                    }
+                   
+
+
+                </div>
+
+            </div>
+            <div class="form-group row">
+                <div class="col-6">
+                    <div class="form-floating mb-3">
+                        <input class="form-control" asp-for="CopyTo" type="text">
+                        <label asp-for="CopyTo"></label>
+                        <span asp-validation-for="CopyTo" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <p>Use "," for multiple email addresses</p>
+                </div>
+
+            </div>
+            <div class="form-group row">
+                <div class="col-6">
+                    <div class="form-floating mb-3">
+                        <input class="form-control" asp-for="BlindCopy" type="text">
+                        <label asp-for="BlindCopy"></label>
+                        <span asp-validation-for="BlindCopy" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <p>Use "," for multiple email addresses</p>
+                </div>
+
+            </div>
+
+            @{
+                if (Model.Source_table_name == "Procurement_Demand_MileStone")
+                {
+            <div class="form-group row">
+                <div class="col-6">
+                    <div class="form-floating mb-3">
+                        <input class="form-control" asp-for="EmailTriggerDays" type="text">
+                        <label asp-for="EmailTriggerDays"></label>
+                        <span asp-validation-for="EmailTriggerDays" class="text-danger"></span>
+                    </div>
+                </div>
+                       <div class="col-6">
+                    <p>Use "," for multiple Email Trigger Days</p>
+                </div>
+            </div>
+                }
+            }
+
+
+
+           
+            <div class="row">
+
+                <div class="col-6 pull-right">
+                    <button type="submit" class="btn btn-primary float-end" style="margin-right:10px;" onsubmit="Save()">Save</button>
+                </div>
+
+
+            </div>
+
+        </form>
+    </div>
+}

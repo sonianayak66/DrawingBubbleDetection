@@ -1,0 +1,80 @@
+﻿@model MPCRS.ViewModels.Base_Line_EngineViewModel
+@{
+    Layout = null;
+}
+<style>
+
+</style>
+@* <div class="col-md-12 col-sm-12 col-lg-12">
+    <div class="col-md-4">
+        <label>@(Model.BL_Engine_Dbkey == 0 ? "Create " : "Edit ") Base Line Engine </h4></label>
+        <hr />
+    </div>
+</div> *@
+
+<form method="post" asp-action="CreateBaseLineEngine" asp-controller="SOPManagement" id="createBLEngine" class="needs-validation">
+    <div class="row">
+        <div class="col-6">
+            <h4>@(Model.BL_Engine_Dbkey == 0 ? "Create " : "Edit ") Base Line Engine </h4>
+        </div>
+    </div>
+    <input type="hidden" asp-for="BL_Engine_Dbkey" />
+    <div class="col-md-12 col-sm-12 col-lg-12">
+        <div class="row">
+            <div class="col-8">
+                <div class="form-floating mb-2">
+                    <input class="form-control" asp-for="Engine_Title" type="text" placeholder="">
+                    <label asp-for="Engine_Title">Engine Title</label>
+                    <span asp-validation-for="Engine_Title" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-8">
+                <div class="form-floating mb-2">
+                    <input class="form-control" asp-for="Engine_Description" type="text" placeholder="">
+                    <label asp-for="Engine_Description">Engine Description</label>
+                    <span asp-validation-for="Engine_Description" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-8">
+                <div class="form-floating mb-2">
+                    <input class="form-control" asp-for="Revision_date" type="date" placeholder="">
+                    <label asp-for="Revision_date">Revision date</label>
+                    <span asp-validation-for="Revision_date" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-8">
+                <div class="form-floating mb-2">
+                    <input class="form-control" asp-for="Revision_title" type="text" placeholder="">
+                    <label asp-for="Revision_title">Revision title</label>
+                    <span asp-validation-for="Revision_title" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="col-8">
+                <div class="form-floating mb-2">
+                    <input class="form-control" asp-for="Revision_title" type="text" placeholder="">
+                    <label asp-for="Revision_title">Revision title</label>
+                    <span asp-validation-for="Revision_title" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="col-8">
+                <div class="form-floating mb-2">
+
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" asp-for="is_active"  type="checkbox" />
+                        <label class="form-check-label" for="flexSwitchCheckDefault">Active</label>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="col-8">
+                <div class="form-floating mb-2">
+                    <button class="btn btn-success" type="button" onclick="SubmitBLEngine()">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

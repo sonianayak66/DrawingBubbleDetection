@@ -1,0 +1,34 @@
+﻿@using MPCRS.Utilities
+@model MPCRS.ViewModels.Upload_DocumentVM
+@{
+    Layout = null;
+    var DocumentType = Masters.GetMaster_General_Value("Demand_Document");
+}
+
+<div class="align-items-center">
+    <input hidden asp-for="DocumentID" />
+    <input hidden asp-for="DemandDbKey" />
+    <div class="col-md-12">
+        <div class="form-floating mb-3">
+            <p id="docname"></p>
+            <select class="form-control" asp-for="Document_Type" asp-items="@DocumentType"></select>
+            <label>Document</label>
+        </div>
+    </div>
+    <div class="col-md-12 mb-3">
+        <label>Document</label>
+        <input type="file" class="form-control" asp-for="DocumentFile">
+    </div>
+    <div class="col-md-12">
+        <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="Remarks">
+            <label>Remarks</label>
+        </div>
+    </div>
+  @*  <div class="col-md-12">
+        <input type="button" class="btn btn-success btn-sm" value="Save" id="btnupload" onclick="UploadDocumentDemand()" />
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+    </div>*@
+</div>
+
+ 

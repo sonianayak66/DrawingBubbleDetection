@@ -1,0 +1,384 @@
+﻿@model MPCRS.ViewModels.MaterialDetailsPopupVM
+
+@{
+    Layout = null;
+}
+
+<style>
+    /* Summary Stats */
+    .stat-box {
+        background-color: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        border-radius: 6px;
+        padding: 10px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #0d6efd;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-top: 2px;
+    }
+
+    /* Section Headers */
+    .section-header {
+        background-color: #0d6efd;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 10px;
+    }
+
+    /* Scrollable Containers */
+    .demands-container, .issues-container {
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    /* Item Cards */
+    .item-card {
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background-color: white;
+    }
+
+    .card-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    /* Detail Table */
+    .detail-table {
+        width: 100%;
+        font-size: 0.875rem;
+    }
+
+        .detail-table td {
+            padding: 4px 8px 4px 0;
+            vertical-align: top;
+        }
+
+            .detail-table td:first-child {
+                color: #6c757d;
+                width: 40%;
+                white-space: nowrap;
+            }
+
+            .detail-table td:last-child {
+                width: 60%;
+            }
+
+        .detail-table i {
+            width: 16px;
+            text-align: center;
+            margin-right: 4px;
+            font-size: 0.85rem;
+        }
+
+    /* Status Badges */
+    .badge {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    .status-complete {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .status-cancelled {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-default {
+        background-color: #cfe2ff;
+        color: #084298;
+    }
+
+    /* No Data */
+    .no-data-box {
+        text-align: center;
+        padding: 30px;
+        color: #6c757d;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+    }
+
+        .no-data-box i {
+            font-size: 2.5rem;
+            opacity: 0.3;
+            margin-bottom: 10px;
+        }
+
+        .no-data-box p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+    /* Scrollbar Styling */
+    .demands-container::-webkit-scrollbar,
+    .issues-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .demands-container::-webkit-scrollbar-track,
+    .issues-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    .demands-container::-webkit-scrollbar-thumb,
+    .issues-container::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+
+        .demands-container::-webkit-scrollbar-thumb:hover,
+        .issues-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+</style>
+
+<!-- NO MODAL WRAPPER - Just the content! -->
+<!-- Summary Stats Row -->
+<div class="row g-2 mb-3">
+    <div class="col-md-2">
+        <div class="stat-box">
+            <div class="stat-value">@Model.Summary.TotalOrdered.ToString("N1")</div>
+            <div class="stat-label">Ordered (kg)</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-box">
+            <div class="stat-value">@Model.Summary.TotalReceived.ToString("N1")</div>
+            <div class="stat-label">Received (kg)</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-box">
+            <div class="stat-value">@Model.Summary.TotalIssued.ToString("N1")</div>
+            <div class="stat-label">Issued (kg)</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-box" style="background-color: @(Model.Summary.CurrentStock >= 0 ? "#d1e7dd" : "#f8d7da");">
+            <div class="stat-value" style="color: @(Model.Summary.CurrentStock >= 0 ? "#0f5132" : "#721c24");">
+                @Model.Summary.CurrentStock.ToString("N1")
+            </div>
+            <div class="stat-label">Current Stock</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-box">
+            <div class="stat-value">@Model.Summary.TotalDemands</div>
+            <div class="stat-label">Total Demands</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="stat-box">
+            <div class="stat-value">@Model.Summary.TotalIssues</div>
+            <div class="stat-label">Total Issues</div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Two Column Layout -->
+<div class="row g-3">
+    <!-- Left Column: Procurement Demands -->
+    <div class="col-md-6">
+        <div class="section-header">
+            <i class="fas fa-shopping-cart"></i> Procurement Demands (@Model.Summary.TotalDemands)
+        </div>
+
+        @if (Model.Demands != null && Model.Demands.Any())
+        {
+            <div class="demands-container">
+                @foreach (var demand in Model.Demands)
+                {
+                    var statusClass = "status-default";
+                    if (demand.CurrentStatus != null)
+                    {
+                        var status = demand.CurrentStatus.ToLower();
+                        if (status.Contains("payment") || status.Contains("complete")) statusClass = "status-complete";
+                        else if (status.Contains("cancel")) statusClass = "status-cancelled";
+                        else if (status.Contains("order") || status.Contains("pending")) statusClass = "status-pending";
+                    }
+
+                    <div class="item-card">
+                        <div class="card-header-row">
+                            <div 
+                                style="cursor:pointer;"
+                                onclick="window.open('/DemandManagement/DemandTree?id=@demand.DemandDbKey', '_blank')"
+                                 title="Click to view complete demand details"
+                            >
+
+                                <strong>@demand.MMGFileNo</strong>
+                                <br><small class="text-muted">@demand.ItemDescription</small>
+                            </div>
+                            <span class="badge @statusClass">@demand.CurrentStatus</span>
+                        </div>
+
+                        <table class="detail-table">
+                            <tr>
+                                <td><i class="fas fa-truck"></i> Vendor:</td>
+                                <td><strong>@(demand.VendorName ?? "Not Assigned")</strong></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-shopping-cart"></i> Ordered:</td>
+                                <td><strong>@demand.OrderedQty.ToString("N2") kg</strong></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-check-circle"></i> Received:</td>
+                                <td><strong class="text-success">@demand.ReceivedQty.ToString("N2") kg</strong></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-hourglass-half"></i> Balance:</td>
+                                <td>
+                                    <strong class="@(demand.Balance > 0 ? "text-warning" : "text-success")">
+                                        @demand.Balance.ToString("N2") kg
+                                    </strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-calendar-alt"></i> Planned Date of Completion:</td>
+                                <td>
+                                    @if (demand.PlannedDate.HasValue)
+                                    {
+                                        <strong>@demand.PlannedDate.Value.ToString("dd-MMM-yyyy")</strong>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Not Set</span>
+                                    }
+                                </td>
+                            </tr> 
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="no-data-box">
+                <i class="fas fa-inbox"></i>
+                <p>No procurement demands</p>
+            </div>
+        }
+    </div>
+
+    <!-- Right Column: Material Issues -->
+    <div class="col-md-6">
+        <div class="section-header">
+            <i class="fas fa-arrow-right"></i> Material Issues (@Model.Summary.TotalIssues)
+        </div>
+
+        @if (Model.Issues != null && Model.Issues.Any())
+        {
+            <div class="issues-container">
+                @foreach (var issue in Model.Issues)
+                {
+                    <div class="item-card">
+                        <div class="card-header-row">
+                            <div>
+                                <strong>@issue.ReferenceNo</strong>
+                                <br><small class="text-muted">
+                                    @(issue.IssueDate?.ToString("dd-MMM-yyyy") ?? "Unknown Date")
+                                </small>
+                            </div>
+                            <span class="badge" style="background-color: #0d6efd; color: white;">
+                                @issue.IssueQty.ToString("N2") kg
+                            </span>
+                        </div>
+
+                        <table class="detail-table">
+                           
+                                <tr>
+                                    <td><i class="fas fa-industry"></i> Vendor:</td>
+                                    <td><strong>@issue.VendorName</strong></td>
+                                </tr>
+                       
+                           
+                                <tr>
+                                    <td><i class="fas fa-barcode"></i> S/N:</td>
+                                    <td><strong>@issue.SerialNumbers</strong></td>
+                                </tr>
+
+                                <tr>
+                                    <td><i class="fas fa-pencil-ruler"></i> Part Name:</td>
+                                    <td><strong>@issue.PartName</strong></td>
+                                </tr>
+
+                                @* @if (!string.IsNullOrWhiteSpace(issue.JobCardNumber))
+                                {
+                                    <tr>
+                                        <td><i class="fas fa-pencil-ruler"></i> Part Name:</td>
+                                        <td><strong>@(string.IsNullOrWhiteSpace(issue.PartName) ? "NA" : issue.PartName)</strong></td>
+                                    </tr>
+                                } *@
+
+                            <tr>
+                                <td><i class="fas fa-clipboard-list"></i> Job Card:</td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(issue.JobCardNumber))
+                                    {
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                onclick="getJcDetails('@issue.JobCardNumber')"
+                                                title="Click to view Job Card details">
+                                            @issue.JobCardNumber
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">NA</span>
+                                    }
+                                </td>
+                            </tr>
+                                @* <tr>
+                                    <td><i class="fas fa-clipboard-list"></i> Job Card:</td>
+                                <td onclick="getJcDetails('@issue.JobCardNumber')">
+                                        <strong>@issue.JobCardNumber</strong>
+                                    </td>
+                                </tr>  *@
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="no-data-box">
+                <i class="fas fa-inbox"></i>
+                <p>No material issues</p>
+            </div>
+        }
+    </div>
+    
+</div>
+

@@ -1,0 +1,164 @@
+﻿@model MPCRS.ViewModels.DocumentsViewModel
+@using System.Security.Claims;
+@using MPCRS.Utilities;
+@{
+    var hasWritePermission = UserData.IsAuthorized(User, Constants.UserPermissions.DOC_Write);
+    if (Model.Item_type == "Folder")
+    {
+           
+            <table class="tg" style="table-layout: fixed; width: 100%">
+                <colgroup>
+                    <col style="width: 20%">
+                    <col style="width: 20%">
+                    <col style="width: 60%">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <td class="tg-0lax" rowspan="6">
+                        <img src="~/lib/icon/unicons/icons/folder-info.svg" />
+                    </td>
+                        <th class="tg-0lax">Title</th>
+                        <td class="tg-0lax">@Model.Refrence_Title</td>
+                    </tr>
+                    <tr>
+                        <th class="tg-0lax">Description</th>
+                        <td class="tg-0lax">@Model.Description</td>
+                    </tr>
+                
+                    <tr>
+                        <th class="tg-0lax">Last Updated By</th>
+                        <td class="tg-0lax">@Model.Updated_By_UserName</td>
+                    </tr>
+                    <tr>
+                        <th class="tg-0lax">Last Updated on</th>
+                        <td class="tg-0lax">@Model.Updated_On</td>
+                    </tr>
+                    <tr>
+                        <th class="tg-0lax">Approval Required</th>
+                          <td class="tg-0lax">@Model.is_required_approve_text</td>
+                    </tr>
+                     <tr>
+                    <th class="tg-0lax">Inherit Parent Access</th>
+                         <td class="tg-0lax">@Model.Inherit_Parent_Access_text</td>
+                     </tr>
+                    <tr>
+                        <th class="tg-0lax" style="text-align:center" rowspan="3">Folder</th>
+                    </tr>
+                </thead>
+            </table>
+            
+     
+    }
+    else
+    {
+            <ul class="nav nav-underline" id="myTab" role="tablist">
+                <li class="nav-item"><a class="nav-link active" id="home-tab" data-bs-toggle="tab" href="#tab-home" role="tab" aria-controls="tab-home" aria-selected="true">Detail</a></li>
+                <li class="nav-item"><a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#tab-profile" role="tab" aria-controls="tab-profile" aria-selected="false">View Document</a></li>
+            </ul>
+            <div class="tab-content mt-3" id="myTabContent">
+                <div class="tab-pane fade show active" id="tab-home" role="tabpanel" aria-labelledby="home-tab">
+                    <table class="tg" style="table-layout: fixed; width: 100%">
+                        <colgroup>
+                            <col style="width: 20%">
+                            <col style="width: 20%">
+                            <col style="width: 20%">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <td class="tg-0lax" rowspan="8">
+                                    <img src="~/lib/icon/unicons/icons/file-download.svg" style="width:170px" />
+                                </td>
+                                <th class="tg-0lax">Title</th>
+                                <td class="tg-0lax">@Model.Refrence_Title</td>
+                            </tr>
+                            <tr>
+                                <th class="tg-0lax">Description</th>
+                                <td class="tg-0lax">@Model.Description</td>
+                            </tr>
+                            <tr>
+                                <th class="tg-0lax">File Type</th>
+                                <td class="tg-0lax">@Model.File_type</td>
+                            </tr>
+                            <tr>
+                                <th class="tg-0lax">File Size</th>
+                                <td class="tg-0lax">@Model.File_Size</td>
+                            </tr>
+                            <tr>
+                                <th class="tg-0lax">Last Updated By</th>
+                                <td class="tg-0lax">@Model.Updated_By_UserName  </td>
+                            </tr>
+                            <tr>
+                                <th class="tg-0lax">Last Updated on</th>
+                                <td class="tg-0lax">@Model.Updated_On</td>
+                            </tr>
+                            <tr>
+                                <th class="tg-0lax">Approved</th>
+                                <td class="tg-0lax">@Model.Approved_Status_text</td>
+                            </tr>
+                            <tr>
+                                <th class="tg-0lax">Search Tags</th>
+                                <td class="tg-0lax">
+                                    @if (!string.IsNullOrWhiteSpace(Model.SearchTags))
+                                    {
+                                        foreach (var tag in Model.SearchTags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                        {
+                                            <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 me-1 mb-1" style="font-weight:500; font-size:0.8rem;">@tag</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+ 
+                            <tr>
+                                <th class="tg-0lax" style="text-align:center" rowspan="3">File</th>
+                            </tr>
+
+                        </thead>
+                    </table>
+         
+
+                    @{
+                        if (Model.DownloadAccess)
+                        {
+                            <a href="/DocManager/DownloadDocument?docdbkey=@Model.Document_Dbkey" class="btn btn-secondary btn-sm">Download</a>
+                            
+                        }
+
+                        if (hasWritePermission || User.FindFirst(ClaimTypes.Email).Value == "lakshmiv@mail.gtre.org")
+                        {
+                        <button class="btn btn-info btn-sm" type="button" onclick="Approval(@Model.Document_Dbkey)">Approve</button>
+                        }
+
+                        if (hasWritePermission || User.FindFirst(ClaimTypes.Email).Value == "lakshmiv@mail.gtre.org")
+                        {
+                        <button class="btn btn-info btn-sm" type="button" onclick="Rejecetion(@Model.Document_Dbkey)">Reject</button>
+                        }
+
+                        if (hasWritePermission == true || Model.WriteAccess)
+                        {
+                        <button class="btn btn-primary btn-sm" type="button" onclick="Rename(@Model.Document_Dbkey)">Rename</button>
+                        //<a class="btn btn-primary btn-sm" href="/DocManager/Rename?Document_Dbkey=@Model.Document_Dbkey">Rename</a>
+                        }
+
+                        if (hasWritePermission || User.FindFirst(ClaimTypes.Email).Value == "lakshmiv@mail.gtre.org")
+                        {
+                            <button class="btn btn-danger btn-sm" type="button" onclick="Deletion(@Model.Document_Dbkey)">Delete</button>
+                        }
+                    }
+            
+                </div>
+                <div class="tab-pane fade" id="tab-profile" role="tabpanel" aria-labelledby="profile-tab">
+                    <embed src="@Model.File_Location@Model.System_File_Name#toolbar=0"  width="1000" height="700">
+                    <embed src="/Attachments/MISC_DOCS/file-sample_1MB.docx#toolbar=0" width="1000" height="700">
+                    
+                </div>
+       
+            </div>
+       
+    }
+}
+
+

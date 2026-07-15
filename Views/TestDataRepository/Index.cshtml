@@ -1,0 +1,286 @@
+﻿@model List<MPCRS.Models.TestDataRepository>
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    //  var hasWritePermission = UserData.IsAuthorized(User, Constants.UserPermissions.Performance_Prediction_Write);
+
+}
+<style>
+    .uil-cog {
+        animation: spin 2s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+</style>
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>Engine Performance Prediction</h3>
+    </div>
+    <div class="col-md-6">
+
+
+        <a asp-controller="home" asp-action="index" class="btn btn-secondary btn-sm float-end m-1" style="float:right;">Back</a>
+
+        <a onclick="UploadExcelForm(0)" value="Upload Excel" class="btn btn-success btn-sm foat-end m-1" style="float:right; cursor:pointer">Upload Excel</a>
+        <a onclick="DownloadTestData(0)" class="btn btn-primary btn-sm foat-end m-1 " style="float:right; cursor:pointer">Download file</a>
+
+    </div>
+</div>
+<table data-toggle="table table-bordered" class="table table-sm fs--1 mb-2" role="grid" id="tblpredication">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Cell No</th>
+            <th>Engine Name</th>
+            <th>Build No</th>
+            <th>Run No</th>
+            <th>1000% NH</th>
+            <th>1000% NL</th>
+            <th>Atmospheric Pressure</th>
+            <th>Room Temperature</th>
+            <th>File No</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+
+        @{
+            foreach (var item in Model)
+            {
+                <tr>
+
+                    <td><input type="checkbox" class="DownloadFile" data-testdatadbkey="@item.TestdataDbKey" /></td>
+                    <td>@item.CellNo</td>
+                    <td>@item.EngineName</td>
+                    <td>@item.BuildNo</td>
+                    <td>@item.RunNo</td>
+                    <td>@item.NH</td>
+                    <td>@item.NL</td>
+                    <td>@item.AtmosphericPressure</td>
+                    <td>@item.RoomTemperature</td>
+                    <td>@item.DecuSWBuildNumber</td>
+                    <td>
+                        <i class="uil uil-trash-alt fs-2" style="color:red;text-align:center;cursor:pointer" onclick="DeleteTestDataRepo(@item.TestdataDbKey)"></i>
+                    </td>
+                </tr>
+            }
+        }
+
+    </tbody>
+</table>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script type="text/javascript">
+
+        let dialog;
+
+
+        function UploadExcelForm(Id) {
+            $.ajax({
+                url: '/TestDataRepository/ManageExcelPerdiction/?Id=' + Id,
+                type: 'GET',
+                success: function (data) {
+                    bootbox.alert({
+                        message: data,
+                        size: 'large',
+                        buttons: {
+                            ok: {
+                                className: 'd-none'
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        function EditTestData(ID) {
+            $.ajax({
+                url: '/TestDataRepository/ManageExcelPerdiction/' + ID,
+                type: 'GET',
+                success: function (data) {
+                    bootbox.alert({
+                        message: data,
+                        size: 'large',
+                        buttons: {
+                            ok: {
+                                className: 'd-none'
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+
+        function SaveTestDataRepo() {
+            var filesinput = document.getElementById("UploadedFileData").files;
+
+            // Check if file input is empty
+            if (filesinput.length === 0) {
+                alert('Please select a file.');
+                return false;
+            }
+            console.log(filesinput);
+            var formData = $('#RawData').serialize(); // Use the correct ID of your form
+
+            if (filesinput.length > 0) {
+                const fileType = filesinput[0].type;
+                const allowedFileTypes = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+                if (!allowedFileTypes.includes(fileType)) {
+                    bootbox.alert('Invalid File Type. Only [Excel] formats allowed');
+                    return false;
+                }
+            }
+            console.log(formData);
+
+            $.ajax({
+                url: '/TestDataRepository/ManageExcelPerdiction/',
+                type: 'POST',
+                data: formData,
+                success: function (data) {
+                    if (data.success) {
+                        Wait();
+                        UploadExcel(data.saveddbkey);
+                        //window.location.reload();
+                        // closeBootboxes();
+                    } else {
+                        alert('Some error occurred.');
+
+                    }
+                },
+                error: function (error) {
+                    console.error('Error:', error);
+                }
+            });
+        }
+
+        function UploadExcel(saveddbkey) {
+
+            var fileData = new FormData();
+
+            var filesinput = document.getElementById("UploadedFileData").files;
+
+            if (filesinput.length > 0) {
+                const fileType = filesinput[0].type;
+                const allowedFileTypes = ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+                if (allowedFileTypes.includes(fileType) == false) {
+                    bootbox.alert('Invalid File Type. Only [Excel] formats allowed');
+                    return false;
+                }
+            }
+            const maxSize = 26 * 1024 * 1024; // 10MB
+            if (filesinput.length > 0) {
+                var filesize = filesinput[0].size;
+                if (filesize > maxSize) {
+                    bootbox.alert('File size must be less than 26MB');
+                    return false;
+                }
+            }
+
+            if (filesinput.length == 0) {
+                bootbox.alert('Input File is Required');
+                return false;
+            }
+
+            for (var i = 0; i < filesinput.length; i++) {
+                fileData.append('uploadeddocument', filesinput[i]);
+            }
+
+            fileData.append('Source_table_key', saveddbkey);
+
+            $.ajax({
+                type: "POST",
+                url: '/TestDataRepository/UploadExcelForPrediction',
+                data: fileData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    if (data.success) {
+                        dialog.modal('hide');
+                        closeBootboxes();
+                        console.log("uploaded");
+                    } else {
+                        // document.getElementById("btnupload").disabled = false;
+
+                    }
+                }
+            });
+        }
+
+        function DownloadTestData() {
+            $('#loading').show();
+            var dataKeys = "";
+            var DownloadFileData = [];
+            var checkboxes = document.getElementsByClassName("DownloadFile");
+
+            for (i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i].checked) {
+                    DownloadFileData.push($(checkboxes[i]).data('testdatadbkey'));
+                }
+            }
+            dataKeys = DownloadFileData.toString();
+
+            if (DownloadFileData.length == 0) {
+                return false;
+            }
+            const url = '/TestDataRepository/DownloadTestDataFile?datakeys=' + dataKeys;
+            console.log(url);
+            window.location.href = url;
+            $('#loading').hide();
+
+        }
+
+        function DeleteTestDataRepo(id) {
+            $('#loading').show();
+            bootbox.confirm("Are you sure you want to delete this File Data ", function (result) {
+                if (result) {
+                    $.ajax({
+                        type: 'GET',
+                        url: '/TestDataRepository/DeleteTestDataRepo?TestDataDbKey=' + id,
+                        success: function (data) {
+                            if (data.success) {
+
+                                $('#loading').hide();
+
+                            }
+                            else {
+                                bootbox.alert("Delete Failed")
+                            }
+                        },
+                        error: function () {
+                        }
+                    });
+                }
+            });
+        }
+
+        function closeBootboxes() {
+            var btn = document.getElementsByClassName("bootbox-close-button")[0];
+            btn.click();
+        }
+
+        function Wait() {
+            dialog = bootbox.dialog({
+                message: '<p class="text-center mb-0"><i class="uil uil-cog"></i> Please wait as the file is been uploaded...</p>',
+                closeButton: false
+            });
+        }
+
+    </script>
+}

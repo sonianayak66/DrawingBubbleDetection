@@ -1,0 +1,43 @@
+﻿@using System.Data;
+@using MPCRS.Utilities;
+
+@{
+    //DataTable dataTable = MPGlobals.GetDataForDatalist(@"[dbo].[Get_Rawmaterial_Issues]  @Engine_Part_Dbkey = " + @ViewBag.Engine_Part_Dbkey + " ");
+    DataTable dataTable = MPGlobals.GetDataForDatalist(@"[dbo].[Get_Rawmaterial_Issues_for_MPL] @Engine_Part_Dbkey = " + @ViewBag.Engine_Part_Dbkey + " ");
+    
+    <table id="datatables" class="table table-striped table-bordered table-condensed" cellspacing="0" style="width:100%">
+        <thead>
+            <tr>
+                <th>Order No/Date</th>
+                <th>Part Name</th>
+                <th>Quantity</th>
+                <th>RM Name</th>
+               @* <th>Dia</th>
+                <th>Thickness</th>
+                <th>Length</th>*@
+                <th>Weight</th>
+                <th>Vendor</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                foreach (DataRow item in dataTable.Rows)
+                {
+                    <tr>
+                        <td>@item["Order_Ref_No"]</td>
+                        <td>@item["Drawing_no"]</td>
+                        <td>@item["Qty"]</td>
+                        <td>@item["Material_name"]</td>
+                       @* <td>@item["outer_dia"]</td>
+                        <td>@item["thickness"]</td>
+                        <td>@item["Mlength"]</td>*@
+                        <td>@item["Weight"]</td>
+                        <td>@item["Vendor_Name"]</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+
+}

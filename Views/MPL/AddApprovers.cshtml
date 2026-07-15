@@ -1,0 +1,51 @@
+﻿@model MPCRS.ViewModels.BaseLineEngineApproversVm
+@{
+    ViewBag.Title = "AddApprovers";
+    Layout = null;
+
+}
+<form asp-action="AddApprovers" asp-controller="MPL" method="post" id="FrmRecp" class="needs-validation">
+    <div class="row">
+        <div class="col-6">
+            <h4>@(Model.BL_Approvers_Dbkey == 0 ? "Add " : "Edit ") Approvers </h4>
+        </div>
+    </div>
+    <input type="hidden" asp-for="BL_Engine_Dbkey" />
+    <input type="hidden" asp-for="BL_Approvers_Dbkey" />
+    <div class="col-md-12 col-sm-12 col-lg-12">
+        <div class="row">
+            <div class="col-12">
+                <div class="form-floating mb-2 mt-1">
+                    <select asp-for="Role_Dbkey" class="form-select" asp-items="@Model.UserAddtionalRoles" aria-label="Floating label select example"></select>
+                    <label asp-for="Role_Dbkey">Terminology</label>
+                    <span asp-validation-for="Role_Dbkey" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="form-floating mb-2 mt-1">
+                    <select asp-for="Module_Dbkey" class="form-select" asp-items="@Model.ModuleResponsibility" aria-label="Floating label select example"></select>
+                    <label asp-for="Module_Dbkey">Module</label>
+                    <span asp-validation-for="Module_Dbkey" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="form-floating mb-2 mt-1">
+                    <select asp-for="Person_Dbkey" class="form-select" asp-items="@Model.PersonsList" aria-label="Floating label select example"></select>
+                    <label asp-for="Person_Dbkey">Person</label>
+                    <span asp-validation-for="Person_Dbkey" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="form-floating mb-2 mt-1">
+                    <input type="button" value="Submit" class="btn btn-success" onclick="submitApprovers()" />
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+    

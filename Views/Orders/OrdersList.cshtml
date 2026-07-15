@@ -1,0 +1,140 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@model List<MPCRS.ViewModels.CastingDetailViewModel>
+@{
+
+    ViewData["Title"] = @ViewBag.Ordertype + " Details";
+    var CastingWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Write);
+    var PyroWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Pyro_Write);
+    var ForgingWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Forging_Write);
+    
+    var CastingDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Delete);
+    var PyroDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Pyro_Delete);
+    var ForgingDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Forging_Delete);
+
+
+}
+
+<style>
+/*    table {
+        table-layout: fixed;
+    }*/
+
+        table td {
+            word-wrap: break-word;
+            
+        }
+
+    #genericOrderlisttbl td {
+        white-space: inherit;
+    }
+
+    p {
+        margin-bottom: 5px !important;
+    }
+
+</style>
+<link href="~/vendors/choices/choices.min.css" rel="stylesheet" />
+
+@{
+    var tabId = ViewBag.Tab;
+}
+<div class="row">
+    <div class="col-md-6">
+        <h3>@ViewBag.Ordertype Orders</h3>
+        <input type="hidden" id="generic-order-summary-Ordertype" value="@ViewBag.Ordertype"  />
+    </div>
+    <div class="col-md-6">
+        <a href="/Orders/DetailedReceiptData?OrderType=@ViewBag.Ordertype" class="btn btn-sm btn-secondary float-end btn-small">Detailed Order Data</a>
+        @if( (CastingWriteAccess && ViewBag.Ordertype == "Casting") || (PyroWriteAccess && ViewBag.Ordertype == "Pyro") || (ForgingWriteAccess && ViewBag.Ordertype == "Forging"))
+        {
+            @*<button class="btn btn-sm btn-success float-end" style="margin-right:10px" onclick="CreateEditCastingOrder(0)">New Casting Order</button>*@
+            <a class="btn btn-sm btn-success float-end btn-small" style="margin-right:10px" href="/Orders/OrderDetail?id=NEW&Ordertype=@ViewBag.Ordertype">New @ViewBag.Ordertype Order</a>
+            <a class="btn btn-sm btn-success float-end btn-small" style="margin-right:10px" href="/Orders/OrderModuleUserMapping?Ordertype=@ViewBag.Ordertype">Custom Access Users List</a>
+            <a class="btn btn-sm btn-success float-end btn-small" style="margin-right:10px" onclick="DepartmentOrder()" >Department Order</a>
+        }
+    </div>
+</div>
+<hr />
+
+<ul class="nav nav-underline" id="myTab" role="tablist">
+    <li class="nav-item" style="margin-right:10px"><a class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" href="#tab-dashboard" role="tab" aria-controls="tab-dashboard" aria-selected="true">Dashboard</a></li>
+    <li class="nav-item" style="margin-right:10px"><a class="nav-link" id="home-tab" data-bs-toggle="tab" href="#tab-home" role="tab" aria-controls="tab-home" aria-selected="true">Orders Summary</a></li>
+    <li class="nav-item" style="margin-right:10px"><a class="nav-link" id="orders-tab" data-bs-toggle="tab" href="#tab-orders" role="tab" aria-controls="tab-orders" aria-selected="false" >Orders</a></li>
+    <li class="nav-item" style="margin-right:10px"><a class="nav-link" id="Issues_Summary-tab" data-bs-toggle="tab" href="#tab-Issues_Summary" role="tab" aria-controls="tab-Issues_Summary" aria-selected="false">Material Issue Summary</a></li>
+    <li class="nav-item" style="margin-right:10px"><a class="nav-link" id="Issues-tab" data-bs-toggle="tab" href="#tab-Issues" role="tab" aria-controls="tab-Issues" aria-selected="false">Material Issue </a></li>
+</ul>
+
+<div class="tab-content" id="myTabContent">
+    <div class="tab-pane fade show active" id="tab-dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+    </div>
+    <div class="tab-pane fade" id="tab-home" role="tabpanel" aria-labelledby="home-tab">
+    </div>
+
+    <div class="tab-pane fade" id="tab-orders" role="tabpanel" aria-labelledby="orders-tab">
+
+        <div class="row">
+            @Html.Partial("_GetOrders", Model)
+          
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-Issues" role="tabpanel" aria-labelledby="Issues-tab">
+    </div>
+
+    <div class="tab-pane fade" id="tab-Issues_Summary" role="tabpanel" aria-labelledby="Issues_Summary-tab">
+       
+    </div>
+</div>
+
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/mpi/GenericOrders.js" asp-append-version="true"></script>
+    <script src="~/vendors/choices/choices.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            var tab_viewbag = "@tabId";
+            document.getElementById(tab_viewbag).click();
+            var dataTable;
+            var Ordertype = $("#generic-order-summary-Ordertype").val();
+            console.log(Ordertype);
+
+            dataTable = $('#genericOrderlisttbl').DataTable({
+                paging: false,
+                "order": [],
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem(
+                        'DataTables_' + settings.sInstance,
+                        JSON.stringify(data)
+                    );
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                }
+            });
+            GetOrderDashboardTable(Ordertype);
+            GetOrderSummaryTable(Ordertype);
+            GetIssueDetailsTable(Ordertype);
+            GetGenericMaterialIssueSummary(Ordertype);
+        });
+
+
+        function enableTextarea(element) {
+            element.removeAttribute("readonly");
+            element.focus(); // Optional: Focus the textarea for immediate editing
+            // Disable again on losing focus
+            element.onblur = function () {
+                element.setAttribute("readonly", "readonly");
+            };
+        }
+
+      
+
+
+    </script>
+
+}

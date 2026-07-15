@@ -1,0 +1,163 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@model List<MPCRS.ViewModels.CastingDetailViewModel>
+@{
+    ViewData["Title"] = "Casting Details";
+    var CastingWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Write);
+    var DeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Delete);
+}
+
+<style>
+/*    table {
+        table-layout: fixed;
+    }*/
+
+        table td {
+            word-wrap: break-word;
+            
+        }
+
+    #castinglisttbl td {
+        white-space: inherit;
+    }
+
+    p {
+        margin-bottom: 5px !important;
+    }
+
+</style>
+<link href="~/vendors/choices/choices.min.css" rel="stylesheet" />
+<div class="row">
+    <div class="col-md-6">
+        <h3>Casting Orders</h3>
+    </div>
+    <div class="col-md-6">
+        <a href="/Casting/DetailedCastingData" class="btn btn-sm btn-secondary float-end">Detailed Order Data</a>
+        @if (CastingWriteAccess)
+        {
+            @*<button class="btn btn-sm btn-success float-end" style="margin-right:10px" onclick="CreateEditCastingOrder(0)">New Casting Order</button>*@
+            <a class="btn btn-sm btn-success float-end" style="margin-right:10px" href="/Casting/CastingDetail?id=NEW">New Casting Order</a>
+        }
+    </div>
+</div>
+<hr />
+
+<ul class="nav nav-underline" id="myTab" role="tablist">
+    <li class="nav-item" style="margin-right:10px"><a class="nav-link active" id="home-tab" data-bs-toggle="tab" href="#tab-home" role="tab" aria-controls="tab-home" aria-selected="true">Order Summary</a></li>
+    <li class="nav-item" style="margin-right:10px"><a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#tab-profile" role="tab" aria-controls="tab-profile" aria-selected="false" >Orders</a></li>
+   
+</ul>
+
+<div class="tab-content" id="myTabContent">
+    <div class="tab-pane fade show active" id="tab-home" role="tabpanel" aria-labelledby="home-tab">
+    </div>
+    <div class="tab-pane fade" id="tab-profile" role="tabpanel" aria-labelledby="profile-tab">
+
+        <div class="row">
+            <table class="table table-hover table-bordered table-sm" id="castinglisttbl">
+                <thead>
+                    <tr>
+                      
+                        <th style="max-width:50px">Demand Number</th> 
+                        <th style="max-width:50px">MMG Number</th>
+                        <th style="max-width:50px">Date</th>
+                        <th class="partcol" >Parts</th>
+                        <th style="max-width:20px">Status</th>
+                        <th style="max-width:20px"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        foreach (var item in Model.OrderByDescending(x=>x.OrderDate))
+                        {
+                            <tr>
+                                <td>@item.DemandNumber</td>
+                                <td>
+                                    @{
+                                        if(item.MMGOrderNumber != null)
+                                        {
+                                            foreach (var orderno in @item.MMGOrderNumber.Split(","))
+                                            {
+                                                <p>@orderno</p>
+                                            }
+                                        }
+                                    } 
+                                </td>
+                                <td>
+                                    @MPGlobals.GetFormattedDate(@item.OrderDate)
+                                </td>
+                                <td>
+                                    @{
+                                        if (item.PartNumber != null)
+                                        {
+                                            foreach (var part in item.PartNumber.Split(","))
+                                            {
+                                                <p class="p-0 m-0" ><b>@part.Split("_")[0]</b></p>
+                                                <p>@part.Split("_")[1]</p>
+                                            }
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge badge-phoenix fs--2 @(item.OrderStatus == "Open" || item.OrderStatus == "InProgress"? "badge-phoenix-warning" :"badge-phoenix-success")">
+                                        @item.OrderStatus
+                                    </span>
+                                </td>
+                                <td> 
+                                    <div class="font-sans-serif btn-reveal-trigger position-static">
+                                        <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs--2" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs--2"></span></button>
+                                        <div class="dropdown-menu dropdown-menu-end py-2">
+                                            @{
+
+                                                <a class="dropdown-item" href="/Casting/CastingDetail?Id=@item.castingGUID">View</a>
+
+                                                if (CastingWriteAccess)
+                                                {
+                                                    <a class="dropdown-item" onclick="GetCastingLink('@item.castingGUID')">Access Link</a>
+                                                }
+
+                                                if (CastingWriteAccess)
+                                                {
+                                                    <a class="dropdown-item" onclick="createRecordDeletionRequest(@item.CastingDbkey,'CastingDetails', 'Casting Order')">Delete</a>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+ 
+</div>
+
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/mpi/casting.js" asp-append-version="true"></script>
+    <script src="~/vendors/choices/choices.min.js"></script>
+
+    <script>
+        var dataTable;
+        $(function () {
+           dataTable =  $('#castinglisttbl').DataTable({
+                paging: false,
+                "order": []
+            });
+
+
+           
+        });
+ 
+        $(document).ready(function () {
+            GetCastingSummaryTable();
+        });
+
+    </script>
+
+}

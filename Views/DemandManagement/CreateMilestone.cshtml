@@ -1,0 +1,61 @@
+﻿ @model MPCRS.ViewModels.CreateMilestoneVM
+@using System.ComponentModel.DataAnnotations;
+@{
+    Layout = null;
+}
+<form id="createMilestoneForm">
+    <div>
+        <input hidden id="MilestoneID" value="0" />
+        <input hidden id="DemandDbKey" value="@ViewBag.DemandDbKey" />
+        <input hidden id="MilestoneNo" value="@ViewBag.MilestoneNumber" />
+        @* <input hidden id="EstimatedOrderDate" value="@ViewBag.EstimatedOrderDate" />        *@
+
+        <div class="col">
+            <div class="row-3">
+                <div class="form-floating mb-3">
+                    <input class="form-control" id="MilestoneName" asp-for="MilestoneName" value="Milestone - @ViewBag.MilestoneNumber" type="text">
+                    <label>Milestone</label>
+                    <span asp-validation-for="MilestoneName" class="text-danger"></span>
+                    @* <label>Milestone Name</label> *@
+                    @*  <span asp-validation-for="MilestoneName" class="text-danger"></span>
+                    <h4>Milestone - @ViewBag.MilestoneNumber</h4>*@
+                </div>
+            </div>
+            <div class="row-3">
+                <div class="form-floating mb-3">
+                    <input class="form-control" id="NoOfDays" type="number" oninput="calculateDueDate()">
+                    <label>No. of Days from order date</label>
+                </div>
+            </div>
+            <div class="row-3">
+                <div class="form-floating mb-3">
+                    <input class="form-control" id="DueDate" asp-for="DueDate" type="date">
+                    <label>Due Date</label>
+                    <span asp-validation-for="DueDate" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row-3">
+                <div class="form-floating mb-3">
+                    <input class="form-control" id="QtyPercentage" asp-for="QtyPercentage" type="number">
+                    <label>Expected Qty (%)</label>
+                    <span asp-validation-for="QtyPercentage" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row-3">
+                <div class="form-floating mb-3">
+                    <input class="form-control" id="Remarks" type="text">
+                    <label>Remarks</label>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex">
+            <label for="IsLastMilestone">Is Last Milestone : </label>
+            <input class="form-check" id="IsLastMilestone" onchange="displayWarningMessage()" type="checkbox" />
+        </div>
+    </div>
+    <p style="display:none" class="text-warning" id="warningMsg"></p>
+
+    <div>
+        <a class="btn btn-small btn-success" onclick="SaveMilestoneForm()">Save</a>
+    </div>
+</form> 

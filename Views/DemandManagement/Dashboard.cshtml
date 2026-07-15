@@ -1,0 +1,107 @@
+﻿@model MPCRS.Models.Project
+@using System.Data
+@using MPCRS.Utilities
+@using System.Globalization
+@{
+	Layout = null;
+}
+
+<style>
+	.qtyCols {
+		text-align: right;
+		padding-right: 9px !important;
+	}
+</style>
+
+<br />
+<h4>
+	Procurement Demands for Project : @(Model.Display_title + " (" + Model.Project_Number + ")")
+</h4>
+<input type="hidden" value="@Model.Project_Dbkey" id="prjiD" />
+
+
+
+<div class="row ">
+	@* Vertical Bar chart *@
+	<div class="col-9">
+		<figure class="highcharts-figure">
+			<div id="container"></div>
+		</figure>
+	</div>
+	@* Vertical Bar chart hidden Table *@
+	<div class="" style="display:none">
+		<table id="datatable2" class="table table-bordered table-sm">
+			<thead>
+				<tr>
+					<th>Status</th>
+					<th>Demands</th>
+				</tr>
+			</thead>
+			<tbody>
+				@{
+					// var totalDemands = 0;
+					System.Data.DataTable dt = MPGlobals.GetDataForDatalist($"DemandDashBoard_StatusInfo @ProjectDBkey = {@Model.Project_Dbkey} ,@DemandingOfficer= {ViewBag.DemandingOfficerDbkey}");
+					foreach (System.Data.DataRow dr in dt.Rows)
+					{
+
+						<tr onclick="GetDemandNumbersByStatus('@dr["DemandStatus"].ToString()',@Model.Project_Dbkey,@ViewBag.DemandingOfficerDbkey)" style="cursor:pointer">
+							<td class="p-2" style="color:#3286c3" title="Click here to view Demands">@dr["DemandStatus"].ToString()</td>
+							<td style="color:#3286c3" title="Click here to view Demands">@dr["Demands"].ToString()</td>
+						</tr>
+						// totalDemands = totalDemands + Convert.ToInt32(dr["Demands"]);
+
+					}
+					// <tr>
+					// 	<td class="p-2"><b>Total</b></td>
+					// 	<th>@totalDemands.ToString()</th>
+					// </tr>
+				}
+			</tbody>
+		</table>
+	</div>
+
+	@* Horizontal bar chart and its table for Cost *@
+	<div class="col-3" style="margin-bottom:10px!important;padding:10px!important;border-radius:6px;box-shadow:4px 4px 2px lightgrey inset">
+		<div class="d-flex-column">
+			<div>
+				<table id="datatable" class="table table-bordered table-sm">
+					<thead>
+						<tr>
+							<th>Type</th>
+							<th class="qtyCols">Amount</th>
+						</tr>
+					</thead>
+					<tbody>
+						@{
+							DataTable cost = MPGlobals.GetDataForDatalist($"DemandDashBoard_CostInfo @ProjectDBkey = {@Model.Project_Dbkey},@DemandingOfficerDbkey = {ViewBag.DemandingOfficerDbkey} ");
+							foreach (System.Data.DataRow dr in cost.Rows)
+							{
+								<tr>
+									<th>@dr["name"].ToString()</th>
+									<td class="qtyCols"><span id="@dr["id"].ToString()">@dr["y"].ToString()</span></td>
+								</tr>
+							}
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div>
+			<figure class="highcharts-figure">
+				<div id="container3"></div>
+			</figure>
+		</div>
+	</div>
+</div>
+
+
+@* Project & Demanding Officer wise summary of demands *@
+<div class="row">
+	<div class="col-12" id="project_DO_report"></div>
+</div>
+
+
+
+
+
+

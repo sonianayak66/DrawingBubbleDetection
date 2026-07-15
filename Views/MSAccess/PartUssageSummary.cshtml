@@ -1,0 +1,107 @@
+﻿@* @model MPCRS.ViewModels.BATLPartUsageSummaryVM
+
+@{
+	ViewData["Title"] = "Part Usage Summary";
+}
+
+<div class="row">
+	<div class="col-6">
+		<h3 class="">Part Usage Summary</h3>
+	</div>
+	<div class="mb-2 col-6 d-flex align-items-center justify-content-end ">
+
+		<a class="btn btn-secondary" href="/MSAccess/Index">
+			Back
+		</a>
+	</div>
+
+</div>
+
+
+
+
+@{
+	var builds = Model.BuildName;
+}
+
+<table id="usageSummaryTable" class="  table table-bordered" style="width:100%">
+	<thead>
+		<tr>
+			<th>Drawing  No</th>
+			<th>Serial No</th>
+			@foreach (var build in builds)
+			{
+				<th>@build</th>
+			}
+			<th>Used?</th>
+		</tr>
+	</thead>
+	<tbody>
+		@for( int i=0; i<600; i++)
+		{
+			@foreach (var group in Model.usageDetails.GroupBy(x => new { x.Draw_part_no, x.Serial_No }))
+			{
+				<tr>
+					<td class="p-2">@group.Key.Draw_part_no</td>
+					<td>@group.Key.Serial_No</td>
+					@foreach (var build in builds)
+					{
+						var match = group.FirstOrDefault(x => x.BuildName == build);
+						if (match != null && match.MatchStatus?.ToUpper() == "MATCHED")
+						{
+							<td>
+								<span class="badge badge-phoenix  badge-phoenix-success">Yes</span>
+							</td>
+						}
+						else
+						{
+							<td>
+								<span class="badge badge-phoenix  badge-phoenix-danger">No</span>
+							</td>
+						}
+
+					}
+					<td>
+						@if (group.First().Used == "Yes")
+						{
+							<span class="badge badge-phoenix badge-phoenix-warning">Yes</span>
+						}
+						else
+						{
+							<span class="badge badge-phoenix badge-phoenix-secondary">No</span>
+						}
+					</td>
+				</tr>
+			}
+
+		}
+		</tbody>
+</table>
+
+@section Scripts {
+	<script>
+		$(document).ready(function () {
+			var table = $('#usageSummaryTable').DataTable({
+				scrollY: "600px",
+				scrollX: true,
+				scrollCollapse: true,
+				paging: true,
+				fixedHeader: true,
+				deferRender: true,
+			   // ordering: false,
+			   // info: false
+				dom: 'Bfrtip', 
+				buttons: [
+					{
+						extend: 'excelHtml5',
+						text: 'Download Excel',
+						title: 'Part_Usage_Summary'
+					}
+				]
+			});
+		});
+	</script>
+ }
+
+
+ *@

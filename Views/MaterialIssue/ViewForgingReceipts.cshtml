@@ -1,0 +1,167 @@
+﻿@model MPCRS.ViewModels.MaterialIssueVM
+@using MPCRS.Utilities
+@{
+    Layout = null;
+    var MIWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.MaterialIssue_Write);
+}
+<style>
+    #MaterialIssueItemstbl td {
+        white-space: nowrap;
+    }
+      
+    #MaterialIssueItemstbl td, th {
+        padding: 4px !important;
+        border: 1px solid lightgrey;
+        color: black;
+        font-size: small !important;
+    }
+
+    p{
+        margin-bottom:2px!important;
+    }
+    
+    .dataTable > thead > tr > th[class*="sort"]:before,
+    .dataTable > thead > tr > th[class*="sort"]:after {
+        content: "" !important;
+    }
+
+    table.dataTable th{
+        vertical-align:top;
+    }
+
+    body {
+        font-size: small;
+        background-color: white;
+    }
+
+    /* Center-align the buttons */
+    .dataTables_wrapper .dataTables_filter {
+        float: left;
+    }
+
+    .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate {
+        float: right;
+    }
+
+    /* Add margin between search box and buttons */
+    .dataTables_wrapper .dataTables_filter {
+        margin-right: 20px;
+        white-space: nowrap;
+    }
+
+    .buttons-html5 {
+        padding: 0.25rem 0.5rem; /* Adjust padding to make the button smaller */
+        font-size: 0.675rem; /* Adjust font size to make the text smaller */
+        line-height: 1.5;
+    }
+
+    /* Custom styles for smaller paging dropdown */
+
+    .buttons-excel, .buttons-html5, .btn-smaller {
+        padding: 0.25rem 0.5rem; /* Adjust padding to make the button smaller */
+        font-size: 0.675rem; /* Adjust font size to make the text smaller */
+        line-height: 1.5; /* Adjust line height for proper text alignment */
+    }
+
+
+
+    .dataTables_length select {
+        padding: 0.225rem 0.35rem; /* Adjust padding to make the dropdown smaller */
+        font-size: 0.65rem; /* Adjust font size to make the text in the dropdown smaller */
+    }
+
+    .form-control-sm {
+        min-height: calc(1.39em + 0.65rem + 2px);
+        padding: 0.175rem 0.35rem;
+        font-size: 0.6rem;
+        border-radius: 0.375rem;
+    }
+
+    .receiptCols {
+        display: none;
+    }
+
+</style>
+
+ 
+<table id="MaterialIssueItemstbl" class="table table-sm table-hover">
+    <thead>
+        <tr>
+            <th style="min-width:100px">PartNo</th>
+            <th>Qty</th>
+            <th>Total Received</th>
+            <th>
+                Balance <i onclick="OpenReceiptCols('receiptCols')" id="open-receipt-items" style="color:green" class="uil uil-plus-circle fs-1"> </i>
+                <i onclick="CloseReceiptCols('receiptCols')" id="close-receipt-items" style="display:none;color:red" class="uil uil-minus-circle fs-1"> </i>
+            </th>
+            @{
+                foreach (var item in Model.forgingReceipts.Select(x => new { x.Receipt_Number, x.Receipt_Date ,x.forging_recp_dbkey}).Distinct().OrderBy(x => x.Receipt_Date))
+                {
+                    <th class="receiptCols" style="min-width:120px;vertical-align:top">
+                        <p class="receipItemDisplay_@item.forging_recp_dbkey"> @item.Receipt_Number <br />[@item.Receipt_Date.ToString("dd-MM-yyyy")]</p>
+                        <input type="text" value="@item.Receipt_Number" class="receipheaderEdit_@item.forging_recp_dbkey" style="display:none">
+                        <input type="date" value="@item.Receipt_Date.ToString("yyyy-MM-dd")" class="receipheaderEdit_@item.forging_recp_dbkey" style="display:none">
+
+                        @{
+                            if (MIWriteAccess)
+                            {
+                                <a id="editControl-@item.forging_recp_dbkey" onclick="EditForgeingReceipts(@item.forging_recp_dbkey)" style="cursor:pointer; color:cornflowerblue">Edit</a>
+                                <i style="display:none; color:green;" id="SaveEditControl-@item.forging_recp_dbkey" onclick="SaveForgeingReceiptItems(@item.forging_recp_dbkey)" class="uil uil-save fs-1 mt-1"> </i>
+                            }
+                        }
+
+                    </th>
+                }
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            foreach (var item in Model.material_Issue_Items)
+            {
+                var reciptSum = Model.forgingReceipts.Where(x => x.Issue_Item_Dbkey == item.Issue_Item_Dbkey).Sum(x => x.Receiving_Inventory);
+                <tr>
+                    <td>
+                         @item.Drawing_no
+                        <input type="number" style="display:none" data-forgingitemdbkey="0" data-IssueItemDbkey="@item.Issue_Item_Dbkey" data-forgingreceiptDbkey="0" value="0">
+                    </td>
+                    <td style="text-align:end">@item.Qty</td>
+                    <td style="text-align:end">@reciptSum</td>
+                    <td style="text-align:end">@(item.Qty - reciptSum)</td>
+                    @{
+                        foreach (var rcvInvernt in Model.forgingReceipts.Select(x => new { x.Receipt_Number, x.Receipt_Date, x.forging_recp_dbkey }).Distinct().OrderBy(x => x.Receipt_Date))
+                        {
+                            var rcpItem = Model.forgingReceipts.Where(x => x.forging_recp_dbkey == rcvInvernt.forging_recp_dbkey && x.Issue_Item_Dbkey == item.Issue_Item_Dbkey).FirstOrDefault();
+                            var receiptDbKey = 0;
+                            var receivedInventryQty = 0.00;
+                            var j=0;
+                            <td class="receiptCols" style="text-align:end">
+                                @{
+                                    if (rcpItem != null)
+                                    {
+                                        j = rcpItem.forging_recp_dbkey??0;
+                                        receiptDbKey = rcpItem.forging_recp_dbkey??0;
+                                        receivedInventryQty = rcpItem.Receiving_Inventory??0;
+                                        if (receivedInventryQty == 0)
+                                        {
+                                            <p class="receipItemDisplay_@j">@receivedInventryQty</p>
+                                        }
+                                        if (receivedInventryQty > 0)
+                                        {
+                                            <a class="receipItemDisplay_@j" onclick="GetForgingSplitPopUp(@rcpItem.forging_item_dbkey)" style="cursor:pointer">@receivedInventryQty</a>
+                                        }
+                                        <input type="number" placeholder="Receiving Inventory" class="receipItemEdit_@j" min="0" style="display:none; max-width:60px" data-forgingitemdbkey="@rcpItem.forging_item_dbkey" data-IssueItemDbkey="@item.Issue_Item_Dbkey" data-forgingreceiptDbkey="@receiptDbKey" value="@receivedInventryQty" />
+
+                                        <input type="text" placeholder="Vendor Drawing No" class="receipItemEditDrawNo_@j" min="0" style="display:none; max-width:100px" data-forgingitemdbkey="@rcpItem.forging_item_dbkey" data-IssueItemDbkey="@item.Issue_Item_Dbkey" data-forgingreceiptDbkey="@receiptDbKey" value="@rcpItem.HAL_Drawing_No" />
+                                    }
+                                }
+                        
+                            </td>
+                        }
+                    }
+                </tr>
+            }
+        }
+ 
+    </tbody>
+</table>

@@ -1,0 +1,56 @@
+﻿@using MPCRS.Utilities
+@{
+    Layout = null;
+    var DemandReceiptWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write_Receipts);
+    var DemandWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write);
+    var DemandShortClosureAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Short_Closure);
+
+}
+
+<div class="row">
+    <div class="col">
+        <ul class="nav nav-tabs" id="myTab">
+            <li class="nav-item" role="presentation"><a class="nav-link active" id="DemandDetail-list-tab" data-bs-toggle="tab" href="#tab-DemandDetail-list" role="tab" aria-controls="tab-DemandDetail-list" aria-selected="true">Detail</a></li>
+            <li class="nav-item" role="presentation" onclick="demandItemsTbl.draw()"><a class="nav-link" id="DemandItems-tab" data-bs-toggle="tab" href="#tab-DemandItems" role="tab" aria-controls="tab-DemandItems" aria-selected="false">Items/Receipts</a></li>
+            @*        <li class="nav-item" role="presentation"><a class="nav-link" id="Receipts-tab" data-bs-toggle="tab" href="#tab-Receipts" role="tab" aria-controls="tab-Receipts" aria-selected="false">Items/Receipts</a></li>*@
+            <li class="nav-item" role="presentation"><a class="nav-link" id="DemandDocument-tab" data-bs-toggle="tab" href="#tab-DemandDocument" role="tab" aria-controls="tab-DemandDocument" aria-selected="false">Demand Documents</a></li>
+            <li class="nav-item" role="presentation"><a class="nav-link" id="Demand-Receipt-Document-tab" data-bs-toggle="tab" href="#tab-Demand-Receipt-Document" role="tab" aria-controls="tab-Demand-Receipt-Document" aria-selected="false">Receipt Documents</a></li>
+        </ul>
+    </div>
+    <div class="col text-right">
+        <ul class="nav nav-tabs float-end" id="myTab">           
+            @{
+                if (DemandWriteAccess)
+                {
+                    <a class="nav-link link-primary" style="cursor:pointer" onclick="EditDemandItemDetail()">Edit Items</a>
+                }
+
+                if (DemandShortClosureAccess)
+                {
+                    <a class="nav-link link-primary" style="cursor:pointer;display:none" id="ShortCloseLink" onclick="ShortClosureDemand(0)">Short Close</a>
+                }
+
+                if (DemandReceiptWriteAccess)
+                {
+                    <a class="nav-link link-primary" style="cursor:pointer" onclick="AddNewReciptColumn(this)">New Receipt</a>
+                }
+            } 
+            <a class="nav-link link-primary" style="cursor:pointer" id="demand-area-toggle" onclick="expandDemandArea()">Expand</a>
+        </ul>
+    </div>
+
+    <div class="tab-content mt-0" id="myTabContent">
+        <div class="tab-pane fade show active" id="tab-DemandDetail-list" role="tabpanel" aria-labelledby="DemandDetail-list-tab">
+        </div>
+        <div class="tab-pane fade" id="tab-DemandItems" role="tabpanel" aria-labelledby="profile-tab">
+        </div>
+        @*  <div class="tab-pane fade" id="tab-summary" role="tabpanel" aria-labelledby="Receipts-tab">
+
+
+        </div>*@
+        <div class="tab-pane fade" id="tab-DemandDocument" role="tabpanel" aria-labelledby="Receipts-tab">  </div>
+        <div class="tab-pane fade" id="tab-Demand-Receipt-Document" role="tabpanel" aria-labelledby="Receipts-tab">  </div>
+    </div>
+</div>
+
+<input type="hidden" value="0" id="DemandDbkeyGlobalKey" />

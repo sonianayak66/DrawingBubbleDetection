@@ -1,0 +1,139 @@
+﻿@model Tuple<MPCRS.Models.Forging_Split, List<MPCRS.Models.Attachment> >
+@using System.Data;
+@using MPCRS.Utilities;
+
+@{
+	DataTable doctypes = MPGlobals.GetDataForDatalist("SELECT [Master_Dbkey],[Master_Name] FROM [dbo].[Master_General] where [Master_Type] = 'Procurement_Doument_Type'");
+	var MIDelete = UserData.IsAuthorized(User, Constants.UserPermissions.MaterialIssue_Delete);
+}
+
+<div class="row col-12">
+	<div class="col-10">
+		<form id="ForgingSplitModelData">
+		 
+			<input asp-for="Item1.forging_item_split_dbkey" name="forging_item_split_dbkey" hidden />
+			<input asp-for="Item1.forging_item_dbkey" name="forging_item_dbkey" hidden />
+			<input asp-for="Item1.Attachment_Db_Key" name="Attachment_Db_Key" hidden />
+			<table class="table table-bordered  table-condensed table-sm">
+				<tbody>
+					<tr>
+						<td class="d-flex align-items-center"><b>Part Name</b></td>
+						<td>  <input class="form-control" asp-for="@Model.Item1.part_name" name="part_name" /></td>
+					</tr>
+					<tr>
+						<td><b>GTRE Drawing No</b></td>
+						<td>
+							<input class="form-control" asp-for="@Model.Item1.GTRE_Drawing_No" name="GTRE_Drawing_No" />
+							<span asp-validation-for ="@Model.Item1.GTRE_Drawing_No"  class="text-danger"></span>
+						</td>
+					</tr>
+					<tr>
+						<td><b>Batch No</b></td>
+						<td>
+							<input class="form-control" asp-for="@Model.Item1.Batch_Number" name="Batch_Number" />
+							<span asp-validation-for="@Model.Item1.Batch_Number" class="text-danger"></span>
+						</td>
+					</tr>
+					<tr>
+						<td><b>Heat No</b></td>
+						<td>
+							<input class="form-control" asp-for="@Model.Item1.Heat_Number" name="Heat_Number" />
+							<span asp-validation-for="@Model.Item1.Heat_Number" class="text-danger"></span>
+						</td>
+					</tr>
+					<tr>
+						<td><b>Forging Sl No</b></td>
+						<td>
+							<input class="form-control" asp-for="@Model.Item1.Sl_No_Forging" name="Sl_No_Forging" />
+							<span asp-validation-for="@Model.Item1.Sl_No_Forging" class="text-danger"></span>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</form>
+	</div>
+	<div class="col-2">
+		<input type="button" class="btn btn-success" value="Save" onclick="SaveSplitItemModel(@ViewBag.forging_recp_dbkey,@Model.Item1.forging_item_dbkey)" />
+	</div>
+</div>
+
+<div class="row col-12">
+	<div class="col-10">
+		<b>Documents</b>
+		<table id="ForgingSplitDocumentsTable" style="width:100%">
+            <thead>
+                <tr>
+                    <th style="width:50%!important">Document Type</th>
+                    <th style="width:40%">Reference No. & File</th>
+                    <th></th>
+                </tr>
+            </thead>
+			<tbody id="ForgingSplitModelDocTablbdy">
+				<tr style="display:none">
+					<td>
+						<select class="form-select fileAttachmentType">
+							<option value="0">Select</option>
+							@foreach (DataRow drtype in doctypes.Rows)
+							{
+								<option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+							}
+						</select>
+					</td>
+					<td>
+						<input type="text" class="splitUploadfileRefNum" placeholder="Reference Number" />
+						<br>
+						<input type="file" class="splitUploadFiles" />
+					</td>
+					<td>
+						<i class="uil uil-trash-alt fs-1" style="color:red;text-align:center; font-size:xx-small; cursor:pointer" onclick="DeleteUnsavedDocs(this)"></i>
+					</td>
+				</tr>
+				@{
+					foreach (var item in Model.Item2)
+					{
+						<tr>
+							<td>
+								<select asp-for="@item.File_DVD_Num" class="form-select fileAttachmentType" onchange="UpdateDocumentType(@item.Attachment_Db_Key,this)">
+									<option value="0">Select</option>
+									@foreach (DataRow drtype in doctypes.Rows)
+									{
+										<option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+									}
+								</select>
+							</td>
+							<td>
+								@item.File_Revision
+								<br>
+								@{
+									string fileNameDisplay = item.Orginal_File_Name;
+									if (item.Orginal_File_Name.Length > 15)
+									{
+										string firstPart = item.Orginal_File_Name.Substring(0, 7);
+										string lastPart = item.Orginal_File_Name.Substring(item.Orginal_File_Name.Length - 7);
+										fileNameDisplay = $"{firstPart}...{lastPart}";
+									}
+
+								}
+								<a target="_blank" href="@item.Attachment_location@item.Attachment_FileName">@fileNameDisplay</a>
+							</td>
+							<td>
+								@{
+									if (MIDelete)
+									{
+										<i class="uil uil-trash-alt fs-1" style="color:red;text-align:center; font-size:xx-small; cursor:pointer" onclick="DeleteForgeReceiptDocs(@item.Attachment_Db_Key,@Model.Item1.forging_item_split_dbkey,this,@Model.Item1.forging_item_dbkey)"></i>
+									}
+								}
+
+							</td>
+						</tr>
+					}
+				}
+			</tbody>
+            <tfoot>
+                <tr>
+					<td colspan="4"> <button onclick="CloneSplitDocumentRow()" class="btn btn-dark btn-sm">More Files</button> </td>
+                </tr>
+            </tfoot>
+        </table>
+	</div>
+</div>

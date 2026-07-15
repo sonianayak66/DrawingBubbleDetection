@@ -1,0 +1,257 @@
+<!doctype html>
+<!--
+  labeler.html — minimal bubble->dimension labelling page for pipeline_v2.
+
+  Loads a v2 debug folder (its 14_schema_view.png + result.json), draws
+  clickable bubbles and dimension boxes on top of the schema view, and
+  lets a human label which bubble points to which dimension. Saves a
+  labels.json file ready to be used as training data for the eventual
+  learned relation resolver.
+
+  To run (browser fetch() needs http://, not file://):
+      cd DrawingBubbleService_M1
+      python -m http.server 8000
+      open http://localhost:8000/pipeline_v2/labeler.html?dir=_pipeline_v2_debug/schema_ref8
+
+  Controls:
+      click bubble    -> select it (yellow outline)
+      click dim box   -> link selected bubble to that dim
+      shift-click bub -> mark "NO_DIMENSION"
+      click pair row  -> remove that pair
+      Save button     -> downloads labels.json
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<title>pipeline_v2 labeler</title>
+<style>
+  body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: #111; color: #ddd; }
+  header { padding: 8px 12px; background: #1a1a1a; border-bottom: 1px solid #333; display: flex; gap: 16px; align-items: center; }
+  header h1 { font-size: 14px; margin: 0; font-weight: 600; }
+  header .status { color: #888; font-size: 13px; }
+  header button { background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+  header button:hover { background: #1d4ed8; }
+  main { display: flex; height: calc(100vh - 41px); }
+  .canvas { flex: 1; position: relative; overflow: auto; background: #000; }
+  .canvas .wrap { position: relative; display: inline-block; }
+  .canvas img { display: block; }
+  svg { position: absolute; top: 0; left: 0; pointer-events: none; }
+  svg .bubble, svg .dim { pointer-events: all; cursor: pointer; }
+  svg .bubble { fill: rgba(236, 72, 153, 0.08); stroke: #ec4899; stroke-width: 2; }
+  svg .bubble.selected { fill: rgba(250, 204, 21, 0.25); stroke: #facc15; stroke-width: 4; }
+  svg .bubble.done { stroke: #22c55e; }
+  svg .bubble.no-dim { stroke: #6b7280; stroke-dasharray: 6 4; }
+  svg .dim { fill: rgba(34, 197, 94, 0.05); stroke: #22c55e; stroke-width: 1.5; }
+  svg .dim.used { stroke: #6b7280; }
+  svg text { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; fill: #f3f4f6; pointer-events: none; user-select: none; }
+  svg .link { stroke: #facc15; stroke-width: 1.5; fill: none; pointer-events: none; }
+  aside { width: 320px; background: #181818; border-left: 1px solid #333; padding: 12px; overflow-y: auto; }
+  aside h2 { font-size: 13px; margin: 0 0 8px; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  aside .row { padding: 6px 8px; margin-bottom: 4px; background: #222; border-radius: 4px; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+  aside .row:hover { background: #2a2a2a; }
+  aside .row .b { color: #ec4899; font-weight: 600; }
+  aside .row .d { color: #22c55e; }
+  aside .row .x { color: #ef4444; font-size: 11px; }
+  aside .empty { color: #555; font-size: 13px; font-style: italic; }
+</style>
+</head>
+<body>
+<header>
+  <h1>pipeline_v2 labeler</h1>
+  <span class="status" id="status">loading…</span>
+  <button id="save">Save labels.json</button>
+  <span class="status" id="hint">click bubble → click dim. shift-click bubble = NO_DIM. click pair to remove.</span>
+</header>
+<main>
+  <div class="canvas"><div class="wrap" id="wrap"></div></div>
+  <aside>
+    <h2>Pairs</h2>
+    <div id="pairs"></div>
+  </aside>
+</main>
+<script>
+const params = new URLSearchParams(location.search);
+const dir = params.get("dir");
+if (!dir) {
+  document.getElementById("status").textContent = "missing ?dir= query param";
+  throw new Error("need ?dir=");
+}
+
+const state = {
+  imageRel: dir + "/14_schema_view.png",
+  resultRel: dir + "/result.json",
+  bubbles: [],
+  ocrByBalloon: {},
+  dims: [],
+  pairs: new Map(),       // balloon_candidate_id -> {dim_id, dim_text}
+  noDim: new Set(),       // balloon_candidate_ids marked NO_DIMENSION
+  selectedBubble: null,
+  imageName: "",
+};
+
+async function init() {
+  const res = await fetch("../" + state.resultRel);
+  if (!res.ok) {
+    document.getElementById("status").textContent = "couldn't load " + state.resultRel;
+    return;
+  }
+  const data = await res.json();
+  state.imageName = data.image || dir;
+  state.bubbles = data.balloons || [];
+  state.dims = (data.text_candidates || []).filter(t => !t.suppressed);
+  state.ocrByBalloon = {};
+  for (const o of (data.balloon_ocr || [])) state.ocrByBalloon[o.balloon_candidate_id] = o.text;
+
+  const img = new Image();
+  img.src = "../" + state.imageRel;
+  await new Promise((r, e) => { img.onload = r; img.onerror = e; });
+  const wrap = document.getElementById("wrap");
+  wrap.appendChild(img);
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${img.naturalWidth} ${img.naturalHeight}`);
+  svg.style.width = img.naturalWidth + "px";
+  svg.style.height = img.naturalHeight + "px";
+  wrap.appendChild(svg);
+  state.svg = svg;
+
+  drawBubbles();
+  drawDims();
+  refresh();
+}
+
+function drawBubbles() {
+  for (const b of state.bubbles) {
+    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    c.setAttribute("cx", b.center[0]);
+    c.setAttribute("cy", b.center[1]);
+    c.setAttribute("r", b.radius);
+    c.classList.add("bubble");
+    c.dataset.id = b.candidate_id;
+    c.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      if (ev.shiftKey) {
+        if (state.noDim.has(b.candidate_id)) state.noDim.delete(b.candidate_id);
+        else { state.noDim.add(b.candidate_id); state.pairs.delete(b.candidate_id); }
+        state.selectedBubble = null;
+      } else {
+        state.selectedBubble = state.selectedBubble === b.candidate_id ? null : b.candidate_id;
+        state.noDim.delete(b.candidate_id);
+      }
+      refresh();
+    });
+    state.svg.appendChild(c);
+
+    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    t.setAttribute("x", b.center[0]);
+    t.setAttribute("y", b.center[1] + 5);
+    t.setAttribute("text-anchor", "middle");
+    t.textContent = state.ocrByBalloon[b.candidate_id] || "?";
+    state.svg.appendChild(t);
+  }
+}
+
+function drawDims() {
+  for (const d of state.dims) {
+    const [x1, y1, x2, y2] = d.bbox;
+    const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    r.setAttribute("x", x1); r.setAttribute("y", y1);
+    r.setAttribute("width", x2 - x1); r.setAttribute("height", y2 - y1);
+    r.classList.add("dim");
+    r.dataset.id = d.candidate_id;
+    r.addEventListener("click", () => {
+      if (!state.selectedBubble) return;
+      state.pairs.set(state.selectedBubble, { dim_id: d.candidate_id, dim_text: d.text });
+      state.noDim.delete(state.selectedBubble);
+      state.selectedBubble = null;
+      refresh();
+    });
+    state.svg.appendChild(r);
+
+    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    t.setAttribute("x", x1); t.setAttribute("y", y2 + 14);
+    t.style.fill = "#22c55e";
+    t.style.fontSize = "12px";
+    t.textContent = d.text;
+    state.svg.appendChild(t);
+  }
+}
+
+function refresh() {
+  const usedDims = new Set([...state.pairs.values()].map(p => p.dim_id));
+  for (const el of state.svg.querySelectorAll(".bubble")) {
+    const id = el.dataset.id;
+    el.classList.toggle("selected", id === state.selectedBubble);
+    el.classList.toggle("done", state.pairs.has(id));
+    el.classList.toggle("no-dim", state.noDim.has(id));
+  }
+  for (const el of state.svg.querySelectorAll(".dim")) {
+    el.classList.toggle("used", usedDims.has(el.dataset.id));
+  }
+  // Draw / redraw link lines
+  state.svg.querySelectorAll(".link").forEach(n => n.remove());
+  const bubbleById = Object.fromEntries(state.bubbles.map(b => [b.candidate_id, b]));
+  const dimById = Object.fromEntries(state.dims.map(d => [d.candidate_id, d]));
+  for (const [bid, info] of state.pairs.entries()) {
+    const b = bubbleById[bid]; const d = dimById[info.dim_id];
+    if (!b || !d) continue;
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.classList.add("link");
+    line.setAttribute("x1", b.center[0]); line.setAttribute("y1", b.center[1]);
+    line.setAttribute("x2", (d.bbox[0] + d.bbox[2]) / 2);
+    line.setAttribute("y2", (d.bbox[1] + d.bbox[3]) / 2);
+    state.svg.appendChild(line);
+  }
+
+  const total = state.bubbles.length;
+  const labeled = state.pairs.size + state.noDim.size;
+  document.getElementById("status").textContent =
+    `${state.imageName}  —  ${labeled}/${total} bubbles labelled`;
+
+  const pairsEl = document.getElementById("pairs");
+  pairsEl.innerHTML = "";
+  if (!state.pairs.size && !state.noDim.size) {
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = "no pairs yet";
+    pairsEl.appendChild(e);
+  }
+  for (const [bid, info] of state.pairs.entries()) {
+    const ocr = state.ocrByBalloon[bid] || "?";
+    const row = document.createElement("div"); row.className = "row";
+    row.innerHTML = `<span><span class="b">${ocr}</span> → <span class="d">${info.dim_text}</span></span><span class="x">remove</span>`;
+    row.addEventListener("click", () => { state.pairs.delete(bid); refresh(); });
+    pairsEl.appendChild(row);
+  }
+  for (const bid of state.noDim) {
+    const ocr = state.ocrByBalloon[bid] || "?";
+    const row = document.createElement("div"); row.className = "row";
+    row.innerHTML = `<span><span class="b">${ocr}</span> → <em style="color:#888">NO_DIMENSION</em></span><span class="x">remove</span>`;
+    row.addEventListener("click", () => { state.noDim.delete(bid); refresh(); });
+    pairsEl.appendChild(row);
+  }
+}
+
+document.getElementById("save").addEventListener("click", () => {
+  const out = {
+    image: state.imageName,
+    schema_view: state.imageRel,
+    pairs: [...state.pairs.entries()].map(([bid, info]) => ({
+      balloon_candidate_id: bid,
+      balloon_id: state.ocrByBalloon[bid] || "?",
+      dimension_candidate_id: info.dim_id,
+      dimension_text: info.dim_text,
+    })),
+    no_dimension_bubbles: [...state.noDim],
+  };
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "labels.json";
+  a.click();
+});
+
+init();
+</script>
+</body>
+</html>

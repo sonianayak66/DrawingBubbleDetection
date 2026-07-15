@@ -1,0 +1,182 @@
+﻿@model MPCRS.ViewModels.ACSNvm
+@{
+    var ItemStatus = MPCRS.Utilities.Masters.GetMasterDropDownList(MPCRS.Utilities.Constants.MetaMasterCode.ACSNRecordStatus);
+    var partsList = MPCRS.Utilities.Masters.GetEnginePartList_NeedTobeRefactored();
+    var Module_Responsibility = MPCRS.Utilities.Masters.GetMaster_General("Module_Responsibility");
+    
+    List<SelectListItem> SeriesList = new List<SelectListItem>();
+    SeriesList.Add(new SelectListItem { Text = "Select", Value = "" });
+    SeriesList.Add(new SelectListItem { Text = "T-Series", Value = "T-Series" });
+    SeriesList.Add(new SelectListItem { Text = "P-Series", Value = "P-Series" });
+    SeriesList.Add(new SelectListItem { Text = "New Drawing", Value = "New Drawing" });
+
+    List<SelectListItem> RevisionList = new List<SelectListItem>
+    {new SelectListItem() { Text = "NIL", Value = "NIL" }};
+    for (char c = 'A'; c <= 'Z'; c++)
+    {
+        RevisionList.Add(new SelectListItem { Text = c.ToString(), Value = c.ToString() });
+    }
+}
+
+
+<form method="post" asp-controller="ACSN" id="ACSN" asp-action="ManageItem" class="needs-validation" novalidate="novalidate">
+    <div class="col-md-6">
+        <h3>ACSN</h3>
+    </div>
+    <input type="hidden" asp-for="acsnKey" />
+    <input type="hidden" asp-for="ACSNnum" />
+    <input type="hidden" asp-for="SerialNumber" />
+    <div class="col-12 col-sm-6 col-md-4 offset-1">
+
+        <div class="form-group row">
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    @{
+                        if(Model.acsnKey != 0)
+                        {
+                                        <input class="form-control form-control-sm" asp-for="Series" readonly type="text" placeholder="AA" />
+                                        <input asp-for="Series" type="hidden" />
+                        }
+                        else
+                        {
+                                        <select asp-for="Series" class="form-select form-select-sm" asp-items="@SeriesList"></select>
+                        }
+                    }
+                   
+                    <label asp-for="Series"></label>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" asp-for="ReceivedDate" type="date" placeholder="AA" />
+                    <label asp-for="ReceivedDate"></label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-8">
+                <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" asp-for="ACSNnum" name="slno" readonly type="text" placeholder="AA" />
+                    <label asp-for="ACSNnum"></label>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="form-floating mb-3">
+                    <select asp-for="ACSN_Status" class="form-select form-select-sm" asp-items="@ItemStatus"></select>
+                    <label asp-for="ACSN_Status"></label>
+                </div>
+            </div>
+        </div>
+          
+        <div class="form-floating mb-3">
+            <input class="form-control form-control-sm" onchange="validateModuleRefNum()" asp-for="ModuleRefNum" type="text" placeholder="AA" />
+            <label asp-for="ModuleRefNum"></label>
+        </div>
+         <div class="form mb-3">
+            <label asp-for="PartDbKey">Part</label>
+            <select asp-for="PartDbKey" class="form-control searchable" onchange="processPartSelection()" asp-items="@partsList"></select>
+           
+        </div>
+        <div class="form-floating mb-3">
+            <input class="form-control form-control-sm" asp-for="DrawingNumber" type="text" placeholder="AA" />
+            <label asp-for="DrawingNumber"></label>
+        </div>
+        <div class="form-floating mb-3">
+            <input class="form-control form-control-sm" asp-for="description" type="text" placeholder="AA" />
+            <label asp-for="description"></label>
+        </div>
+        <div class="form-group mb-3">
+            <label asp-for="Module"></label>
+            <select asp-for="Module" class="form-control searchable" asp-items="@Module_Responsibility"></select>
+            <span asp-validation-for="Module" class="text-danger"></span>
+        </div>
+        <div class="form-group row">
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <select asp-for="existingRevision" class="form-select form-select-sm" asp-items="@RevisionList"></select>
+                    <label asp-for="existingRevision"></label>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <select asp-for="NewRevision" class="form-select form-select-sm" asp-items="@RevisionList"></select>
+                    <label asp-for="NewRevision"></label>
+                </div>
+            </div>          
+        </div>       
+
+        <div class="form-floating mb-3">
+            <textarea asp-for="Remarks" class="form-control"></textarea> 
+            <label asp-for="Remarks"></label>
+        </div>
+       
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a class="btn btn-secondary" href="/ACSN/Index">Back</a>
+        </div>
+
+    </div>
+</form>
+
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script type="text/javascript">
+        $(document).ready(function () {
+            applySelect2();
+           // HideloginAllowed();
+        });
+        function applySelect2() {
+            $('.searchable').select2({
+               // theme: "classic"
+            });
+        }
+
+        function processPartSelection() {
+            var selectedVal = $("#PartDbKey").val();
+            if (selectedVal == 0) {
+                $("#DrawingNumber").val("");
+                $("#description").val("");
+            } else {
+                var selectedText = $("#PartDbKey option:selected").text();
+                var partNumber = selectedText.split(":")[0];
+                var partDesc = selectedText.split(":")[1];
+                //DrawingNumber
+                //description
+                $("#DrawingNumber").val(partNumber.trim());
+                $("#description").val(partDesc.trim());
+            }
+        }
+
+        // validate ModuleRefNum for duplicates using ajax on change of ModuleRefNum input field
+       function validateModuleRefNum () {
+            var moduleRefNum = $("#ModuleRefNum").val();
+           moduleRefNum = moduleRefNum.trim();
+            var acsnKey = $("#acsnKey").val();
+            var series = $("#Series").val();
+
+            if(series.contains("New") && moduleRefNum == "-"){
+                return false;
+            }
+
+            if (moduleRefNum != "") {
+                $.ajax({
+                    type: "GET",
+                    url: "/ACSN/ValidateModuleRefNum",
+                    data: { moduleRefNum: moduleRefNum, acsnKey: acsnKey },
+                    success: function (data) {
+                        if (data.isduplicate) {
+                            bootbox.alert({ message: "Module Ref number " + moduleRefNum + " already exists" });
+                            $("#ModuleRefNum").val("");
+                        } else {
+                            $("#ModuleRefNum").val(moduleRefNum);
+                        }
+                    }
+                });
+            }
+        }
+       
+    </script>
+}

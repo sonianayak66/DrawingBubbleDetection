@@ -1,0 +1,93 @@
+﻿@model IEnumerable<MPCRS.ViewModels.ACSNvm>
+@using MPCRS.Utilities;
+@{
+    Layout = null;
+    var hasWritePermission = UserData.IsAuthorized(User, Constants.UserPermissions.ACSN_Write);
+    var hasDeletePermission = UserData.IsAuthorized(User, Constants.UserPermissions.ACSN_Delete);
+}
+ 
+<table class="table table-sm fs--1 mb-2" id="TblAcsnList" cellspacing="0" style="width:100%;">
+    <thead>
+        <tr style="font-size:small">
+            <th>Sl No</th>
+            <th>Series</th>
+            <th>Received Date</th>
+            <th>ACSN # </th>
+            <th>Module Ref </th>
+            <th>Drawing No.</th>
+            <th>Description</th>
+            <th>Module</th>
+            <th>Rev</th>
+            <th>New Rev</th>
+            <th>Current Step</th>
+            <th>Status</th>             
+            <th>Remarks</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @item.rn
+                    </td>
+                    <td>
+                        @item.Series
+                    </td>
+                    <td data-sort="@item.ReceivedDate.ToString("yyyyMMdd")">
+                       @MPGlobals.GetFormattedDate(item.ReceivedDate) 
+                    </td>
+                    <td>
+                        @item.ACSNnum
+                    </td>
+                    <td>
+                        @item.ModuleRefNum
+                    </td>
+                    <td>
+                        @item.DrawingNumber
+                    </td>
+                    <td>
+                        @item.description
+                    </td>
+                    <td>
+                        @item.ModuleName
+                    </td>
+                    <td>
+                        @item.existingRevision
+                    </td>
+                    <td>
+                        @item.NewRevision
+                    </td>
+                    <td style="cursor:pointer" onclick="StatusUpdatePopUP(@item.acsnKey)">
+                        <span >@item.StepStatus</span>
+                    </td>
+                    <td>                        
+                         <span class="badge badge-phoenix fs--2 @(item.ACSN_Status == "Open"? "badge-phoenix-warning" :"badge-phoenix-success")">
+                             @item.ACSN_Status
+                         </span> 
+                    </td>                   
+                    <td>
+                        @item.Remarks
+                    </td>
+                    <td>
+                        @if (hasWritePermission)
+                        {
+                            <a href="/ACSN/ManageItem/@item.acsnKey">
+                                <span class="fas fa-pen pe-2 fs--2"></span>
+                            </a>
+                        }
+                        @if (hasDeletePermission)
+                        {
+                            <a style="cursor:pointer" onclick="DeleteACSN(@item.acsnKey)">
+                                <span class="text-danger uil uil-glass-tea"></span>
+                            </a>
+                        }
+                    </td>
+
+                </tr>
+            }
+        }
+    </tbody>
+</table>

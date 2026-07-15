@@ -1,0 +1,75 @@
+﻿@model MPCRS.ViewModels.CastingDetailViewModel
+@using MPCRS.Utilities
+
+@{
+var DemandingOfficersList = Masters.GetDemandingOfficersList();
+}
+<div class="col-12">
+       <form id="CastingForm" method="post">
+        <input asp-for="CastingDbkey" type="hidden" />
+        <input asp-for="OrderType" type="hidden" />
+
+        <table class="table table-sm table-bordered table-hover table-primary" style="border:1px!important solid;border-color:black">
+            <tr>
+                <th>Demand Number</th>
+                <td>
+                    <input class="form-control" asp-for="DemandNumber" type="text">
+                    <span asp-validation-for="DemandNumber" class="text-danger"></span>
+                </td>
+
+                <th>MMG Number</th>
+                <td>
+                    <input class="form-control" asp-for="MMGOrderNumber">
+                    <span asp-validation-for="MMGOrderNumber" class="text-danger"></span>
+                </td>
+
+                <th>Status</th>
+                <td>
+                    <select asp-for="OrderStatus" class="form-select">
+                        @* <option value="Open">Open</option> *@
+                        <option value="InProgress">InProgress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                    <span asp-validation-for="DeliveryDate" class="text-danger"></span>
+                </td>
+            </tr>
+            <tr>
+                <th>Demand Description </th>
+                <td colspan="5">
+                    <input class="form-control" asp-for="DemandDesc">
+                    <span asp-validation-for="DemandDesc" class="text-danger"></span>
+                </td>
+            </tr>
+            <tr>
+                <th>Order Date</th>
+                <td>
+                    <input class="form-control" asp-for="OrderDate" type="date">
+                    <span asp-validation-for="OrderDate" class="text-danger"></span>
+                </td>
+                <th>Remarks</th>
+                <td colspan="3">
+                    <input class="form-control" asp-for="Remarks" type="text">
+                    <span asp-validation-for="Remarks" class="text-danger"></span>
+                </td>
+            
+            </tr>
+            <tr>
+                <th>Order Number(s)</th>
+                <td >
+                    <input class="form-control" asp-for="OrderNumbers" type="text">
+                    <span asp-validation-for="OrderNumbers" class="text-danger"></span>
+                </td>
+                <th>Demanding Officer</th>
+                <td colspan="3">
+                    <select asp-for="DemandingOfficer" asp-items="@DemandingOfficersList" class="form-select"></select>
+                    <span asp-validation-for=DemandingOfficer class="text-danger"></span>
+                </td>
+            </tr> 
+        </table> 
+        <div class="row">
+            <div class="col-12">
+                <input type="button" value="Submit" class="btn btn-success btn-sm btn-small float-end" onclick="SubmitGenericOrder()" />
+            </div>
+        </div>
+       </form>
+</div>

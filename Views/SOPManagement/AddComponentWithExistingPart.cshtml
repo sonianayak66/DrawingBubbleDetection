@@ -1,0 +1,250 @@
+﻿@model MPCRS.ViewModels.SOP_AddWithExistingPartVM
+@using MPCRS.Utilities;
+@using MPCRS.ViewModels;
+@{
+	Layout = null;
+}
+
+<style>
+	.readonly-field {
+		background-color: #f8f9fa;
+		cursor: not-allowed;
+	}
+
+	#partsSelectionTable_wrapper {
+		margin-bottom: 20px;
+	}
+
+	.selected-row {
+		background-color: #d1ecf1 !important;
+	}
+</style>
+
+<div class="col-md-12">
+	<h4>Parent - @ViewBag.ParentPart</h4>
+	<p class="text-muted">Search and select a part from the list below. You can edit the details after adding.</p>
+</div>
+
+<form asp-action="AddComponentWithExistingPart" id="formAddWithExistingPart" asp-controller="SOPManagement" method="post">
+	<input type="hidden" asp-for="Parent_id" />
+	<input type="hidden" asp-for="BL_Engine_Dbkey" />
+	<input type="hidden" asp-for="BuildId" />
+	<input type="hidden" asp-for="SelectedEnginePartDbkey" id="hiddenSelectedPartDbkey" />
+	<input type="hidden" asp-for="Type_Dbkey" id="hiddenTypeDbkey" />
+	<input type="hidden" asp-for="RawMaterial" id="hiddenRawMaterial" />
+	<input type="hidden" asp-for="Module_Responsibility" id="hiddenModuleResp" />
+	<input type="hidden" asp-for="DrawingNumber" id="hiddenDrawingNumber" />
+	<input type="hidden" asp-for="Description" id="hiddenDescription" />
+	<input type="hidden" asp-for="Revision" id="hiddenRevision" />
+	<input type="hidden" asp-for="QtyPerEngine" id="hiddenQtyPerEngine" />
+
+	<hr />
+	<h6 class="text-muted">Available Parts</h6>
+
+	<table id="partsSelectionTable" class="table table-bordered table-sm table-hover" style="width:100%">
+		<thead>
+			<tr>
+				<th>Action</th>
+				<th>Type</th>
+				<th>Drawing Number</th>
+				<th>Description</th>
+				<th>Revision</th>
+				<th>Qty</th>
+				<th>Parent</th>
+			</tr>
+		</thead>
+		<tbody>
+		</tbody>
+	</table>
+
+	<div id="selectedPartSection" style="display:none;">
+		<hr />
+		<h6 class="text-muted">Selected Part Details</h6>
+
+		<div class="row mb-2">
+			<div class="col-md-4">
+				<div class="form-floating">
+					<input type="text" class="form-control readonly-field" id="displayTypeDbkey" readonly />
+					<label>Type</label>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="form-floating">
+					<input type="text" class="form-control readonly-field" id="displayDrawingNumber" readonly />
+					<label>Drawing Number</label>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="form-floating">
+					<input type="text" class="form-control readonly-field" id="displayRevision" readonly />
+					<label>Revision</label>
+				</div>
+			</div>
+		</div>
+
+		<div class="row mb-2">
+			<div class="col-md-4">
+				<div class="form-floating">
+					<input type="text" class="form-control readonly-field" id="displayQty" readonly />
+					<label>Quantity per Engine</label>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="form-floating">
+					<input type="text" class="form-control readonly-field" id="displayRawMaterial" readonly />
+					<label>Raw Material</label>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="form-floating">
+					<input type="text" class="form-control readonly-field" id="displayModuleResp" readonly />
+					<label>Module Responsibility</label>
+				</div>
+			</div>
+		</div>
+
+		<div class="form-floating mb-3">
+			<textarea class="form-control readonly-field" id="displayDescription" readonly style="height: 60px"></textarea>
+			<label>Description</label>
+		</div>
+
+		@* <div class="alert alert-info"> *@
+		@*     <i class="bi bi-info-circle"></i> The part will be added with these details. You can edit SOP-specific fields (Job Card, Serial Number, etc.) after adding. *@
+		@* </div> *@
+
+		<div class="mt-3">
+			<button class="btn btn-primary" type="button" id="btnSaveExistingPart" onclick="SaveComponentWithExistingPart(this)">
+				<i class="bi bi-save"></i> Add Component
+			</button>
+			<button class="btn btn-secondary" type="button" onclick="bootbox.hideAll()">Cancel</button>
+		</div>
+	</div>
+</form>
+
+
+
+<script>
+	var partsDataTable;
+	var allPartsData = @Html.Raw(ViewBag.AllPartsData);
+
+	$(document).ready(function () {
+		// Initialize DataTable
+		partsDataTable = $('#partsSelectionTable').DataTable({
+			data: allPartsData,
+			columns: [
+				{
+					data: null,
+					orderable: false,
+					searchable: false,
+					render: function (data, type, row) {
+						return '<button type="button" class="btn btn-sm btn-primary btn-select-part" onclick="selectPart(' + row.Engine_Part_Dbkey + ')">Select</button>';
+					}
+				},
+				{ data: 'TypeName' },
+				{ data: 'DrawingNumber' },
+				{ data: 'Description' },
+				{ data: 'Revision' },
+				{ data: 'Quantity' },
+				{ data: 'Parent_Draw_part_no' }
+			],
+			pageLength: 10,
+			lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+			scrollY: '400px',
+			scrollCollapse: true,
+			order: [[2, 'asc']], // Sort by Drawing Number
+			drawCallback: function() {
+				// Adjust columns after each draw
+				partsDataTable.draw();
+			}
+
+		});
+	});
+
+
+
+	function selectPart(enginePartDbkey) {
+		// Find the part data
+		var selectedPart = allPartsData.find(p => p.Engine_Part_Dbkey === enginePartDbkey);
+
+		if (!selectedPart) {
+			bootbox.alert('Error: Part not found');
+			return;
+		}
+
+		// Highlight the selected row
+		$('#partsSelectionTable tbody tr').removeClass('selected-row');
+		var selectedRow = $('#partsSelectionTable tbody tr').filter(function() {
+			return $(this).find('.btn-select-part').attr('onclick').includes(enginePartDbkey);
+		});
+		selectedRow.addClass('selected-row');
+
+		// Update hidden fields
+		$('#hiddenSelectedPartDbkey').val(selectedPart.Engine_Part_Dbkey);
+		$('#hiddenTypeDbkey').val(selectedPart.Type_Dbkey);
+		$('#hiddenRawMaterial').val(selectedPart.RawMaterial);
+		$('#hiddenModuleResp').val(selectedPart.Module_Responsibility);
+		$('#hiddenDrawingNumber').val(selectedPart.DrawingNumber);
+		$('#hiddenDescription').val(selectedPart.Description);
+		$('#hiddenRevision').val(selectedPart.Revision);
+		$('#hiddenQtyPerEngine').val(selectedPart.Quantity);
+
+		// Update display fields
+		$('#displayTypeDbkey').val(selectedPart.TypeName);
+		$('#displayDrawingNumber').val(selectedPart.DrawingNumber);
+		$('#displayRevision').val(selectedPart.Revision);
+		$('#displayRawMaterial').val(selectedPart.RawMaterialName);
+		$('#displayModuleResp').val(selectedPart.ModuleRespName);
+		$('#displayDescription').val(selectedPart.Description);
+		$('#displayQty').val(selectedPart.Quantity);
+
+		// Show the selected part section
+		$('#selectedPartSection').slideDown();
+
+		// Scroll to the form section
+		$('html, body').animate({
+			scrollTop: $('#selectedPartSection').offset().top - 100
+		}, 500);
+	}
+
+	function SaveComponentWithExistingPart(btn) {
+		var form = $('#formAddWithExistingPart');
+
+		// Check if a part is selected
+		if (!$('#hiddenSelectedPartDbkey').val()) {
+			bootbox.alert('Please select a part from the table first');
+			return;
+		}
+
+		$(btn).prop('disabled', true);
+
+		$.ajax({
+			type: "POST",
+			url: form.attr('action'),
+			data: form.serialize(),
+			cache: false,
+			success: function (data) {
+				if (data.success) {
+					bootbox.alert({
+						message: data.msg,
+						callback: function () {
+							bootbox.hideAll();
+							// Reload the component tree
+							if (typeof LoadComponents === 'function') {
+								LoadComponents();
+							}
+						}
+					});
+				} else {
+					bootbox.alert(data.msg);
+					$(btn).prop('disabled', false);
+				}
+			},
+			error: function () {
+				bootbox.alert('Failed to save component');
+				$(btn).prop('disabled', false);
+			}
+		});
+	}
+
+</script>
+

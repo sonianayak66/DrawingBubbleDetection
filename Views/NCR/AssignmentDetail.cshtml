@@ -1,0 +1,1877 @@
+﻿@model MPCRS.ViewModels.AssignedNCRvm
+@using MPCRS.ViewModels;
+@using MPCRS.Utilities;
+@using System.Security.Claims
+
+
+@{
+	var NCR_Status = Masters.GetMaster_General_SameValueAsText("NCR_Report_Status");
+	var NCR_Module_User = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Module_User);
+	var NCR_Assignments_Admin = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Assignments_Admin);
+	var NCR_Assignments_Admin_Delete = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Assignments_Admin_Delete);
+	var NCR_Assignments_Module_Delete = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Assignments_Module_Delete);
+	var userguid = ViewBag.UserGuid;
+	var userOldDBKey = ViewBag.userDBKey;
+	bool allModuleRemarksUpdated = Model.NcrItems.All(item => !string.IsNullOrEmpty(item.Module_Remarks));
+	bool allTASRemarksUpdated = Model.NcrItems.All(item => !string.IsNullOrEmpty(item.TAS_Remarks));
+	bool allSTRESSRemarksUpdated = Model.NcrItems.All(item => !string.IsNullOrEmpty(item.Stress_Remarks));
+	bool allCHAIRRemarksUpdated = Model.NcrItems.All(item => !string.IsNullOrEmpty(item.Chair_Remarks));
+	//bool forwardedToTAS = Model.NcrItems.All(item => (item.TAS_Status == "Forwarded To TAS" || item.TAS_Status == "MarkedAsComplete" || item.TAS_Status == "Ended"));
+	bool forwardedToTAS = Model.NcrItems.All(item => !string.IsNullOrEmpty(item.TAS_Status));
+	//bool forwardedToSTRESS = Model.NcrItems.All(item => (item.Stress_Status == "Forwarded To STRESS" || item.Stress_Status == "MarkedAsComplete"));
+	bool forwardedToSTRESS = Model.NcrItems.All(item => !string.IsNullOrEmpty(item.Stress_Status));
+	bool forwardedToCHAIR = Model.NcrItems.All(item => !string.IsNullOrEmpty(item.Chair_Status));
+	var Modules = Masters.GetMaster_General("Module_Responsibility", true);
+	var TASmoduleId = Modules.Where(x => x.Text.ToLower().Contains("tas")).FirstOrDefault() == null ? "" : Modules.Where(x => x.Text.ToLower().Contains("tas")).FirstOrDefault().Value;
+	var STRESSmoduleId = Modules.Where(x => x.Text.ToLower().Contains("stress")).FirstOrDefault() == null ? "" : Modules.Where(x => x.Text.ToLower().Contains("stress")).FirstOrDefault().Value;
+	var CHAIRmoduleId = Modules.Where(x => x.Text.ToLower().Contains("chair")).FirstOrDefault() == null ? "" : Modules.Where(x => x.Text.ToLower().Contains("chair")).FirstOrDefault().Value;
+	bool closeNCR = Model.AssignmentData.CloseNCR == 1;
+	// bool MarkedForRework = Model.NcrItems.Any(x => (x.Rework_Status == 1 || x.Rework_Status == 2));
+	bool MarkedForRework = Model.NcrItems.Any(x =>	x.Module_ReworkType == 1 || x.Module_ReworkType == 2 ||
+													x.TAS_ReworkType == 1 || x.TAS_ReworkType == 2 ||
+													x.STRESS_ReworkType == 1 || x.STRESS_ReworkType == 2 ||
+													x.PO_ReworkType == 1 || x.PO_ReworkType == 2);
+	//bool all_Module_Rework_Remarks_updated = Model.NcrItems.Where(x => (x.Rework_Status == 1 || x.Rework_Status == 2)).All(item => !string.IsNullOrEmpty(item.Module_Rework_Remarks)); 
+	bool all_Module_Rework_Remarks_updated = Model.NcrItems.Where(x => x.Module_ReworkType == 1 || x.Module_ReworkType == 2 ||
+																	x.TAS_ReworkType == 1 || x.TAS_ReworkType == 2 ||
+																	x.STRESS_ReworkType == 1 || x.STRESS_ReworkType == 2 ||
+																	x.PO_ReworkType == 1 || x.PO_ReworkType == 2)
+																	.All(item => !string.IsNullOrEmpty(item.Module_Rework_Remarks));
+	//bool all_TAS_Rework_Remarks_updated = Model.NcrItems.Where(x => (x.Rework_Status == 1 || x.Rework_Status == 2)).All(item => !string.IsNullOrEmpty(item.TAS_Rework_Remarks));
+	bool all_TAS_Rework_Remarks_updated = Model.NcrItems.Where(x => x.Module_ReworkType == 1 || x.Module_ReworkType == 2 ||
+																	x.TAS_ReworkType == 1 || x.TAS_ReworkType == 2 ||
+																	x.STRESS_ReworkType == 1 || x.STRESS_ReworkType == 2 ||
+																	x.PO_ReworkType == 1 || x.PO_ReworkType == 2)
+																	.All(item => !string.IsNullOrEmpty(item.TAS_Rework_Remarks));
+	//bool all_STRESS_Rework_Remarks_updated = Model.NcrItems.Where(x => (x.Rework_Status == 1)).All(item => !string.IsNullOrEmpty(item.STRESS_Rework_Remarks));
+	bool all_STRESS_Rework_Remarks_updated = Model.NcrItems.Where(x => x.Module_ReworkType == 1 || x.TAS_ReworkType == 1 ||
+																		x.STRESS_ReworkType == 1 || x.PO_ReworkType == 1)
+																		.All(item => !string.IsNullOrEmpty(item.STRESS_Rework_Remarks));
+	//bool forwardedToModule_Rework = Model.NcrItems.Where(x => (x.Rework_Status == 1 || x.Rework_Status == 2)).All(item => !string.IsNullOrEmpty(item.Module_Rework_Status));
+	bool forwardedToModule_Rework = Model.NcrItems.Where(x => x.Module_ReworkType == 1 || x.Module_ReworkType == 2 ||
+																x.TAS_ReworkType == 1 || x.TAS_ReworkType == 2 ||
+																x.STRESS_ReworkType == 1 || x.STRESS_ReworkType == 2 ||
+																x.PO_ReworkType == 1 || x.PO_ReworkType == 2)
+																.All(item => !string.IsNullOrEmpty(item.Module_Rework_Status));
+ 	//bool forwardedToTAS_Rework = Model.NcrItems.Where(x => (x.Rework_Status == 1 || x.Rework_Status == 2)).All(item => !string.IsNullOrEmpty(item.TAS_Rework_Status));
+	bool forwardedToTAS_Rework = Model.NcrItems.Where(x => x.Module_ReworkType == 1 || x.Module_ReworkType == 2 ||
+																x.TAS_ReworkType == 1 || x.TAS_ReworkType == 2 ||
+																x.STRESS_ReworkType == 1 || x.STRESS_ReworkType == 2 ||
+																x.PO_ReworkType == 1 || x.PO_ReworkType == 2)
+																.All(item => !string.IsNullOrEmpty(item.TAS_Rework_Status));
+	//bool forwardedToSTRESS_Rework = Model.NcrItems.Where(x => (x.Rework_Status == 1 || x.Rework_Status == 2)).All(item => !string.IsNullOrEmpty(item.STRESS_Rework_Status));
+	bool forwardedToSTRESS_Rework = Model.NcrItems.Where(x => x.Module_ReworkType == 1 || x.Module_ReworkType == 2 ||
+																x.TAS_ReworkType == 1 || x.TAS_ReworkType == 2 ||
+																x.STRESS_ReworkType == 1 || x.STRESS_ReworkType == 2 ||
+																x.PO_ReworkType == 1 || x.PO_ReworkType == 2)
+																.All(item => !string.IsNullOrEmpty(item.STRESS_Rework_Status));
+ 	//bool forwardedToCHAIR_Rework = Model.NcrItems.Where(x => (x.Rework_Status == 1 || x.Rework_Status == 2)).All(item => !string.IsNullOrEmpty(item.CHAIR_Rework_Status));
+	bool forwardedToCHAIR_Rework = Model.NcrItems.Where(x => x.Module_ReworkType == 1 || x.Module_ReworkType == 2 ||
+																x.TAS_ReworkType == 1 || x.TAS_ReworkType == 2 ||
+																x.STRESS_ReworkType == 1 || x.STRESS_ReworkType == 2 ||
+																x.PO_ReworkType == 1 || x.PO_ReworkType == 2)
+																.All(item => !string.IsNullOrEmpty(item.CHAIR_Rework_Status));
+	// bool onlyTrialAssembly =
+	// 	Model.NcrItems.Any(x => x.Rework_Status == 2)   has trial assembly
+	// 	&& !Model.NcrItems.Any(x => x.Rework_Status == 1); no rework
+	bool onlyTrialAssembly = Model.NcrItems.Any(x =>x.Module_ReworkType == 2 || x.TAS_ReworkType == 2 ||x.STRESS_ReworkType == 2 || x.PO_ReworkType == 2)
+						 && !Model.NcrItems.Any(x =>x.Module_ReworkType == 1 || x.TAS_ReworkType == 1 ||x.STRESS_ReworkType == 1 || x.PO_ReworkType == 1);
+	
+	var UserGuid = User.FindFirst(ClaimTypes.NameIdentifier).Value.ToString();
+
+	// Helper function to check if item is marked for rework at ANY stage
+	Func<NonConformanceReport_ItemVM, bool> IsMarkedForRework = (item) =>
+		item.Module_ReworkType == 1 || item.TAS_ReworkType == 1 ||
+		item.STRESS_ReworkType == 1 || item.PO_ReworkType == 1;
+
+	// Helper function to check if item is marked for trial assembly at ANY stage
+	Func<NonConformanceReport_ItemVM, bool> IsMarkedForTrialAssembly = (item) =>
+		item.Module_ReworkType == 2 || item.TAS_ReworkType == 2 ||
+		item.STRESS_ReworkType == 2 || item.PO_ReworkType == 2;
+
+	// Helper function to check if item is marked for ANY rework type at ANY stage
+	Func<NonConformanceReport_ItemVM, bool> IsMarkedForAnyRework = (item) =>
+		IsMarkedForRework(item) || IsMarkedForTrialAssembly(item);
+}
+
+<style>
+	.large-icon {
+		font-size: 30px !important; /* Adjust size as needed */
+	}
+
+	td {
+		padding: 3px !important;
+	}
+
+	.serialNoRemarks, .TASremarks {
+		height: 1em; /* Adjust the height as needed to match the normal input field height */
+		/* font-size: 1em; /* Ensure the font-size is consistent */
+	}
+
+	@@media print {
+		.no-print {
+			display: none;
+		}
+	}
+
+	.tox .tox-toolbar {
+		position: relative;
+		float: right;
+	}
+
+	.table > :not(caption) > * > * {
+		padding: 0rem .0rem;
+		background-color: #fff;
+	}
+
+	.tox:not(.tox-tinymce-inline) .tox-editor-header {
+		padding: 0px 0;
+	}
+
+	.tox .tox-editor-header {
+		margin-bottom: 0rem;
+	}
+
+	.formControlNoBorder {
+		border: none;
+	}
+
+	.tox-editor-container {
+		border: none;
+	}
+
+	.tox .tox-statusbar__text-container {
+		display: none;
+		flex: 1 1 auto;
+		justify-content: flex-end;
+		overflow: hidden;
+	}
+
+
+	.mark-for-rework {
+		color: #000;
+		font-weight: bold;
+	}
+
+	.tox .tox-collection__item-label--markForRework {
+		background-color: yellow;
+		font-weight: bold;
+	}
+
+	.mark-for-rework:hover {
+		background-color: #EE4B2B;
+		cursor: pointer;
+	}
+
+	.mark-for-trial-assembly {
+		color: #000;
+		font-weight: bold;
+	}
+
+		.mark-for-trial-assembly:hover {
+			background-color: #BF40BF;
+			cursor: pointer;
+		}
+</style>
+
+<style>
+	/* Clean Component Details Table */
+	/* Clean Component Details Table */
+	#ncrDetailsTbl {
+		border: 1px solid #dee2e6;
+		background-color: #fff;
+		font-size: 12px;
+		margin-bottom: 10px;
+	}
+
+		#ncrDetailsTbl td {
+			padding: 5px 7px !important;
+			border: 1px solid #dee2e6;
+			vertical-align: middle;
+			background-color: #fff;
+		}
+
+			#ncrDetailsTbl td:nth-child(odd) {
+				font-weight: 600;
+				color: #495057;
+				width: 18%;
+			}
+
+			#ncrDetailsTbl td:nth-child(even) {
+				color: #212529;
+				width: 32%;
+			}
+
+		/* Header row */
+		#ncrDetailsTbl tr:first-child td:first-child,
+		#ncrDetailsTbl tr:first-child td:nth-child(3) {
+			font-weight: 700;
+			color: #212529;
+		}
+
+	.details-container {
+		background-color: #fff;
+		border: 1px solid #dee2e6;
+		border-radius: 4px;
+		padding: 0;
+		margin-bottom: 20px;
+	}
+
+	/* Notes part*/
+
+	.notes-section {
+		background-color: #f8f9fa;
+		padding: 15px;
+		border-radius: 4px;
+		border: 1px solid #dee2e6;
+	}
+
+	.notes-title {
+		font-weight: 600;
+		color: #212529;
+		margin-bottom: 12px;
+		font-size: 15px;
+	}
+
+	.note-item {
+		display: flex;
+		margin-bottom: 10px;
+		align-items: flex-start;
+	}
+
+	.note-number {
+		font-weight: 600;
+		color: #495057;
+		margin-right: 8px;
+		min-width: 20px;
+	}
+
+	.note-text {
+		flex: 1;
+		font-size: 14px;
+		line-height: 1.4;
+		color: #495057;
+	}
+
+
+	/* Complete itemsTbl Styling */
+	#itemsTbl {
+		border: 1px solid #dee2e6;
+		background-color: #fff;
+		font-size: 14px;
+	}
+
+		/* Table Headers */
+		#itemsTbl thead th {
+			background-color: #f8f9fa;
+			font-weight: 600;
+			padding: 12px 8px;
+			border: 1px solid #dee2e6;
+			text-align: center;
+			vertical-align: middle;
+			color: #495057;
+			font-size: 13px;
+			line-height: 1.3;
+		}
+
+		/* Table Body Cells */
+		#itemsTbl tbody td {
+			padding: 8px;
+			border: 1px solid #dee2e6;
+			vertical-align: middle;
+			background-color: #fff;
+		}
+
+		/* Readonly dimension display - direct HTML rendering */
+		#itemsTbl tbody .readonly-dimension-display {
+			padding: 8px;
+			font-size: 14px;
+			line-height: 1.4;
+			color: #212529;
+			font-family: inherit;
+			min-height: 50px;
+			word-wrap: break-word;
+			overflow-wrap: break-word;
+		}
+
+			/* Ensure HTML content in readonly displays renders properly */
+			#itemsTbl tbody .readonly-dimension-display p {
+				margin: 0;
+				padding: 0;
+			}
+
+			#itemsTbl tbody .readonly-dimension-display span {
+				font-size: 14px;
+				line-height: 1.4;
+			}
+
+
+
+		/* TinyMCE containers for readonly dimensions */
+		#itemsTbl tbody td .readonly-dimension + .tox .tox-sidebar-wrap,
+		#itemsTbl tbody td:has(.readonly-dimension) .tox .tox-sidebar-wrap {
+			border: none !important;
+			background: transparent !important;
+			box-shadow: none !important;
+			padding-left: 5px;
+		}
+
+		/* Editable textarea styling for remarks columns */
+		#itemsTbl .serialNoRemarks,
+		#itemsTbl .TASremarks,
+		#itemsTbl .AfterMarksAsCompleteRemarks {
+			border: 1px solid #ced4da !important;
+			border-radius: 4px;
+			padding: 8px;
+			font-size: 14px;
+			background-color: #fff;
+			min-height: 60px;
+			resize: vertical;
+		}
+
+			#itemsTbl .serialNoRemarks:focus,
+			#itemsTbl .TASremarks:focus,
+			#itemsTbl .AfterMarksAsCompleteRemarks:focus {
+				border-color: #80bdff;
+				outline: 0;
+				box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+			}
+
+			/* TinyMCE containers for editable remarks */
+			#itemsTbl .serialNoRemarks + .symbolDropdown,
+			#itemsTbl .TASremarks + .symbolDropdown,
+			#itemsTbl .AfterMarksAsCompleteRemarks + .symbolDropdown {
+				border: 1px solid #ced4da;
+				border-radius: 4px;
+				min-height: 60px;
+			}
+
+		#itemsTbl label {
+			padding-left: 2px;
+		}
+</style>
+
+<style>
+	/* Loading Overlay Styles */
+	.table-loading-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(255, 255, 255, 0.95);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 1000;
+		border-radius: 4px;
+	}
+
+	.table-loading-spinner {
+		text-align: center;
+		color: #495057;
+	}
+
+		.table-loading-spinner .spinner-border {
+			width: 3rem;
+			height: 3rem;
+			border-width: 0.3rem;
+		}
+
+		.table-loading-spinner p {
+			font-size: 14px;
+			font-weight: 500;
+			color: #6c757d;
+		}
+
+	/* Hide overlay when table is ready */
+	.table-loading-overlay.hidden {
+		display: none;
+	}
+</style>
+
+
+<div class="row">
+	<div class="col-4">
+		@{
+			if (closeNCR != true)
+			{
+				<h4>NCR</h4>
+			}
+			else
+			{
+				<h4>NCR Closed</h4>
+			}
+		}
+	</div>
+</div>
+<div class="row">
+
+	<div class="col-12 pull-right  no-print " id="buttons-area">
+
+		<a class="btn btn-secondary  btn-sm float-end" href="/NCR/AssignedNCRList">Back</a>
+		@{
+			if (closeNCR != true)
+			{
+
+				@if (NCR_Module_User && NCR_Assignments_Admin == false)
+				{
+					<input type="button" id="ReferDeviationBtn" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" value="Refer deviation to other module" onclick="TransferNCRModuleItem('@Model.NcrItems.FirstOrDefault().NCRGuid')" />
+					<input type="button" id="MarkAsCompleteBtn" class="btn btn-success  btn-sm float-end" style="margin-right:10px;" value="Mark as complete" onclick="MarkUpdatingRemarksAsCompleted()" />
+				}
+
+
+
+				// rework forward buttons
+				if (NCR_Assignments_Admin && MarkedForRework && allSTRESSRemarksUpdated)
+				{
+				 
+					//if (all_STRESS_Rework_Remarks_updated && !forwardedToCHAIR)
+
+					// if (all_STRESS_Rework_Remarks_updated && !forwardedToCHAIR && forwardedToSTRESS_Rework)
+					// {
+					// 	<input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" value="Complete rework/trial assembly cycle and forward to CAHIR" onclick="GetPopupToAssignModuleToNCR('@Model.NcrItems.FirstOrDefault().NCRGuid','@CHAIRmoduleId','CHAIR')" />
+					// }
+					// else if (!forwardedToSTRESS_Rework && all_TAS_Rework_Remarks_updated && !onlyTrialAssembly)
+					// {
+					// 	<input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" value="Forward to STRESS for rework/trial assembly Remark" onclick="GetPopupToAssignModuleToNCR('@Model.NcrItems.FirstOrDefault().NCRGuid','@STRESSmoduleId','STRESS')" />
+					// }
+					if (all_STRESS_Rework_Remarks_updated && !forwardedToCHAIR && forwardedToSTRESS_Rework)
+					{
+						<input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" value="Complete rework/trial assembly cycle and forward to CAHIR" onclick="GetPopupToAssignModuleToNCR('@Model.NcrItems.FirstOrDefault().NCRGuid','@CHAIRmoduleId','CHAIR')" />
+					}
+					else if (!forwardedToSTRESS_Rework && all_TAS_Rework_Remarks_updated && onlyTrialAssembly && forwardedToTAS_Rework)
+					{
+						<input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" value="Complete rework/trial assembly cycle and forward to CAHIR (Skip STRESS)" onclick="GetPopupToAssignModuleToNCR('@Model.NcrItems.FirstOrDefault().NCRGuid','@CHAIRmoduleId','CHAIR')" />
+					}
+					else if (!forwardedToSTRESS_Rework && all_TAS_Rework_Remarks_updated && !onlyTrialAssembly)
+					{
+						<input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" value="Forward to STRESS for rework/trial assembly Remark" onclick="GetPopupToAssignModuleToNCR('@Model.NcrItems.FirstOrDefault().NCRGuid','@STRESSmoduleId','STRESS')" />
+					}
+					else if (!forwardedToTAS_Rework && all_Module_Rework_Remarks_updated)
+					{
+						<input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" value="Forward to TAS for rework/trial assembly Remark" onclick="GetPopupToAssignModuleToNCR('@Model.NcrItems.FirstOrDefault().NCRGuid','@TASmoduleId','TAS')" />
+					}
+					else if (!forwardedToModule_Rework)
+					{
+						<input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" value="Forward to Module for rework/trial assembly Remark" onclick="GetPopupToAssignModuleToNCR('@Model.NcrItems.FirstOrDefault().NCRGuid',0)" />
+					}
+				}
+				//normal forward buttons
+				else
+				{
+					if (NCR_Assignments_Admin && allSTRESSRemarksUpdated && !forwardedToCHAIR && !MarkedForRework)
+					{
+						<input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" value="Forward to CHAIR" onclick="forwardNCRtoModule('@Model.NcrItems.FirstOrDefault().NCRGuid','@CHAIRmoduleId','CHAIR')" />
+					}
+					else if (NCR_Assignments_Admin && allTASRemarksUpdated && !forwardedToSTRESS)
+					{
+						<input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" value="Forward to STRESS" onclick="forwardNCRtoModule('@Model.NcrItems.FirstOrDefault().NCRGuid','@STRESSmoduleId','STRESS')" />
+					}
+					else if (NCR_Assignments_Admin && allModuleRemarksUpdated && !forwardedToTAS)
+					{
+						<input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" value="Forward to TAS" onclick="forwardNCRtoModule('@Model.NcrItems.FirstOrDefault().NCRGuid','@TASmoduleId','TAS')" />
+					}
+				}
+
+
+
+				//print, delete, close
+				if (NCR_Assignments_Admin)
+				{
+					<input type="button" class="btn btn-primary  btn-sm float-left" style="margin-right:10px;" onclick="printNCRReport('@Model.AssignmentData.NCRGUID')" value="Print Report" />
+
+					@if (allCHAIRRemarksUpdated)
+					{
+						<input type="button" class="btn btn-success  btn-sm float-left" style="margin-right:10px;" value="Close NCR" onclick="CloseNCR('@Model.AssignmentData.NCRGUID')" />
+					}
+					@if (NCR_Assignments_Admin_Delete)
+					{
+						<input type="button" class="btn btn-danger btn-sm float-left" style="margin-right:10px;" value="Delete Assignment" onclick="ncrModuleDelete('@Model.AssignmentData.NCRGUID','@Model.AssignmentData.NCRWorkflowGUID')" />
+					}
+					// if (forwardedToCHAIR)
+					// {
+					// 	<input type="button" id="MarkSerialNoStatus" class="btn btn-success  btn-sm float-end" style="margin-right:10px;" value="Mark Serial No. status" onclick="MarkSerialNoStatus('@Model.NcrItems.FirstOrDefault().NCRGuid')" />
+
+					// }
+				}
+
+			}
+			else
+			{
+
+				if (NCR_Assignments_Admin == true)
+				{
+					<input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" onclick="printNCRReport('@Model.AssignmentData.NCRGUID')" value="Print Report" />
+				}
+			}
+
+		}
+
+	</div>
+</div>
+
+
+<hr class="no-print" />
+<div class="row">
+	<div class="col-8">
+		<div class="details-container">
+			<table class="table table-bordered table-condensed" id="ncrDetailsTbl">
+				<tbody>
+					<tr>
+						<td colspan="2"><strong>Component Details:</strong></td>
+						<td><strong>Material</strong></td>
+						<td>@Model.AssignmentData.Raw_material_Name</td>
+					</tr>
+					<tr>
+						<td><strong>Drawing No</strong></td>
+						<td>@Model.AssignmentData.Draw_part_no</td>
+						<td><strong>JobCard/Contract No</strong></td>
+						<td>@Model.AssignmentData.JobCard</td>
+					</tr>
+					<tr>
+						<td><strong>Revision</strong></td>
+						<td>@Model.AssignmentData.Revision</td>
+						<td><strong>Contractor</strong></td>
+						<td>@Model.AssignmentData.ReceivedFromString</td>
+					</tr>
+					<tr>
+						<td><strong>Nomenclature</strong></td>
+						<td>@Model.AssignmentData.PartDescription</td>
+						<td><strong>Stage/Final</strong></td>
+						<td>@Model.AssignmentData.Stage_Final</td>
+					</tr>
+					<tr>
+						<td><strong>Serial Number</strong></td>
+						<td>@Model.AssignmentData.SerialNumber</td>
+						<td><strong>Inspection Report No</strong></td>
+						<td>@Model.AssignmentData.Inspection_Report_No</td>
+					</tr>
+					<tr>
+						<td><strong>Quantity</strong></td>
+						<td>@Model.AssignmentData.Qty</td>
+						<td><strong>NCR No</strong></td>
+						<td>@Model.AssignmentData.ReferenceNumber</td>
+					</tr>
+					<tr>
+						<td><strong>DAR No.</strong></td>
+						<td>@Model.AssignmentData.DARno</td>
+						<td><strong>Module</strong></td>
+						<td>@Model.AssignmentData.ModuleName</td>
+					</tr>
+
+					@*
+				<tr>
+				<td><strong>Received From</strong></td>
+				<td>@Model.AssignmentData.ReceivedFromString</td>
+				</tr>
+				<tr>
+				<td><strong>Remarks</strong></td>
+				<td>@Model.AssignmentData.Remarks</td>
+				</tr> *@
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+
+	<div class="col-4 no-print">
+		<h5>Attachments</h5>
+		@{
+			attachmentData attData = new attachmentData();
+			attData.sourceAttachTable = "NonConformanceReport";
+			attData.sourceAttachTableKey = Model.AssignmentData.NcrID;
+			attData.deleteAccess = false;
+			var attachmentData = MPGlobals.GetAttachmentsData(attData.sourceAttachTable, attData.sourceAttachTableKey);
+
+			if (attachmentData.Count > 3)
+			{
+				<details>
+					<summary>Show attachments</summary>
+					<div id="Attachment-display" class="Attachment-display">
+						@{
+
+						}
+						<partial name="../Attachment/GetAttachments" model="@attData">
+					</div>
+				</details>
+			}
+			else
+			{
+				<div id="Attachment-display" class="Attachment-display">
+					<partial name="../Attachment/GetAttachments" model="@attData">
+				</div>
+			}
+		}
+
+
+		@*<p class="">Note :</p>
+		<p>1. Right click on remarks area to mark serial number for rework or to mark for trial assembly or to use GD&T symbols </p>
+		<p>
+			2.
+			<span style="display: inline-block; background-color: #EE4B2B; height: 1rem; width: 1rem; border: 1px solid #000;"></span>
+			colored rows indicate marked for rework
+			<br />
+			<span style="display: inline-block; background-color:#BF40BF; height: 1rem; width: 1rem; border: 1px solid #000;"></span>
+			colored rows indicate marked for Trial Assembly
+		</p>
+		<p>
+			3. Leave remarks blank to refer deviation to other module & click on blue button
+		</p>
+		*@ 
+<div class="notes-section">
+			<p class="notes-title">Notes:</p>
+			<div class="note-item">
+				<span class="note-number">1.</span>
+				<span class="note-text">Right click on remarks area to use GD&T symbols</span>
+			</div>
+			<div class="note-item">
+				<span class="note-number">2.</span>
+				<span class="note-text">
+					<span style="display: inline-block; background-color: #EE4B2B; height: 14px; width: 14px; border: 1px solid #000; margin-right: 8px; vertical-align: middle;"></span>
+					Colored rows indicate marked for rework
+					<br />
+					<span style="display: inline-block; background-color:#BF40BF; height: 14px; width: 14px; border: 1px solid #000; margin-right: 8px; vertical-align: middle;"></span>
+					Colored rows indicate marked for Trial Assembly
+				</span>
+			</div>
+			<div class="note-item">
+				<span class="note-number">3.</span>
+				<span class="note-text">Leave remarks blank to refer deviation to other module & click on blue button</span>
+			</div>
+			<div class="note-item">
+				<span class="note-number">4.</span>
+				<span class="note-text">When you click accepted checkbox, any existing remarks will be overridden as 'Accepted under concession'</span>
+			</div>
+		</div>
+
+	</div>
+
+	@*   <div class="col-4">
+	<form id="ncrWorkflowLog">
+	<input id="NCRWorkflowGUID" asp-for="AssignmentData.NCRWorkflowGUID" hidden />
+	<div class="row">
+	<b>Marks Status as</b>
+	<select id="ncrLogStatus" asp-for="AssignmentData.Status" class="form-select form-select-square" asp-items="@NCR_Status"></select>
+	</div>
+	<div class="row">
+	<b>Remarks</b>
+	<textarea rows="4" id="ncRLogRemarks" asp-for="AssignmentData.Remarks" class="form-control"></textarea>
+	</div>
+	</form>
+	<hr />
+
+	</div> *@
+
+	<hr />
+	@*<div class="mb-3">
+		<table class="table table-bordered" id="itemsTbl">*@
+	<div class="table-responsive" style="position: relative;">
+		<!-- Loading Overlay -->
+		<div id="tableLoadingOverlay" class="table-loading-overlay">
+			<div class="table-loading-spinner">
+				<div class="spinner-border text-primary" role="status">
+					<span class="visually-hidden">Loading...</span>
+				</div>
+				<p class="mt-2 mb-0">Loading assignment details...</p>
+			</div>
+		</div>
+
+		<table class="table table-bordered" id="itemsTbl" style="opacity: 0; transition: opacity 0.3s ease;">
+			<thead class="no-word-break">
+				<tr>
+					<th>SlNo.</th>
+					<th style="width:5%">Serial no in Insp Rep</th>
+					<th style="width:5%">Drg Zone</th>
+					<th style="width:5%">Serial Number</th>
+					<th style="width:10%">Drawing Dimension</th>
+					<th style="width:10%">Actual Dimension</th>
+					<th style="width:10%">Reason/Analysis</th>
+					@if (MarkedForRework && Model.NcrItems.Any(x => !String.IsNullOrEmpty(x.Rework_Dimension)))
+					{
+						<th style="width:10%">Rework Dimension/Trial Assembly Remark</th>
+					}
+
+					@*<th style="width:5%" class=" no-print">Module Referred</th>
+					<th>Engine</th>
+					<th>Status</th>*@
+					@if (forwardedToTAS)
+					{
+						<th style="width:10%">
+							Effect of Deviation on Assembly Aero-thermal Design Performance
+						</th>
+					}
+					else
+					{
+						<th style="width:10%">
+							Effect of Deviation on Assembly Aero-thermal Design Performance
+							<br />
+							<small class="text-muted">*Leave blank to refer deviation to other module</small>
+						</th>
+					}
+
+					@if (forwardedToTAS && (!forwardedToSTRESS))
+					{
+						<th style="width:10%">
+							Effect of Deviation on Assembly
+							<br />
+							<small class="text-muted">*Leave blank to refer deviation to other module</small>
+						</th>
+					}
+					else
+					{
+						<th style="width:10%">Effect of Deviation on Assembly</th>
+					}
+
+
+					@if (forwardedToSTRESS && (!forwardedToCHAIR))
+					{
+						<th style="width:10%">
+							Effect of Deviation on Structural Integrity
+							<br />
+							<small class="text-muted">*Leave blank to refer deviation to other module</small>
+						</th>
+					}
+					else
+					{
+						<th style="width:10%">Effect of Deviation on Structural Integrity</th>
+					}
+
+					<th style="width:10%">CHAIR Remarks </th>
+					<th style="width:10%">Remarks (PO)</th>
+					@if (NCR_Assignments_Module_Delete && !NCR_Assignments_Admin)
+					{
+						<th style="width:5%" class="no-print"></th>
+					}
+
+				</tr>
+			</thead>
+			<tbody id="tblbody">
+				@{
+					foreach (var item in Model.NcrItems)
+					{
+						// <tr style="color: @(item.Rework_Status == 1 ? "#EE4B2B" : item.Rework_Status == 2 ? "#BF40BF" : "");">
+						<tr style="color: @(item.Module_ReworkType == 1 || item.TAS_ReworkType == 1 || item.STRESS_ReworkType == 1 || item.PO_ReworkType == 1 ? "#EE4B2B" :
+							 		item.Module_ReworkType == 2 || item.TAS_ReworkType == 2 || item.STRESS_ReworkType == 2 || item.PO_ReworkType == 2 ? "#BF40BF" : "");">
+							<td> <spn style="padding-left:5px">@item.SlNo</spn></td>
+							<td><b style="padding-left:5px">@item.Serial_No_in_Inspection_Rep</b></td>
+							<td class="p-2">@item.DrgZone</td>
+							<td style="padding:1px" class="SerialNumberCell">
+								<input data-field="NCRItemkey" type="hidden" asp-for="@item.NCRItemKey" />
+								<input id="NCRWorkflowGUID" asp-for="@item.NCRWorkFlowGuid" hidden />
+								<b style="padding-left:5px">@item.SerialNumber</b>
+							</td>
+							<td><div class="readonly-dimension-display">@Html.Raw(item.DrawingDimension)</div></td>
+							<td><div class="readonly-dimension-display">@Html.Raw(item.ActualDimension)</div></td>
+							<td><label class="">@item.Deviation_Reason_Analysis</label></td>
+							@if (MarkedForRework && Model.NcrItems.Any(x => !String.IsNullOrEmpty(x.Rework_Dimension)))
+							{
+								if (item.Rework_Dimension != null)
+								{
+									<td><div class="readonly-dimension-display">@Html.Raw(item.Rework_Dimension)</div></td>
+								}
+								else
+								{
+									<td><label class="d-flex justify-content-center align-item-center" style="font-size:xx-large">-</label></td>
+								}
+
+							}
+
+
+							@* Module Remarks *@
+							<td>
+								@{
+									bool reworkCycleStarted = !string.IsNullOrEmpty(item.Module_Rework_Status)
+									|| !string.IsNullOrEmpty(item.TAS_Rework_Status)
+									|| !string.IsNullOrEmpty(item.STRESS_Rework_Status)
+									|| !string.IsNullOrEmpty(item.CHAIR_Rework_Status);
+
+									if (item.Module_Status != "Ended")
+									{
+										if (item.AssigneeUserGUIDs.Contains(userguid)
+										&& !NCR_Assignments_Admin
+										&& item.Module_Status == "Forwarded To MODULE"
+										&& (item.TAS_Status != "Forwarded To TAS" || item.TAS_Status != "MarkedAsComplete")
+										&& (item.Stress_Status != "Forwarded To STRESS" || item.Stress_Status != "MarkedAsComplete")
+										&& (item.Chair_Status != "Forwarded To CHAIR" || item.Chair_Status != "MarkedAsComplete")
+										&& item.Module_Rework_Status != "Forwarded To Module")
+										{
+											<div class="gd-t-container">
+												<!-- Checkboxes - STAGE SPECIFIC (correct) -->
+												<div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input rework-checkbox"
+															   type="checkbox"
+															   id="rework-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="MODULE"
+															   @(item.Module_ReworkType == 1 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 1)">
+														<label class="form-check-label" for="rework-checkbox-@item.NCRItemKey">Rework</label>
+													</div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input trial-checkbox"
+															   type="checkbox"
+															   id="trialAssembly-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="MODULE"
+															   @(item.Module_ReworkType == 2 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 2)">
+														<label class="form-check-label" for="trialAssembly-checkbox-@item.NCRItemKey">Trial Assembly</label>
+													</div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input accepted-checkbox"
+															   type="checkbox"
+															   id="accepted-checkbox-@item.NCRItemKey"
+															   onclick="markAsAccepted(this, @item.NCRItemKey, 'Module_Remarks')">
+														<label class="form-check-label" for="accepted-checkbox-@item.NCRItemKey">Accepted under concession</label>
+													</div>
+												</div>
+
+												<textarea style="font-size:1rem; height:100%" data-field="Module_Remarks"
+														  data-ncrItemKey="@item.NCRItemKey"
+														  data-workFlowGuid="@item.NCRWorkFlowGuid"
+														  data-NCRGuid="@item.NCRGuid"
+														  class="form-control form-control-square serialNoRemarks"
+														  onchange="autoSaveRemarks(this,@item.NCRItemKey)"
+														  asp-for="@item.Module_Remarks"
+														  id="module-textarea-@item.NCRItemKey">
+					                    </textarea>
+												<div class="symbolDropdown"></div>
+											</div>
+										}
+										else if (item.Module_Remarks != null)
+										{
+											if (item.Module_ReworkType == 1)
+											{
+												<i>Marked for rework</i>
+											}
+											else if (item.Module_ReworkType == 2)
+											{
+												<i>Marked for Trial Assembly</i>
+											}
+											<br />
+											<label>@Html.Raw(item.Module_Remarks)</label>
+										}
+
+										@* After mark as complete *@
+										if (item.Module_Status == "MarkedAsComplete"
+										&& !NCR_Assignments_Admin
+										&& item.AssigneeUserGUIDs.Contains(userguid))
+										{
+											<div class="gd-t-container">
+												<!-- Checkboxes - STAGE SPECIFIC (correct) -->
+												<div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input rework-checkbox"
+															   type="checkbox"
+															   id="rework-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="MODULE"
+															   @(item.Module_ReworkType == 1 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 1)">
+														<label class="form-check-label" for="rework-checkbox-@item.NCRItemKey">Rework</label>
+													</div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input trial-checkbox"
+															   type="checkbox"
+															   id="trialAssembly-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="MODULE"
+															   @(item.Module_ReworkType == 2 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 2)">
+														<label class="form-check-label" for="trialAssembly-checkbox-@item.NCRItemKey">Trial Assembly</label>
+													</div>
+												</div>
+
+												<textarea style="font-size:1rem; height:100%" data-field="Module_Remarks"
+													  data-ncrItemKey="@item.NCRItemKey"
+													  data-workFlowGuid=null
+													  data-NCRGuid="@item.NCRGuid"
+													  class="form-control form-control-square AfterMarksAsCompleteRemarks"
+													  onchange="updateRemarksAfterMarkAsComplete(this,@item.NCRItemKey)"
+													  id="">
+												</textarea>
+												<div class="symbolDropdown"></div>
+											</div>
+										}
+									}
+									else if (item.Module_Remarks != null)
+									{
+										if (item.Module_ReworkType == 1)
+										{
+											<i>Marked for rework</i>
+										}
+										else if (item.Module_ReworkType == 2)
+										{
+											<i>Marked for Trial Assembly</i>
+										}
+										<br />
+										<label>@Html.Raw(item.Module_Remarks)</label>
+									}
+
+									@* Rework Cycle - CONDITION CHECKS ALL STAGES *@
+									if (item.AssigneeUserGUIDs.Contains(UserGuid)
+									&& !NCR_Assignments_Admin
+									&& item.Module_Rework_Status == "Forwarded To Module"
+									&& item.TAS_Rework_Status != "Forwarded To TAS"
+									&& item.STRESS_Rework_Status != "Forwarded To STRESS"
+									&& item.Workflow_Assignments_Status != "MarkedAsComplete"
+									&& IsMarkedForAnyRework(item))  @* ← FIXED: Check ALL stages *@
+									{
+										<br />
+										<div class="gd-t-container">
+											<textarea style="font-size:1rem" data-field="Module_Rework_Remarks"
+													  data-ncrItemKey="@item.NCRItemKey"
+													  data-workFlowGuid="@item.NCRWorkFlowGuid"
+													  data-NCRGuid="@item.NCRGuid"
+													  class="form-control form-control-square serialNoRemarks"
+													  onchange="autoSaveRemarks(this)"
+													  id="module-reworkcycle-remarks-@item.NCRItemKey"
+													  asp-for="@item.Module_Rework_Remarks"></textarea>
+											<div class="symbolDropdown"></div>
+										</div>
+									}
+									else if (item.Module_Rework_Remarks != null)
+									{
+										<br />
+										<!-- Labels - CHECK ALL STAGES -->
+										@if (IsMarkedForRework(item))
+										{
+											<i>Rework Remark:</i>
+										}
+										else if (IsMarkedForTrialAssembly(item))
+										{
+											<i>Trial Assembly Remark:</i>
+										}
+										<br />
+										<label>@Html.Raw(item.Module_Rework_Remarks)</label>
+									}
+
+									@* After mark as complete in rework cycle *@
+									if (item.Module_Rework_Status == "MarkedAsComplete"
+									&& !NCR_Assignments_Admin
+									&& item.AssigneeUserGUIDs.Contains(userguid))
+									{
+										<div class="gd-t-container">
+											<textarea style="font-size:1rem; height:100%" data-field="Module_Rework_Remarks"
+											  data-ncrItemKey="@item.NCRItemKey"
+											  data-workFlowGuid=null
+											  data-NCRGuid="@item.NCRGuid"
+											  class="form-control form-control-square AfterMarksAsCompleteRemarks"
+											  onchange="updateRemarksAfterMarkAsComplete(this,@item.NCRItemKey)"
+											  id="">
+											 </textarea>
+											<div class="symbolDropdown"></div>
+										</div>
+									}
+								}
+							</td>
+
+							@* TAS Remarks *@
+							<td>
+								@{
+									if (item.TAS_Status != "Ended")
+									{
+										if (item.AssigneeUserGUIDs.Contains(UserGuid)
+										&& !NCR_Assignments_Admin
+										&& item.TAS_Status == "Forwarded To TAS"
+										&& (item.Stress_Status != "Forwarded To STRESS" || item.Stress_Status != "MarkedAsComplete")
+										&& (item.Chair_Status != "Forwarded To CHAIR" || item.Chair_Status != "MarkedAsComplete")
+										&& item.Module_Rework_Status != "Forwarded To Module")
+										{
+											<div class="gd-t-container">
+												<!-- Checkboxes - STAGE SPECIFIC (correct) -->
+												<div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input rework-checkbox"
+															   type="checkbox"
+															   id="rework-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="TAS"
+															   @(item.TAS_ReworkType == 1 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 1)">
+														<label class="form-check-label" for="rework-checkbox-@item.NCRItemKey">Rework</label>
+													</div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input trial-checkbox"
+															   type="checkbox"
+															   id="trialAssembly-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="TAS"
+															   @(item.TAS_ReworkType == 2 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 2)">
+														<label class="form-check-label" for="trialAssembly-checkbox-@item.NCRItemKey">Trial Assembly</label>
+													</div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input accepted-checkbox"
+															   type="checkbox"
+															   id="accepted-checkbox-@item.NCRItemKey"
+															   onclick="markAsAccepted(this,@item.NCRItemKey,'TAS_Remarks')">
+														<label class="form-check-label" for="accepted-checkbox-@item.NCRItemKey">Accepted under concession</label>
+													</div>
+												</div>
+
+												<textarea style="font-size:1rem" data-field="TAS_Remarks"
+														  data-ncrItemKey="@item.NCRItemKey"
+														  data-workFlowGuid="@item.NCRWorkFlowGuid"
+														  data-NCRGuid="@item.NCRGuid"
+														  class="form-control form-control-square serialNoRemarks"
+														  onchange="autoSaveRemarks(this,@item.NCRItemKey)"
+														  id="tas-textarea-@item.NCRItemKey"
+														  asp-for="@item.TAS_Remarks"></textarea>
+												<div class="symbolDropdown"></div>
+											</div>
+										}
+										else if (item.TAS_Remarks != null)
+										{ 
+											if (item.TAS_ReworkType == 1)
+											{
+												<i>Marked for rework</i>
+											}
+											else if (item.TAS_ReworkType == 2)
+											{
+												<i>Marked for Trial Assembly</i>
+											}
+											<br />
+											<label>@Html.Raw(item.TAS_Remarks)</label>
+										}
+
+										@* After mark as complete *@
+										if (item.TAS_Status == "MarkedAsComplete"
+										&& !NCR_Assignments_Admin
+										&& item.AssigneeUserGUIDs.Contains(userguid))
+										{
+											<div class="gd-t-container">
+												<!-- Checkboxes - STAGE SPECIFIC (correct) -->
+												<div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input rework-checkbox"
+															   type="checkbox"
+															   id="rework-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="TAS"
+															   @(item.TAS_ReworkType == 1 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 1)">
+														<label class="form-check-label" for="rework-checkbox-@item.NCRItemKey">Rework</label>
+													</div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input trial-checkbox"
+															   type="checkbox"
+															   id="trialAssembly-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="TAS"
+															   @(item.TAS_ReworkType == 2 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 2)">
+														<label class="form-check-label" for="trialAssembly-checkbox-@item.NCRItemKey">Trial Assembly</label>
+													</div>
+												</div>
+
+												<textarea style="font-size:1rem; height:100%" data-field="TAS_Remarks"
+												  data-ncrItemKey="@item.NCRItemKey"
+												  data-workFlowGuid=null
+												  data-NCRGuid="@item.NCRGuid"
+												  class="form-control form-control-square AfterMarksAsCompleteRemarks"
+												  onchange="updateRemarksAfterMarkAsComplete(this,@item.NCRItemKey)"
+												  id="">
+												</textarea>
+												<div class="symbolDropdown"></div>
+											</div>
+										}
+									}
+									else if (item.TAS_Remarks != null)
+									{
+										if (item.TAS_ReworkType == 1)
+										{
+											<i>Marked for rework</i>
+										}
+										else if (item.TAS_ReworkType == 2)
+										{
+											<i>Marked for Trial Assembly</i>
+										}
+										<br />
+										<label>@Html.Raw(item.TAS_Remarks)</label>
+									}
+
+									@* Rework Cycle - CONDITION CHECKS ALL STAGES *@
+									@if (item.AssigneeUserGUIDs.Contains(UserGuid)
+															&& !NCR_Assignments_Admin
+															&& item.TAS_Rework_Status == "Forwarded To TAS"
+															&& item.STRESS_Rework_Status != "Forwarded To STRESS"
+															&& item.Workflow_Assignments_Status != "MarkedAsComplete"
+															&& IsMarkedForAnyRework(item))  @* ← FIXED: Check ALL stages *@
+									{
+										<br />
+										<!-- Labels - CHECK ALL STAGES -->
+										@if (IsMarkedForRework(item))
+										{
+											<i>Rework Remark:</i>
+										}
+										else if (IsMarkedForTrialAssembly(item))
+										{
+											<i>Trial Assembly Remark:</i>
+										}
+										<div class="gd-t-container">
+											<textarea style="font-size:1rem" data-field="TAS_Rework_Remarks"
+													  data-ncrItemKey="@item.NCRItemKey"
+													  data-workFlowGuid="@item.NCRWorkFlowGuid"
+													  data-NCRGuid="@item.NCRGuid"
+													  class="form-control form-control-square serialNoRemarks"
+													  onchange="autoSaveRemarks(this,@item.NCRItemKey)"
+													  asp-for="@item.TAS_Rework_Remarks"
+													  id="tas-reworkcycle-remarks-@item.NCRItemKey"></textarea>
+											<div class="symbolDropdown"></div>
+										</div>
+									}
+									else if (item.TAS_Rework_Remarks != null)
+									{
+										<br />
+										<!-- Labels - CHECK ALL STAGES -->
+										@if (IsMarkedForRework(item))
+										{
+											<i>Rework Remark:</i>
+										}
+										else if (IsMarkedForTrialAssembly(item))
+										{
+											<i>Trial Assembly Remark:</i>
+										}
+										<br />
+										<label>@Html.Raw(item.TAS_Rework_Remarks)</label>
+									}
+
+									@* After mark as complete in rework cycle *@
+									if (item.TAS_Rework_Status == "MarkedAsComplete"
+									&& !NCR_Assignments_Admin
+									&& item.AssigneeUserGUIDs.Contains(userguid))
+									{
+										<div class="gd-t-container">
+											<textarea style="font-size:1rem; height:100%" data-field="TAS_Rework_Remarks"
+											  data-ncrItemKey="@item.NCRItemKey"
+											  data-workFlowGuid=null
+											  data-NCRGuid="@item.NCRGuid"
+											  class="form-control form-control-square AfterMarksAsCompleteRemarks"
+											  onchange="updateRemarksAfterMarkAsComplete(this,@item.NCRItemKey)"
+											  id="">
+											</textarea>
+											<div class="symbolDropdown"></div>
+										</div>
+									}
+								}
+							</td>
+
+							@* STRESS Remarks *@
+							<td>
+								@{
+									if (item.Stress_Status != "Ended")
+									{
+										if (item.AssigneeUserGUIDs.Contains(UserGuid)
+										&& !NCR_Assignments_Admin
+										&& item.Stress_Status == "Forwarded To STRESS"
+										&& (item.Chair_Status != "Forwarded To CHAIR" || item.Chair_Status != "MarkedAsComplete")
+										&& item.Module_Rework_Status != "Forwarded To Module")
+										{
+											<div class="gd-t-container">
+												<!-- Checkboxes - STAGE SPECIFIC (correct) -->
+												<div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input rework-checkbox"
+															   type="checkbox"
+															   id="rework-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="STRESS"
+															   @(item.STRESS_ReworkType == 1 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 1)">
+														<label class="form-check-label" for="rework-checkbox-@item.NCRItemKey">Rework</label>
+													</div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input trial-checkbox"
+															   type="checkbox"
+															   id="trialAssembly-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="STRESS"
+															   @(item.STRESS_ReworkType == 2 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 2)">
+														<label class="form-check-label" for="trialAssembly-checkbox-@item.NCRItemKey">Trial Assembly</label>
+													</div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input accepted-checkbox"
+															   type="checkbox"
+															   id="accepted-checkbox-@item.NCRItemKey"
+															   onclick="markAsAccepted(this, @item.NCRItemKey, 'Stress_Remarks')">
+														<label class="form-check-label" for="accepted-checkbox-@item.NCRItemKey">Accepted under concession</label>
+													</div>
+												</div>
+
+												<textarea style="font-size:1rem" data-field="Stress_Remarks"
+														  data-ncrItemKey="@item.NCRItemKey"
+														  data-workFlowGuid="@item.NCRWorkFlowGuid"
+														  data-NCRGuid="@item.NCRGuid"
+														  class="form-control form-control-square serialNoRemarks"
+														  onchange="autoSaveRemarks(this,@item.NCRItemKey)"
+														  id="stress-textarea-@item.NCRItemKey"
+														  asp-for="@item.Stress_Remarks"></textarea>
+												<div class="symbolDropdown"></div>
+											</div>
+										}
+										else if (item.Stress_Remarks != null)
+										{ 
+											if (item.STRESS_ReworkType == 1)
+											{
+												<i>Marked for rework</i>
+											}
+											else if (item.STRESS_ReworkType == 2)
+											{
+												<i>Marked for Trial Assembly</i>
+											}
+											<br />
+											<label>@Html.Raw(item.Stress_Remarks)</label>
+										}
+
+										@* After mark as complete *@
+										if (item.Stress_Status == "MarkedAsComplete"
+										&& !NCR_Assignments_Admin
+										&& item.AssigneeUserGUIDs.Contains(userguid))
+										{
+											<div class="gd-t-container">
+												<!-- Checkboxes - STAGE SPECIFIC (correct) -->
+												<div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input rework-checkbox"
+															   type="checkbox"
+															   id="rework-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="STRESS"
+															   @(item.STRESS_ReworkType == 1 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 1)">
+														<label class="form-check-label" for="rework-checkbox-@item.NCRItemKey">Rework</label>
+													</div>
+													<div class="form-check checkbox-sm">
+														<input class="form-check-input trial-checkbox"
+															   type="checkbox"
+															   id="trialAssembly-checkbox-@item.NCRItemKey"
+															   data-ncritemkey="@item.NCRItemKey"
+															   data-stage="STRESS"
+															   @(item.STRESS_ReworkType == 2 ? "checked" : "")
+															   @(reworkCycleStarted ? "disabled" : "")
+															   onclick="handleReworkCheckbox(this, 2)">
+														<label class="form-check-label" for="trialAssembly-checkbox-@item.NCRItemKey">Trial Assembly</label>
+													</div>
+												</div>
+
+												<textarea style="font-size:1rem; height:100%" data-field="Stress_Remarks"
+													  data-ncrItemKey="@item.NCRItemKey"
+													  data-workFlowGuid=null
+													  data-NCRGuid="@item.NCRGuid"
+													  class="form-control form-control-square AfterMarksAsCompleteRemarks"
+													  onchange="updateRemarksAfterMarkAsComplete(this,@item.NCRItemKey)"
+													  id="">
+												 </textarea>
+												<div class="symbolDropdown"></div>
+											</div>
+										}
+									}
+									else if (item.Stress_Remarks != null)
+									{
+										if (item.STRESS_ReworkType == 1)
+										{
+											<i>Marked for rework</i>
+										}
+										else if (item.STRESS_ReworkType == 2)
+										{
+											<i>Marked for Trial Assembly</i>
+										}
+										<br />
+										<label>@Html.Raw(item.Stress_Remarks)</label>
+									}
+
+									@* Rework Cycle - CONDITION CHECKS ALL STAGES FOR REWORK ONLY *@
+									if (item.AssigneeUserGUIDs.Contains(UserGuid)
+									&& !NCR_Assignments_Admin
+									&& item.STRESS_Rework_Status == "Forwarded To STRESS"
+									&& item.Workflow_Assignments_Status != "MarkedAsComplete"
+									&& !forwardedToCHAIR
+									&& IsMarkedForRework(item))  @* ← FIXED: Check ALL stages for REWORK ONLY (not trial assembly) *@
+									{
+										<br />
+										<i>Rework Remark:</i>
+										<div class="gd-t-container">
+											<textarea style="font-size:1rem" data-field="STRESS_Rework_Remarks"
+													  data-ncrItemKey="@item.NCRItemKey"
+													  data-workFlowGuid="@item.NCRWorkFlowGuid"
+													  data-NCRGuid="@item.NCRGuid"
+													  class="form-control form-control-square serialNoRemarks"
+													  onchange="autoSaveRemarks(this,@item.NCRItemKey)"
+													  asp-for="@item.STRESS_Rework_Remarks"
+													  id="stress-reworkcycle-remarks-@item.NCRItemKey">
+											 </textarea>
+											<div class="symbolDropdown"></div>
+										</div>
+									}
+									else if (item.STRESS_Rework_Remarks != null)
+									{
+										<br />
+										<i>Rework Remark:</i>
+										<br />
+										<label>@Html.Raw(item.STRESS_Rework_Remarks)</label>
+									}
+
+									@* After mark as complete in rework cycle *@
+									if (item.STRESS_Rework_Status == "MarkedAsComplete"
+									&& !NCR_Assignments_Admin
+									&& item.AssigneeUserGUIDs.Contains(userguid))
+									{
+										<div class="gd-t-container">
+											<textarea style="font-size:1rem; height:100%" data-field="STRESS_Rework_Remarks"
+											  data-ncrItemKey="@item.NCRItemKey"
+											  data-workFlowGuid=null
+											  data-NCRGuid="@item.NCRGuid"
+											  class="form-control form-control-square AfterMarksAsCompleteRemarks"
+											  onchange="updateRemarksAfterMarkAsComplete(this,@item.NCRItemKey)"
+											  id="">
+											 </textarea>
+											<div class="symbolDropdown"></div>
+										</div>
+									}
+								}
+							</td>
+
+							@* CHAIR Remarks *@
+							<td>
+								@{
+									if (item.AssigneeUserGUIDs.Contains(UserGuid)
+									&& !NCR_Assignments_Admin
+									&& item.Chair_Status == "Forwarded To CHAIR")
+									{
+
+										<div class="gd-t-container">
+											<div class="form-check checkbox-sm">
+												<input class="form-check-input accepted-checkbox"
+													   type="checkbox"
+													   id="accepted-checkbox-@item.NCRItemKey"
+													   onclick="markAsAccepted(this, @item.NCRItemKey, 'Chair_Remarks')">
+												<label class="form-check-label" for="accepted-checkbox-@item.NCRItemKey">Accepted under concession</label>
+											</div>
+											<textarea style="font-size:1rem;height:100%;" data-field="Chair_Remarks"
+													  data-ncrItemKey="@item.NCRItemKey"
+													  data-workFlowGuid="@item.NCRWorkFlowGuid"
+													  data-NCRGuid="@item.NCRGuid"
+													  class="form-control form-control-square serialNoRemarks"
+													  onchange="autoSaveRemarks(this,@item.NCRItemKey)"
+													  id="chair-textarea-@item.NCRItemKey"
+													  asp-for="@item.Chair_Remarks">
+																			 </textarea>
+											<div class="symbolDropdown"></div>
+										</div>
+
+									
+
+									}
+									else if (item.Chair_Remarks != null)
+									{  
+										<label>@Html.Raw(item.Chair_Remarks)</label>
+									}
+
+									@* After mark as complete*@
+									if (item.Chair_Status == "MarkedAsComplete"
+									&& !NCR_Assignments_Admin
+									&& item.AssigneeUserGUIDs.Contains(userguid))
+									{
+										<div class="gd-t-container">
+										 
+											<textarea style="font-size:1rem; height:100%" data-field="Chair_Remarks"
+											  data-ncrItemKey="@item.NCRItemKey"
+											  data-workFlowGuid=null
+											  data-NCRGuid="@item.NCRGuid"
+											  class="form-control form-control-square AfterMarksAsCompleteRemarks"
+											  onchange="updateRemarksAfterMarkAsComplete(this,@item.NCRItemKey)"
+											  id="">
+											</textarea>
+											<div class="symbolDropdown"></div>
+										</div>
+									}
+								}
+
+							</td>
+
+							@* PO Remarks *@
+							<td>
+								@{
+									if (NCR_Assignments_Admin == true && !closeNCR)
+									{
+										<div class="gd-t-container"> 
+											<div>
+												<div class="form-check checkbox-sm">
+													<input class="form-check-input rework-checkbox"
+														   type="checkbox"
+														   id="rework-checkbox-@item.NCRItemKey"
+														   data-ncritemkey="@item.NCRItemKey"
+														   data-stage="PO"
+														   @(item.PO_ReworkType == 1 ? "checked" : "")
+														   @(reworkCycleStarted ? "disabled" : "")
+														   onclick="handleReworkCheckbox(this, 1)">
+													<label class="form-check-label" for="rework-checkbox-@item.NCRItemKey">Rework</label>
+												</div>
+												<div class="form-check checkbox-sm">
+													<input class="form-check-input trial-checkbox"
+														   type="checkbox"
+														   id="trialAssembly-checkbox-@item.NCRItemKey"
+														   data-ncritemkey="@item.NCRItemKey"
+														   data-stage="PO"
+														   @(item.PO_ReworkType == 2 ? "checked" : "")
+														   @(reworkCycleStarted ? "disabled" : "")
+														   onclick="handleReworkCheckbox(this, 2)">
+													<label class="form-check-label" for="trialAssembly-checkbox-@item.NCRItemKey">Trial Assembly</label>
+												</div>
+												<div class="form-check checkbox-sm">
+													<input class="form-check-input accepted-checkbox"
+														   type="checkbox"
+														   id="accepted-checkbox-@item.NCRItemKey"
+														   onclick="markAsAccepted(this, @item.NCRItemKey,'STFE_PO_Remark')">
+													<label class="form-check-label" for="accepted-checkbox-@item.NCRItemKey">Accepted under concession</label>
+												</div>
+											</div>
+
+											<textarea style="font-size:1rem;height:100%;" data-field="STFE_PO_Remark"
+													  data-ncrItemKey="@item.NCRItemKey"
+													  data-workFlowGuid="@item.NCRWorkFlowGuid"
+													  data-NCRGuid="@item.NCRGuid"
+													  class="form-control form-control-square serialNoRemarks"
+													  onchange="autoSaveRemarks(this,@item.NCRItemKey)"
+													  id="po-textarea-@item.NCRItemKey"
+													  asp-for="@item.STFE_PO_Remark"></textarea>
+											<div class="symbolDropdown"></div>
+										</div>
+									}
+									else
+									{ 
+										if (item.PO_ReworkType == 1)
+
+										{
+											<i>Marked for rework</i>
+											 
+										}
+										else if (item.PO_ReworkType == 2)
+										{
+											<i>Marked for Trial Assembly</i>
+										 
+										}
+										<br />
+										<label>@Html.Raw(item.STFE_PO_Remark)</label>
+									}
+								}
+							</td>
+
+
+							@if (NCR_Assignments_Module_Delete && !NCR_Assignments_Admin)
+							{
+								@if (item.AssignedBy == userOldDBKey && item.Workflow_Assignments_Status != "MarkedAsComplete")
+								{
+									<td style="text-align: center" class=" no-print">
+										<input type="button" class="text-center btn btn-danger btn-small" onclick="ncrItemDelete('@item.NCRGuid','@item.NCRWorkFlowGuid', '@item.NCRItemKey')" value="Revert referred devaiation" />
+									</td>
+								}
+								else
+								{
+									<td class=" no-print"></td>
+								}
+							}
+
+						</tr>
+					}
+				}
+			</tbody>
+
+		</table>
+	</div>
+
+	@*Logs*@
+	<hr />
+	@{
+		if (Model.workFlowLogs.Count > 0)
+		{
+			<div class="col-12 no-print">
+				<h5>Activity Log</h5>
+				<details>
+					<summary>Show Logs</summary>
+					<table class="table table-bordered table-condensed" id="WorkflowLogTbl">
+						<thead>
+							<tr>
+								<th>Time stamp</th>
+								<th>User</th>
+								<th>Status</th>
+								<th>Remarks</th>
+								<th>Status Description</th>
+							</tr>
+						</thead>
+
+						<tbody>
+							@{
+								foreach (var log in Model.workFlowLogs.OrderBy(X => X.UpdatedOn))
+								{
+									<tr>
+										<td data-date="@log.UpdatedOn">@MPGlobals.GetFormattedDateTime(log.UpdatedOn)</td>
+										<td>@log.UpdatedBy</td>
+										<td>@log.Status</td>
+										<td>@Html.Raw(log.Remarks)</td>
+										<td>@Html.Raw(log.Status_Verbose)</td>
+									</tr>
+								}
+							}
+						</tbody>
+
+
+					</table>
+				</details>
+			</div>
+		}
+	}
+</div>
+
+@section Scripts {
+	<script src="~/vendors/tinymce/tinymce.min.js"></script>
+	<script src="~/js/print.min.js"></script>
+	<script src="~/mpi/ncr.js" asp-append-version="true"></script>
+	<script>
+				// $(document).ready(function () {
+				// 	$.fn.dataTable.ext.type.order['datetime-custom-pre'] = function (d) {
+				// 		return new Date(d).getTime();
+				// 	};
+				// 			var reinitializeTimer = null;
+
+				// 	var itemsTable = $('#itemsTbl').DataTable({
+				// 	paging: false,
+				// 	ordering: false,
+				// 	drawCallback: function(settings) {
+				// 		// Clear any existing timer
+				// 		clearTimeout(reinitializeTimer);
+				// 		// Set new timer - only runs if user stops searching for 200ms
+				// 		reinitializeTimer = setTimeout(function() {
+				// 			reinitializeTinyMCE();
+				// 		}, 200);
+				// 	}
+				// });
+
+				// 	$('#WorkflowLogTbl').DataTable({
+				// 		paging: false,
+				// 		"columnDefs": [
+				// 			{
+				// 				"targets": 0, // Index of the column with datetime
+				// 				"type": 'datetime-custom'
+				// 			}
+				// 		]
+
+				// 	});
+
+
+				// 	const table = document.getElementById('itemsTbl');
+				// 	const textareas = table.querySelectorAll('textarea.serialNoRemarks');
+
+
+				// 	if (textareas.length <= 0) {
+				// 		document.getElementById('ReferDeviationBtn').style.display = 'none';
+				// 		document.getElementById('MarkAsCompleteBtn').style.display = 'none';
+				// 	}
+
+				// 	applyTinyMCEForRemarksArea(".serialNoRemarks");
+
+				// });
+
+
+				$(document).ready(function () {
+			$.fn.dataTable.ext.type.order['datetime-custom-pre'] = function (d) {
+				return new Date(d).getTime();
+			};
+
+			var reinitializeTimer = null;
+			var initializedEditors = new Set(); // Track which textareas are already initialized
+
+				  var itemsTable = $('#itemsTbl').DataTable({
+					paging: false,
+					ordering: false,
+					deferRender: true,
+					drawCallback: function(settings) {
+						// Clear any existing timer
+						clearTimeout(reinitializeTimer);
+						// Set new timer - only runs if user stops searching for 200ms
+						reinitializeTimer = setTimeout(function() {
+							lazyInitializeTinyMCE();
+						}, 200);
+					}
+				});
+
+				// Add this code right after DataTable initialization
+				// Hide loading overlay and show table with fade-in effect
+				setTimeout(function() {
+					$('#tableLoadingOverlay').addClass('hidden');
+					$('#itemsTbl').css('opacity', '1');
+				}, 100);
+
+				// Also hide overlay after DataTable fully renders
+				itemsTable.on('draw.dt', function() {
+					setTimeout(function() {
+						$('#tableLoadingOverlay').addClass('hidden');
+						$('#itemsTbl').css('opacity', '1');
+					}, 100);
+				});
+
+			$('#WorkflowLogTbl').DataTable({
+				paging: false,
+				"columnDefs": [
+					{
+						"targets": 0,
+						"type": 'datetime-custom'
+					}
+				]
+			});
+
+			const table = document.getElementById('itemsTbl');
+			const textareas = table.querySelectorAll('textarea.serialNoRemarks');
+
+			if (textareas.length <= 0) {
+				document.getElementById('ReferDeviationBtn').style.display = 'none';
+				document.getElementById('MarkAsCompleteBtn').style.display = 'none';
+			}
+
+			// Initial lazy load
+			lazyInitializeTinyMCE();
+
+			// Intersection Observer for lazy loading TinyMCE
+			function lazyInitializeTinyMCE() {
+				const editableTextareas = document.querySelectorAll('textarea.serialNoRemarks:not(.tinymce-initialized)');
+
+				if (editableTextareas.length === 0) return;
+
+				// Create Intersection Observer
+				const observer = new IntersectionObserver((entries) => {
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							const textarea = entry.target;
+							const textareaId = textarea.id;
+
+							// Check if not already initialized
+							if (!initializedEditors.has(textareaId) && !textarea.classList.contains('tinymce-initialized')) {
+								initializeSingleEditor(textarea);
+								observer.unobserve(textarea); // Stop observing once initialized
+							}
+						}
+					});
+				}, {
+					root: null,
+					rootMargin: '200px', // Start loading 200px before element comes into view
+					threshold: 0.01
+				});
+
+				// Observe all uninitialized textareas
+				editableTextareas.forEach(textarea => {
+					observer.observe(textarea);
+				});
+			}
+
+			// Function to initialize a single TinyMCE editor
+			function initializeSingleEditor(textarea) {
+				const textareaId = textarea.id;
+
+				// Mark as initialized immediately to prevent double-initialization
+				textarea.classList.add('tinymce-initialized');
+				initializedEditors.add(textareaId);
+
+				tinymce.init({
+					target: textarea,
+					height: 50,
+					branding: false,
+					toolbar: false,
+					menubar: false,
+					plugins: ' ',
+					contextmenu: 'markForRework | markForTrialAssembly | Straightness | Dia | Flatness | Circularity | Cylindricity | Perpendicularity | Parallelism | Symmetry | TRunout | Concentricity | Angularity | Position | CRunout | PSurface | PLine | Datum | MMC | LMC | RFS | Degree',
+					setup: function (editor) {
+						editor.on('init', function () {
+							const body = editor.getBody();
+							body.style.lineHeight = '1.3';
+							body.style.fontSize = '14px';
+							body.style.padding = '2px 8px';
+							body.style.margin = '0';
+							body.style.paddingTop = '0';
+						});
+
+						// Add all your custom menu items here (same as before)
+						editor.ui.registry.addMenuItem('markForRework', {
+							text: 'Mark For Rework',
+							onAction: function () {
+								markForRework(editor, 1);
+							}
+						});
+
+						editor.ui.registry.addMenuItem('markForTrialAssembly', {
+							text: 'Mark For Trial Assembly',
+							onAction: function () {
+								markForTrialAssembly(editor, 2);
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Straightness', {
+							text: 'Straightness : ⏤',
+							onAction: function () {
+								editor.insertContent('⏤');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Dia', {
+							text: 'Diameter : ⌀',
+							onAction: function () {
+								editor.insertContent('⌀');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Flatness', {
+							text: 'Flatness : ⏥',
+							onAction: function () {
+								editor.insertContent('⏥');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Circularity', {
+							text: 'Circularity : ○',
+							onAction: function () {
+								editor.insertContent('○');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Cylindricity', {
+							text: 'Cylindricity : ⌭',
+							onAction: function () {
+								editor.insertContent('⌭');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Perpendicularity', {
+							text: 'Perpendicularity : ⟂',
+							onAction: function () {
+								editor.insertContent('⟂');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Parallelism', {
+							text: 'Parallelism : ∥',
+							onAction: function () {
+								editor.insertContent('∥');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Symmetry', {
+							text: 'Symmetry : ⌯',
+							onAction: function () {
+								editor.insertContent('⌯');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('TRunout', {
+							text: 'Total Runout : ⌰',
+							onAction: function () {
+								editor.insertContent('⌰');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Concentricity', {
+							text: 'Concentricity : ◎',
+							onAction: function () {
+								editor.insertContent('◎');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Angularity', {
+							text: 'Angularity : ∠',
+							onAction: function () {
+								editor.insertContent('∠');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Position', {
+							text: 'Position : ⌖',
+							onAction: function () {
+								editor.insertContent('⌖');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('CRunout', {
+							text: 'Circular Runout : ↗',
+							onAction: function () {
+								editor.insertContent('↗');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('PSurface', {
+							text: 'Profile of a Surface : ⌓',
+							onAction: function () {
+								editor.insertContent('⌓');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('PLine', {
+							text: 'Profile of a Line : ⌒',
+							onAction: function () {
+								editor.insertContent('⌒');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Datum', {
+							text: 'Datum : ⌷',
+							onAction: function () {
+								editor.insertContent('⌷');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('MMC', {
+							text: 'Maximum Material Condition (MMC) : Ⓜ',
+							onAction: function () {
+								editor.insertContent('Ⓜ');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('LMC', {
+							text: 'Least Material Condition (LMC) : Ⓛ',
+							onAction: function () {
+								editor.insertContent('Ⓛ');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('RFS', {
+							text: 'Regardless of Feature Size (RFS) : Ⓡ',
+							onAction: function () {
+								editor.insertContent('Ⓡ');
+							}
+						});
+
+						editor.ui.registry.addMenuItem('Degree', {
+							text: 'Degree : °',
+							onAction: function () {
+								editor.insertContent('°');
+							}
+						});
+
+						editor.ui.registry.addContextMenu('customContextMenu', {
+							update: function () {
+								return 'Straightness Dia Flatness Circularity Cylindricity Perpendicularity Parallelism Symmetry TRunout Concentricity Angularity Position CRunout PSurface PLine Datum MMC LMC RFS Degree';
+							}
+						});
+
+						editor.on('blur', function (e) {
+							autoSaveRemarks(this);
+						});
+					}
+				});
+			}
+		});
+
+	</script>
+}

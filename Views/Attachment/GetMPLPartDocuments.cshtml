@@ -1,0 +1,170 @@
+﻿@model List<MPCRS.Models.Attachment>;
+@using MPCRS.Utilities;
+
+<style>
+    tr.group,
+    tr.group:hover {
+        background-color: #ddd !important;
+    }
+</style>
+@{
+    var Download_WO_waterMark = UserData.IsAuthorized(User, Constants.UserPermissions.Download_WO_waterMark);
+}
+
+ 
+    <div class="tab-pane fade show active" id="tab-home" role="tabpanel" aria-labelledby="home-tab">
+        <table class="table table-sm fs--1 mb-1" style="width:100%" id="DocsTblBody">
+            <thead>
+                <tr>
+                    <th>File Type</th>
+                    <th>File Name</th>
+                    <th>Revision</th>
+                    <th>Uploaded On</th>
+                    <th>Download</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Where(x => x.Source_table == "Engine_Parts_Master").ToList())
+                {
+                    <tr>
+                        <td>@item.Attachment_type</td>
+                        <td>@item.Orginal_File_Name</td>
+                        <td>@item.File_Revision</td>
+                        <td>@item.Updated_on</td>
+                        <td>
+                          @*  <a href="@(item.Attachment_location+item.Attachment_FileName)" target="_blank">Download</a>*@
+                        
+
+
+                        @if (Download_WO_waterMark)
+                        {
+                            <div class="dropdown font-sans-serif">
+                                <a class="btn btn-default dropdown-toggle" id="dropdownMenuLink" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Download</a>
+                                <div class="dropdown-menu dropdown-menu-end py-0" aria-labelledby="dropdownMenuLink">
+                                    <a class="dropdown-item" href="/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=false&fileKey=@item.Attachment_Db_Key">Download</a>
+                                    <a class="dropdown-item" href="/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=true&fileKey=@item.Attachment_Db_Key">Download w/o watermark</a>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <a href="~/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=false&fileKey=@item.Attachment_Db_Key" target="_blank">Download</a>
+                        }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+ @*   <div class="tab-pane fade" id="tab-profile" role="tabpanel" aria-labelledby="profile-tab">
+        <table class="table table-sm fs--1 mb-1" style="width:100%" id="SopTblBody">
+            <thead>
+                <tr>
+                    <th>File Type</th>
+                    <th>File Name</th>
+                    <th>Uploaded On</th>
+                    <th>Download</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Where(x => x.Source_table == "EngineBuildComponents").ToList())
+                {
+                    <tr>
+                        <td>@item.Attachment_type</td>
+                        <td>@item.Orginal_File_Name</td>
+                        <td>@item.Updated_on</td>
+                        <td><a href="@(item.Attachment_location+item.Attachment_FileName)" target="_blank">Download</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>*@
+ 
+
+<script>
+
+    //    $(document).ready(function () {
+
+    //    $('#DocsTblBody').DataTable();
+    //} );
+
+    $(document).ready(function () {
+        var groupColumn = 0;
+        var table = $('#DocsTblBody').DataTable({
+            "columnDefs": [
+                { "visible": false, "targets": groupColumn }
+            ],
+            "order": [[groupColumn, 'asc']],
+            "paging": false,
+            "searching": false,
+            "displayLength": 25,
+            "drawCallback": function (settings) {
+                var api = this.api();
+                var rows = api.rows({ page: 'current' }).nodes();
+                var last = null;
+
+                api.column(groupColumn, { page: 'current' }).data().each(function (group, i) {
+                    if (last !== group) {
+                        $(rows).eq(i).before(
+                            '<tr class="group"><td colspan="5">' + group + '</td></tr>'
+                        );
+
+                        last = group;
+                    }
+                });
+            }
+        });
+
+        // Order by the grouping
+        $('#DocsTblBody tbody').on('click', 'tr.group', function () {
+            var currentOrder = table.order()[0];
+            if (currentOrder[0] === groupColumn && currentOrder[1] === 'asc') {
+                table.order([groupColumn, 'desc']).draw();
+            }
+            else {
+                table.order([groupColumn, 'asc']).draw();
+            }
+        });
+
+
+
+        //var soptable = $('#SopTblBody').DataTable({
+        //    "columnDefs": [
+        //        { "visible": false, "targets": groupColumn }
+        //    ],
+        //    "order": [[groupColumn, 'asc']],
+        //    "paging": false,
+        //    "searching": false,
+        //    "displayLength": 25,
+        //    "drawCallback": function (settings) {
+        //        var api = this.api();
+        //        var rows = api.rows({ page: 'current' }).nodes();
+        //        var last = null;
+
+        //        api.column(groupColumn, { page: 'current' }).data().each(function (group, i) {
+        //            if (last !== group) {
+        //                $(rows).eq(i).before(
+        //                    '<tr class="group"><td colspan="5">' + group + '</td></tr>'
+        //                );
+
+        //                last = group;
+        //            }
+        //        });
+        //    }
+        //});
+
+        //$('#SopTblBody tbody').on('click', 'tr.group', function () {
+        //    var currentOrder = table.order()[0];
+        //    if (currentOrder[0] === groupColumn && currentOrder[1] === 'asc') {
+        //        table.order([groupColumn, 'desc']).draw();
+        //    }
+        //    else {
+        //        table.order([groupColumn, 'asc']).draw();
+        //    }
+        //});
+
+
+    });
+
+
+</script>

@@ -1,0 +1,272 @@
+﻿@model MPCRS.ViewModels.EngineBuildComponentViewModel
+@using MPCRS.Utilities;
+@using MPCRS.ViewModels;
+@{
+	Layout = null;
+	var Permission_Buid_Write = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Write);
+	var Permission_Sop_Documents_Read = UserData.IsAuthorized(User, Constants.UserPermissions.Sop_Documents_Read);
+	var Permission_Sop_Documents_Write = UserData.IsAuthorized(User, Constants.UserPermissions.Sop_Documents_Write);
+	var Permission_Sop_Documents_Delete = UserData.IsAuthorized(User, Constants.UserPermissions.Sop_Documents_Delete);
+	//var acsnStatusList = MPCRS.Utilities.Masters.GetMaster_General("ACSN_Status", false);
+	var DocTypeList = MPCRS.Utilities.Masters.GetMasterDropDownList(MPCRS.Utilities.Constants.MetaMasterCode.DocumentType, false);
+	List<SelectListItem> RevisionList = new List<SelectListItem>
+	{new SelectListItem() { Text = "NIL", Value = "NIL" }};
+	for (char c = 'A'; c <= 'Z'; c++)
+	{
+		RevisionList.Add(new SelectListItem { Text = c.ToString(), Value = c.ToString() });
+	}
+	var reportingparent = Masters.GetMPLParts();
+	var reportingtypes = MPCRS.Utilities.Masters.ReportingTypeList();
+}
+
+<style>
+
+	.textWarp {
+		word-wrap: break-word !important; /* Break long words and wrap them to the next line */
+		word-break: break-all !important;
+		white-space: normal !important; /* Allow text to wrap to the next line */
+	}
+</style>
+
+@{
+	if (Model.Id != 0)
+	{
+		<div class="row">
+			<div class="col-md-6">
+				<h4>@Model.PartDisplayName </h4>
+			</div>
+			@*   <div class="col-md-6">
+	//    <button class="btn btn-primary btn-sm" onclick="AddSopPart(0,@Model.Id)">Add New Part</button>
+	//</div> *@
+
+		</div>
+		<ul class="nav nav-underline" id="myTab" role="tablist">
+			<li class="nav-item" style="margin-right:10px"><a class="nav-link active" id="home-tab" data-bs-toggle="tab" href="#tab-home" role="tab" aria-controls="tab-home" aria-selected="true">Detail</a></li>
+			@{
+				if (Permission_Buid_Write)
+				{
+					<li class="nav-item" style="margin-right:10px"><a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#tab-profile" role="tab" aria-controls="tab-profile" aria-selected="false">Update</a></li>
+				}
+				if (Permission_Sop_Documents_Read)
+				{
+					<li class="nav-item"><a class="nav-link" id="documents-tab" data-bs-toggle="tab" href="#tab-documents" role="tab" aria-controls="tab-documents" aria-selected="false">Documents</a></li>
+				}
+			}
+			<li class="nav-item" style="margin-right:10px"><a class="nav-link" id="MPLDoc-tab" data-bs-toggle="tab" href="#tab-MPLDoc" role="tab" aria-controls="tab-MPLDoc" aria-selected="true">MPL Documents</a></li>
+
+		</ul>
+		<div class="tab-content" id="myTabContent">
+			<div class="tab-pane fade show active" id="tab-home" role="tabpanel" aria-labelledby="home-tab">
+				<div class="table">
+					<table class="table table-sm fs--1 mb-1" style="width:100%">
+						<tbody>
+							<tr>
+								<th>Part Number</th>
+								<td>@Model.DrawingNumber</td>
+							</tr>
+							<tr>
+								<th>Revision</th>
+								<td>@Model.Revision</td>
+							</tr>
+							<tr>
+								<th>Qty/Engine</th>
+								<td>@Model.QtyPerEngine</td>
+							</tr>
+							<tr>
+								<th>Description</th>
+								<td>@Model.Description</td>
+							</tr>
+							<tr>
+								<th>JobCard/Contract Number</th>
+								<td>@Model.JobCard</td>
+							</tr>
+
+							<tr>
+								<th>Serial Number</th>
+								<td class="textWarp">@Model.SerialNumber</td>
+							</tr>
+							<tr>
+								<th>Mfg Responsibility</th>
+								<td>@Model.Collaborators</td>
+							</tr>
+							<tr>
+								<th>Remarks</th>
+								<td>@Model.Remarks</td>
+							</tr>
+							<tr>
+								<th>Scheme Drawing Number</th>
+								<td>@Model.SchemeNumber</td>
+							</tr>
+							
+							<tr>
+								<th>Replaced</th>
+								<td>@Model.IsReplaced</td>
+							</tr>
+							<tr>
+								<th>Removed</th>
+								<td>@Model.IsRemoved</td>
+							</tr>
+
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="tab-pane fade" id="tab-profile" role="tabpanel" aria-labelledby="profile-tab">
+				@{
+					if (Permission_Buid_Write)
+					{
+						<form asp-action="UpdatePartDetail" id="formSOPupdate" asp-controller="SOPManagement" method="post">
+							<input type="hidden" asp-for="Id" />
+							<div class="form-floating mb-2">
+								<input asp-for="DrawingNumber" class="form-control" />
+								<label asp-for="DrawingNumber">Drawing Number</label>
+							</div>
+
+							<div class="form-floating mb-2">
+								<select asp-for="Revision" class="form-control" asp-items="RevisionList"></select>
+								<label asp-for="Revision">Revision</label>
+							</div>
+							<div class="form-floating mb-2">
+								<input asp-for="QtyPerEngine" class="form-control" type="number" />
+								<label asp-for="QtyPerEngine">Qty/Engine</label>
+							</div>
+							<div class="form-floating mb-2">
+								<textarea asp-for="Description" class="form-control" style="height: 90px"></textarea>
+								<label asp-for="Description">Description</label>
+							</div>
+							<div class="form-floating mb-2">
+								<input asp-for="JobCard" class="form-control" />
+								<label asp-for="JobCard">Job Card/Contract Number</label>
+							</div>
+							<div class="form-floating mb-2">
+								<textarea asp-for="SerialNumber" class="form-control buildSerialNo" ></textarea>
+								<label asp-for="SerialNumber">Serial Number</label>
+							</div>
+							<div class="form-floating mb-2">
+								<input asp-for="Remarks" class="form-control" />
+								<label asp-for="Remarks">Note</label>
+							</div>
+							<div class="form-floating mb-2">
+								<input asp-for="SchemeNumber" class="form-control" />
+								<label asp-for="SchemeNumber">Scheme Drawing Number</label>
+							</div>
+
+							<br />
+							<div class="row">
+
+								<div class="form-check form-switch col-3 ml-10" style="display:@(Model.IsActive==true ? "block" : "none")">
+									<input class="form-check-input" type="checkbox" asp-for="IsRemoved" />
+									<label asp-for="SchemeNumber">Is Removed</label>
+								</div>
+								<div class="form-check form-switch col-3 ml-10" style="display:@(Model.IsActive==false ? "block" : "none")">
+									<input class="form-check-input" type="checkbox" asp-for="IsActive" />
+									<label asp-for="SchemeNumber">Is Active</label>
+								</div>
+								<div class="form-check form-switch col-3" style="display:@(Model.IsActive==true ? "block" : "none")">
+									<input class="form-check-input" type="checkbox" asp-for="IsReplaced" />
+									<label asp-for="IsReplaced">Is Replaced</label>
+								</div>
+							</div>
+
+
+							<div class="mt-3">
+								<button class="btn btn-primary" type="button" id="btnCompSubmit" onclick="SubmitComponentDetail(this)">Submit</button>
+							</div>
+
+							@{
+								if (ViewBag.customAccess == "false")
+								{
+									<div class="accordion" id="accordion_advanceDetail">
+										<div class="accordion-item">
+											<h2 class="accordion-header" id="headingThree">
+
+												<button class="accordion-button collapsed" onclick="ManageAdvanceInfo(this)" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+													Additional Details
+												</button>
+											</h2>
+											<div class="accordion-collapse collapse" id="collapseThree" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+												<div class="accordion-body pt-0">
+
+													<div class="b-2">
+														<label style="cursor:pointer; color:blue; font-weight:bold" ondblclick="enableReportingParent()" asp-for="ReportingParent">Parent</label>
+														<select asp-for="ReportingParent" asp-items="reportingparent" class="form-control"></select>
+													</div>
+
+													<div class="b-2">
+														<label style="cursor:pointer; color:blue; font-weight:bold" asp-for="ReportingParent">Reporting Type</label>
+														<select asp-for="ReportingType" asp-items="reportingtypes" class="form-control"></select>
+													</div>
+
+													<div class="b-2">
+														<label style="cursor:pointer; color:blue; font-weight:bold" asp-for="ReportingParent">Assembly Reporting Type</label>
+														@{
+															var AssemblyReportingTypes = new List<SelectListItem>();
+															AssemblyReportingTypes.Add(new SelectListItem { Text = "Default", Value = "Default" });
+															AssemblyReportingTypes.Add(new SelectListItem { Text = "Direct Part", Value = "Direct Part" });
+															AssemblyReportingTypes.Add(new SelectListItem { Text = "Main Assembly", Value = "Main Assembly" });
+														}
+														<select class="form-select" asp-for="AssemblyReportingType" asp-items="AssemblyReportingTypes"></select>
+													</div>
+
+													<div class="mt-3">
+														<button class="btn btn-primary btn-sm" type="button" id="btnCompAddtionalSubmit" onclick="SubmitAddtionalComponentDetail(this)">Save Additional Info</button>
+													</div>
+
+												</div>
+											</div>
+										</div>
+									</div>
+								}
+							}
+					
+
+
+
+					
+					
+
+						</form>
+					}
+				}
+
+			</div>
+			<div class="tab-pane fade" id="tab-documents" role="tabpanel" aria-labelledby="documents-tab">
+				@{
+					if (Permission_Sop_Documents_Read)
+					{
+						<br />
+						<div id="Attachment-display" class="Attachment-display">
+							@{
+								attachmentData attData = new attachmentData();
+								attData.sourceAttachTable = "EngineBuildComponents";
+								attData.sourceAttachTableKey = Model.Id;
+								attData.deleteAccess = Permission_Sop_Documents_Delete;
+
+							}
+							<partial name="../Attachment/GetAttachments" model="@attData">
+						</div>
+						<hr />
+
+						if (Permission_Sop_Documents_Write)
+						{
+							<div>
+								<input type="hidden" name="Source_table_key" value="@Model.Id" />
+								<input type="hidden" name="Source_table" value="EngineBuildComponents" />
+								<select class="form-select form-select-sm mb-2" name="Attachment_type" asp-items="@DocTypeList"></select>
+								<input type="file" name="uploadeddocument" onchange="GlobalUploadFile(this)" />
+								<input type="hidden" name="deleteAccess" value="@Permission_Sop_Documents_Delete" />
+							</div>
+						}
+					}
+				}
+
+			</div>
+			<div class="tab-pane fade" id="tab-MPLDoc" role="tabpanel" aria-labelledby="MPLDoc-tab">
+			</div>
+		</div>
+
+	}
+}
+
+
+ 

@@ -1,0 +1,162 @@
+﻿@model List<MPCRS.ViewModels.NCRAssignmentsVM>
+@using MPCRS.Utilities;
+
+@{
+    ViewData["Title"] = "NCR Assignment List";
+    var NCR_Assignments_Admin = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Assignments_Admin);
+    var NCR_Module_User = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Module_User);
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-6">
+            <h4><i class="fas fa-clipboard-list"></i> NCR Assignments</h4>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="assignmnetListTbl">
+                    <thead class="table-dark">
+                        <tr>
+                           
+                            <th>NCR Number</th>
+                            <th>Part No</th>
+                            <th>Rev</th>
+                            <th>Received From/On</th>
+                            <th>Committee</th>
+                            <th>Status of Deviations</th>
+                            <th>Module</th>
+                            <th>Current Status</th>
+                            <th>Remarks</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.GroupBy(x => x.ReferenceNumber).Select(x => x.First()).OrderByDescending(x => x.AssignedOn))
+                        {
+                            <tr>
+                                
+
+                                <!-- NCR Number -->
+                                <td class="p-3"><strong>@item.ReferenceNumber</strong></td>
+
+                                <!-- Part No -->
+                                <td>@item.Draw_part_no / @item.PartDescription</td>
+
+                                <!-- Revision -->
+                                <td>@item.Revision</td>
+
+                                <!-- Received From/On -->
+                                <td>
+                                    @item.ReceivedFromString<br />
+                                    <i class="text-muted">@(MPGlobals.GetFormattedDate(item.ReceivedDate))</i>
+                                </td>
+
+                                <!-- Committee -->
+                                <td>@item.ComitteeReferred</td>
+
+                                <td style="max-width:25%;">
+                                    @{
+                                        MPCRS.ViewModels.NCRSerialNoDataVM nCRSerialNo = new();
+                                        nCRSerialNo.NCRGUID = item.NCRGUID;
+                                        nCRSerialNo.NCRWorkflowGUID = item.NCRWorkflowGUID;
+                                    }
+                                    <partial name="../Ncr/ncritemstatus" model="@nCRSerialNo">
+                       
+                                </td>
+
+                                <!-- Module/Stage -->
+                                <td>
+                                    @if (item.UseNewWorkflow == 1)
+                                    {
+                                        <span class="badge bg-info">@item.Module_Responsibilty_String</span>
+                                    }
+                                    else
+                                    {
+                                        @item.ModuleName
+                                    }
+                                </td>
+
+                                <!-- Current Status -->
+                                <td>
+                                    @if (item.UseNewWorkflow != 1)
+                                    {
+                                        @* Old workflow status logic *@
+                                        if (item.ForwardedToCHAIR_Rework == 1)
+                                        {
+                                            <p>Forwarded To CHAIR for <br /> Rework/Trial Assembly remarks</p>
+                                        }
+                                        else if (item.ForwardedToSTRESS_Rework == 1)
+                                        {
+                                            <p>Forwarded To STRESS for <br /> Rework/Trial Assembly remarks</p>
+                                        }
+                                        else if (item.ForwardedToTAS_Rework == 1)
+                                        {
+                                            <p>Forwarded To TAS for <br /> Rework/Trial Assembly remarks</p>
+                                        }
+                                        else if (item.ForwardedToModule_Rework == 1)
+                                        {
+                                            <p>Forwarded To Module for <br /> Rework/Trial Assembly remarks</p>
+                                        }
+                                        else if (item.ForwardedToSTRESS == 1)
+                                        {
+                                            <p>Forwarded To STRESS</p>
+                                        }
+                                        else if (item.ForwardedToTAS == 1)
+                                        {
+                                            <p>Forwarded To TAS</p>
+                                        }
+                                        else if (item.ForwardedToModule == 1)
+                                        {
+                                            <p>Forwarded To Module</p>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">@item.Status</small>
+                                    }
+                                </td>
+
+                                <!-- Remarks -->
+                                <td>@item.NCRRemarks</td>
+
+                                <!-- Actions -->
+                                <td class="text-center p-2">
+                                    @if (item.UseNewWorkflow == 1)
+                                    {
+                                        <a href="/NCRWorkflow/AssignmentDetail?id=@item.NCRWorkflowGUID&NCRGuid=@item.NCRGUID"
+                                           class="btn btn-sm btn-primary">
+                                             View
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="/NCR/AssignmentDetail?id=@item.NCRWorkflowGUID&NCRGuid=@item.NCRGUID"
+                                           class="btn btn-sm btn-secondary">
+                                             View
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/mpi/ncr.js" asp-append-version="true"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#assignmnetListTbl").DataTable({ 
+               "pageLength": 10,
+                ordering:false
+               
+            });
+        });
+    </script>
+}

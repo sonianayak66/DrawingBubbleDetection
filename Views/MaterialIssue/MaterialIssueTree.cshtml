@@ -1,0 +1,287 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@model List<MPCRS.ViewModels.MaterialIssueNoteDetails>
+
+@{
+	ViewData["Title"] = "Material Issue";
+	var MI_read = UserData.IsAuthorized(User, Constants.UserPermissions.MaterialIssue_Read);
+	var MI_write = UserData.IsAuthorized(User, Constants.UserPermissions.MaterialIssue_Write);
+	var MI_Delete = UserData.IsAuthorized(User, Constants.UserPermissions.MaterialIssue_Delete);
+	//var MaterialIssueList = Masters.GetMaterialIssueNote();
+
+}
+
+<link href="~/css/select2.min.css" rel="stylesheet" />
+<link href="~/css/style.min.css" rel="stylesheet" />
+
+
+<style>
+	.jstree-node {
+		font-size: 8pt;
+	}
+
+	.jstree-anchor-MaterialIssue {
+		color: black;
+		font-size: 10pt;
+	}
+
+	.jstree-anchor-demand {
+		color: black;
+		font-size: 10pt;
+	}
+
+	.jstree-anchor-IssueItems {
+		color: black;
+		font-size: 9pt;
+	}
+
+	.jstree-anchor-Receipts {
+		color: black;
+		font-size: 9pt;
+	}
+
+	.jstree-anchor-demandItems {
+		color: black;
+		font-size: 9pt;
+	}
+
+	.jstree-anchor-Item {
+		color: black;
+		font-size: 9pt;
+	}
+
+	.jstree-anchor-ForgingReceipt {
+		color: black;
+		font-size: 9pt;
+	}
+
+	.jstree-anchor-split {
+		color: black;
+		font-size: 9pt;
+	}
+
+	#MaterialIssuejstree .jstree-themeicon {
+		font-size: 9px; /* Adjust the font size as needed */
+	}
+
+	.jstree-default .jstree-icon {
+		width: 12px;
+		height: 12px;
+		line-height: 12px;
+	}
+
+	@@media print {
+		.exclude-print {
+			display: none;
+		}
+	}
+
+
+	td {
+		padding-top: 0.5px !important;
+		padding-bottom: 0.5px !important;
+	}
+
+ 
+
+</style>
+
+
+@* <div style="padding:2px; display:none" id="ToggleOpenControl">
+	<i class="uil uil-arrow-circle-right fs-3" style="cursor:pointer" onclick="toggleDemandTree('open')"></i>
+</div>
+<div class="row" style="margin-right:-55px!important; display:none">
+	<div class="col-3" style="vertical-align:top;padding:0px" id="treeControlPanel">
+		<div class="row">
+			<div class="col-6">
+				<i class="uil uil-arrow-circle-left fs-3" style="cursor:pointer" onclick="toggleDemandTree('close')"></i>
+			</div>
+			<div class="col-6">
+				<button class="btn btn-sm btn-default float-end" onclick="EditMaterialIssue(0)"><i class="text-primary uil uil-focus-add fs-2"></i></button>
+			</div>
+		</div>
+
+		<div class="row">
+			<input class="search-input form-control" placeholder="Search......." />
+		</div>
+
+		<div class="row" style="padding:0px">
+			<div class="input-group" style="padding:0px">
+				<input type="text" class="search-input form-control" placeholder="Search......." aria-label="Recipient's username" aria-describedby="basic-addon2">
+				<div class="input-group-append">
+					<span style="cursor:pointer" onclick="EditMaterialIssue(0)" class="input-group-text" id="basic-addon2">New Issue</span>
+				</div>
+			</div>
+		</div>
+
+		<div class="row">
+			<div style="max-height:600px!important;overflow-y:scroll; padding-left:0px!important;" class="card" id="areaDemandjstree">
+				need to change id
+				<div id="MaterialIssuejstree">
+				</div>
+			</div>
+		</div>
+
+	</div>
+</div> *@
+
+<div class="row">
+	<div class="col-9">
+
+		<h3>Material Issue Summary</h3>
+		@* <input type="hidden" />
+        <select class="form-select" asp-items="@MaterialIssueList" onchange="GetComponentDetail(this)" id="selectMaterialIssueList"></select> *@
+	</div>
+	<div class="col-3">
+		@{
+			if (MI_write)
+			{
+				<button onclick="EditMaterialIssue(0)" class="btn btn-success" id="basic-addon2">New Issue</button>
+			}
+			if (MI_read)
+			{
+				<a href="/MaterialIssue/MaterialIssueSummary/" class="btn btn-success">Issue Details</a>
+			}
+			<a href="/Home/Index/" class="btn btn-secondary">Back</a>
+		}
+
+	</div>
+</div>
+<br />
+
+<ul class="nav nav-underline" id="myTab" role="tablist">
+	 
+	<li class="nav-item" style="margin-right:10px"><a class="nav-link active" id="summary-tab" data-bs-toggle="tab" href="#tab-summary" role="tab" aria-controls="tab-home" aria-selected="true">Material Issue Summary</a></li>
+	<li class="nav-item" style="margin-right:10px"><a class="nav-link" id="BATLSummary-tab" data-bs-toggle="tab" href="#tab-BATLSummary" onclick="BATLIssueTbl.draw();" role="tab" aria-controls="tab-profile" aria-selected="false">Issue Summary (BATL)</a></li>
+
+</ul>
+
+<div class="tab-content">
+	<div class="tab-pane fade show active" id="tab-summary" role="tabpanel" aria-labelledby="summary-tab">
+		<table class="table table-bordered table-hover " id="materialIssueTbl">
+			<thead>
+				<tr>
+					@* <th>Demand Number</th> *@
+					<th>Order Number</th>
+					<th>Date</th>
+					<th>Vendor</th>
+					<th>Issued For</th>
+					@* <th>PMO Reference Number</th> *@
+					<th>Issue Purpose</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				@{
+					foreach (var item in Model)
+					{
+						<tr>
+							@* <td><span style="margin-left:5px;">@item.Demand_No</span></td> *@
+							<td>
+								@foreach (var orderNo in item.Order_Ref_No.Split(','))
+								{
+									<p style="margin-left:5px">@orderNo</p>
+								}
+							</td>
+
+							<td style="min-width:100px">@MPGlobals.GetFormattedDate(item.Order_Ref_Date)</td>
+							<td>@item.Vendor_Name</td>
+							<td>
+								@if (item.PartName != null)
+								{
+									string mmgOrderNo = "";
+									string previousOrderNo = "";
+									@foreach (var part in item.PartName.Split(','))
+									{
+										string PartName = part;
+										if (PartName.Contains("##;"))
+										{
+											var splitArry = PartName.Split("##;");
+											if (splitArry.Length == 2)
+											{
+												mmgOrderNo = splitArry[0];
+												PartName = splitArry[1];
+											}
+										}
+
+										PartName = (PartName.StartsWith('/')) ? PartName.Replace('/', ' ') : PartName;
+
+										if (previousOrderNo != mmgOrderNo && item.Order_Ref_No.Contains(","))
+										{
+											previousOrderNo = mmgOrderNo;
+											<p><b>@mmgOrderNo</b></p>
+										}
+										<p>@PartName</p>
+									}
+
+								}
+							</td>
+							@* <td>@item.PMO_Ref_No</td>*@
+							<td>@item.Issue_Purpose</td>
+							<td>
+								@{
+									<a style="margin-right:7px; color:blue;cursor:pointer" class="fas fa-info-circle fs-0" href="#" onclick="GetComponentDetail(@item.Issue_Dbkey)" title="Material Issue Details">Details </a>
+									if (MI_write)
+									{
+										<a style="margin-right:7px;color:blue;cursor:pointer" class="fa fa-edit fs-0" href="#" onclick="EditMaterialIssue(@item.Issue_Dbkey)" title="Edit Material Issue">Edit </a>
+									}
+									<a style="margin-right:7px;color:blue;cursor:pointer" class="fa fa-file fs-0" href="#" onclick="viewMaterialIssueDocuments(@item.Issue_Dbkey,'View')" title="Material Issue Documents">Doc </a>
+									if (MI_Delete)
+									{
+										<a style="color:red;cursor:pointer" class="fa fa-trash fs-0" onclick="DeleteMaterialIssue(@item.Issue_Dbkey)" title="Delete Material Issue">Delete Material Issue </a>
+									}
+								}
+							</td>
+						</tr>
+
+
+					}
+				}
+			</tbody>
+		</table>
+	</div>
+
+	<div class="tab-pane fade " id="tab-BATLSummary" role="tabpanel"  aria-labelledby="BATLSummary-tab">
+		Loading..
+	</div>
+</div>
+
+
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+
+
+	<script src="~/js/jstree.min.js" asp-append-version="true"></script>
+	<script src="~/mpi/materialissue.js" asp-append-version="true"></script>
+	<script>
+		$(function () {
+			$('#materialIssueTbl').DataTable(
+				{
+					paging: false,
+					stateSave: true,
+					stateSaveCallback: function (settings, data) {
+						localStorage.setItem(
+							'DataTables_' + settings.sInstance,
+							JSON.stringify(data)
+						);
+					},
+					stateLoadCallback: function (settings) {
+						return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+					},
+
+				});
+			UpdateNavHeading("Material Issue");
+			getBATLIssueSummary();
+			//  LoadMaterialJstree();
+			//SetTreeHeight();
+			// $('#selectMaterialIssueList').select2();
+			//getIssueDetails();
+
+		});
+
+
+	</script>
+
+}

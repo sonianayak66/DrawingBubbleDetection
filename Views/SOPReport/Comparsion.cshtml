@@ -1,0 +1,96 @@
+﻿@model MPCRS.ViewModels.SOPReportVM
+
+@{
+    ViewData["Title"] = "Comparison";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <h5>SOP to MPL Revision Comparison</h5>
+    </div>
+    <div class="col-md-3">
+        <h5>Baseline : @Model.engineBuildsVM.BaseLineEngineName</h5>
+    </div>
+    <div class="col-md-3">
+        <h5>Build : @Model.engineBuildsVM.BuildName</h5>
+    </div>
+</div>
+
+<hr />
+<div class="row">
+     <table id="Comparsiontbl" class="table table-bordered table-hover table-sm">
+         <thead>
+            <tr>
+                <th>Assembly</th>
+                <th>Part Number</th>
+                <th>Part Type</th>
+                <th>SOP Part Desc</th>
+                <th>SOP Revision</th>
+                <th>MPL Revision</th>
+                <th>Rev Deviation</th>
+                <th>SOP Part Status</th>
+            </tr>
+         </thead>
+         <tbody>
+             @{
+                 foreach (var item in Model.engineBuildComponents)
+                {
+                    <tr>
+                        <td>@item.ParentName</td>
+                        <td>@item.Draw_part_no</td>
+                        <td>@item.Type_Part_Name</td>
+                        <td>@item.SOP_BuildPartDescription</td>
+                        <td>@item.SOP_BuildPartRevision</td>
+                        <td>@item.Revision</td>
+                        <td>
+                            @{
+                                if (@item.Revision != item.SOP_BuildPartRevision)
+                                {
+                                    <span>true</span>
+                                }
+                                else{
+                                    <span>false</span>                                 
+                                }
+                             }
+                        </td>
+                        <td>@item.SOPPartStatus</td>
+                    </tr>
+                }
+             }   
+         </tbody>
+     </table>
+</div>
+
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+
+        $(document).ready(function () {
+
+            var Windowheight = window.innerHeight;
+            var x = $("#Comparsiontbl").position();
+            var tableHeight = (Windowheight - x.top) * 0.75;
+
+            $('#Comparsiontbl').DataTable({
+                paging:false,
+                sorting:false,
+                scrollY: tableHeight + 'px',
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excel'
+                    }
+                ]
+            });
+        });
+    </script>
+
+
+
+
+}
+

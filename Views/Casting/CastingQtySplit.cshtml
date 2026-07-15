@@ -1,0 +1,82 @@
+﻿@using Newtonsoft.Json;
+@using MPCRS.Utilities;
+@model string
+
+
+@{
+	Layout = null;
+
+	List<CastingReceiptQtySplit> castingQtySplit = new();
+
+	string cmdStr = $"EXEC dbo.GetCastingQtySplit @ReceiptSplitKeys='{Model}'";
+
+	System.Data.DataTable dt = MPCRS.Utilities.MPGlobals.GetDataForDatalist(cmdStr);
+	try
+	{
+		if (dt.Rows.Count > 0)
+		{
+			string json = JsonConvert.SerializeObject(dt);
+			castingQtySplit = JsonConvert.DeserializeObject<List<CastingReceiptQtySplit>>(json);
+		}
+
+	}
+	catch (Exception ex)
+	{
+		ErrorHandler.LogException(ex);
+		throw;
+	}
+	
+
+
+	if (castingQtySplit.Count > 0)
+	{
+		<table class="table table-bordered m-0">
+			<tbody>
+				@{
+					var TotalQty = castingQtySplit.Select(x => x.SplitQty).Sum();
+					foreach (var item in castingQtySplit
+						//.Where(x => x.SplitQty > 0)
+					)
+					{
+						<tr>
+							<td class="p-0" style="width:100px!important">@item.StatusRemarks</td>
+							<td class="p-0 text-end" style="width:40px!important;padding-right:10px!important"><b>@item.SplitQty</b> </td>
+							<td class="p-0" style="padding-left:10px!important;word-wrap:break-word!important;">
+								@if (item.SerialNos.Split(',').Count() > 9)
+								{
+									<div style="max-height:100px;max-width:300px;overflow:hidden;" class="serialNoDiv">
+										@foreach (var serialNo in item.SerialNos.Split(','))
+										{
+											<span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark ">@serialNo</span>
+										}
+									</div>
+									<i class="fas fa-angle-down fa-1x" style="cursor:pointer" onclick="viewMore(this,'serialNoDiv')"></i>
+								}
+								else
+								{
+									<div style="max-width:300px;">
+										@foreach (var serialNo in item.SerialNos.Split(','))
+										{
+											<span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark ">@serialNo</span>
+										}
+									</div>
+								}
+							</td>
+						</tr>
+					}
+					if (castingQtySplit.Count > 1)
+					{
+						<tr>
+							<td class="p-0" style="width:150px!important"><b>Total</b></td>
+							<td class="p-0 text-end" style="width:40px!important;padding-right:10px!important"><b>@TotalQty</b> </td>
+							<td class="p-0" style="padding-left:10px!important;word-wrap:break-word!important;"> </td>
+						</tr>
+					} 
+				}
+			</tbody>
+		</table>
+	}
+}
+
+
+

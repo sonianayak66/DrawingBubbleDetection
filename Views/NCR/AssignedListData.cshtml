@@ -1,0 +1,24 @@
+﻿@model List<MPCRS.ViewModels.NCRAssignmentsVM>
+@{
+    Layout = null;
+}
+<table class ="table table-bordered">
+    <tbody>
+        @{
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td class="p-2">@item.Draw_part_no/ @item.PartDescription</td>
+                    <td>@item.Revision</td>
+                    <td>@item.ReceivedFromString<br /><i>@(MPCRS.Utilities.MPGlobals.GetFormattedDate(item.ReceivedDate))</i></td>
+                    <td>@item.ComitteeReferred</td>
+                    <td></td>
+                    <td class="p-2">@item.ModuleName</td>
+                    <td>@item.UserName<br /><i>@(MPCRS.Utilities.MPGlobals.GetFormattedDateTime(item.AssignedOn))</i></td>
+                    <td>@item.Remarks</td>
+                    <td></td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

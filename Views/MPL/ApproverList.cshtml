@@ -1,0 +1,169 @@
+﻿@model MPCRS.ViewModels.BaseLineEngineApproversVm
+@using MPCRS.Utilities;
+@using System.Data;
+
+@{
+    ViewBag.Title = "AddApprovers";
+
+    var BLE_write = UserData.IsAuthorized(User, Constants.UserPermissions.BaseLineEngine_Write);
+    // Layout = "~/Views/Shared/_LayoutPage.cshtml";
+}
+
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-sm-10">
+                <h3>Add Authorized By  To the Engine</h3>
+                
+            </div>
+            <div class="col-sm-2 pull-right">
+                <a href="/Home" style="margin-right:4px" class="btn btn-secondary float-end ">Back</a>
+                <button class="btn btn-primary float-end" style="margin-right:10px;" onclick="Create(@ViewBag.BlEngineDbkey,0)">Create</button>
+            </div>
+        </div>
+    </div>
+</div>
+<hr />
+<div class="col-md-12 col-sm-12 col-lg-12 divc">
+    <div class="row">
+        <h2>@Model.Engine_Title</h2>
+    </div>
+    <hr />
+    <table id="ApproverDataTable" data-toggle="table" class="table table-sm fs--1 mb-2">
+        <thead>
+            <tr>
+                @* <th>Engine</th> *@
+                <th class="RoleNames" hidden>Terminology</th>
+                <th>Module Name</th>
+                <th>Person</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                if (Model.BaseLineEngine.Count > 0)
+                {
+                    foreach (var item in Model.BaseLineEngine)
+                    {
+                            <tr>
+                                
+                                @*  <th> @item.Engine_Title</th>*@
+                                <td class="RoleNames" hidden>@item.RoleName</td>
+                                <td>@item.ModuleName</td>
+                                <td>@item.Person_Name</td>
+                                <td>
+                                    <a type="button" class="btn btn-primary btn-sm" style="margin-right:10px;" onclick="Create(@item.BL_Engine_Dbkey,@item.BL_Approvers_Dbkey)">Edit</a>
+                                <a type="button" class="btn btn-danger btn-sm" onclick="DeleteApproverdata(@item.BL_Approvers_Dbkey)">Delete</a>
+                                </td>
+                            </tr>
+                    }
+                }
+            }
+
+        </tbody>
+    </table>
+</div>
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script type="text/javascript">
+        var VendorsDataList = [];
+
+        $(document).ready(function () {
+            //getRawmaterialsData();
+           // window.location.reload();
+            dataTable = $("#ApproverDataTable").DataTable({
+                paging: false,
+                drawCallback: function (settings) {
+                    var api = this.api();
+                    var rows = api.rows({ page: 'current' }).nodes();
+                    var last = null;
+
+                    api.column('.RoleNames', { page: 'current' }).data().each(function (group, i) {
+                        if (last !== group) {
+                            $(rows).eq(i).before(
+                                '<tr class="align-items-center text-center" style="background-color:#007bff38" ><td colspan="4">' + group + '</td></tr>'
+                            );
+
+                            last = group;
+                        }
+                    });
+                }
+
+            });
+        });
+
+
+
+       
+        function Create(BLengineDbkey, Blapproverkey) {
+            $.ajax({
+                url: '/MPL/AddApprovers/?BlEngineDbKey=' + BLengineDbkey + '&BlApproversDbKey=' + Blapproverkey,
+
+                type: 'GET',
+                success: function (data) {
+                    bootbox.alert({
+                        message: data,
+                        size: 'medium',
+                        buttons: {
+                            ok: {
+                                className: 'd-none',
+                                //callback: function () {
+                                //    if (!$('#FrmRecp').valid()) { return false }
+                                //}
+                            }
+                        },
+
+
+                    });
+                }
+            });
+        }
+
+        function submitApprovers() {
+            var Bldbkey = document.getElementById("BL_Engine_Dbkey").value;
+            if (!$('#FrmRecp').valid()) {
+                return false
+            }
+            var data = $("#FrmRecp").serialize();
+            $.ajax({
+                type: 'POST',
+                url: '/MPL/AddApprovers',
+                data: data,
+                success: function (data) {
+                    bootbox.alert(data.msg,
+                        function () {
+                            var btn = document.getElementsByClassName("bootbox-close-button")[0];
+                            btn.click();
+                        });
+                },
+                error: function (data) { bootbox.alert(data.msg) }
+            });
+        }
+
+        function DeleteApproverdata(BlApproversDbKey) {
+            bootbox.confirm("Are you certain you wish to remove this approver's access?", function (result) {
+                if (result) {
+                    $.ajax({
+                        type: "POST",
+                        url: "/MPL/RemoveApprover?BlApproversDbKey=" + BlApproversDbKey,
+                        success: function (data) {
+                            if (data.success) {
+                                bootbox.alert("Deleted Successfully");
+                            }
+                            else {
+                                bootbox.alert(data.msg)
+                            }
+                        },
+                    });
+                }
+                else {
+                    bootbox.alert("Deletion canceled.");
+                }
+            }
+            );
+        }
+
+    </script>
+}

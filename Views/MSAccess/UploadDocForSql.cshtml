@@ -1,0 +1,40 @@
+﻿<form method="post" enctype="multipart/form-data" asp-action="UploadDocument">
+    <div>
+        <label for="document">Upload Document:</label>
+        <input type="file" id="document" name="document" />
+    </div>
+    <button type="submit">Upload</button>
+</form>
+
+
+@section Scripts {
+
+    <script>
+        $(document).ready(function () {
+            $('#uploadButton').click(function () {
+                var formData = new FormData();
+                var fileInput = $('#document')[0].files[0];
+
+                if (fileInput) {
+                    formData.append("document", fileInput);
+                    $.ajax({
+                        url: '/Document/UploadDocument', // Your controller's action URL
+                        type: 'POST',
+                        data: formData,
+                        contentType: false,
+                        processData: false,
+                        success: function (response) {
+                            bootbox.alert("Uploaded sucessfully");
+                        },
+                        error: function (error) {
+                            $('#resultMessage').text("Error uploading file.");
+                        }
+                    });
+                } else {
+                    bootbox.alert("select a file ");
+                }
+            });
+        });
+    </script>
+}
+

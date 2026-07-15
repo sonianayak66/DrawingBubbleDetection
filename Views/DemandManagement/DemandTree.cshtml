@@ -1,0 +1,260 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@{
+	ViewData["Title"] = "Demands";
+	var Demand_write = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write);
+	var canReadFinancial = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Financial_Read);
+	
+	var demandSelectList = Masters.GetDemandSelectList();
+	var DemandingOfficersList = Masters.GetDemandingOfficersList("DemandDashBoard");
+	var projects = MPGlobals.GetDataForDatalist("dbo.ProjectList_SP");
+}
+
+<link href="~/css/select2.min.css" rel="stylesheet" />
+<link href="~/css/style.min.css" rel="stylesheet" />
+
+<style>
+	.jstree-node {
+		font-size: 8pt;
+	}
+
+	.jstree-anchor-project {
+		color: black;
+		font-size: 12pt;
+	}
+
+	.jstree-anchor-demand {
+		color: black;
+		font-size: 10pt;
+	}
+
+	.jstree-anchor-demanditems {
+		color: black;
+		font-size: 9pt;
+	}
+
+	.jstree-anchor-demandreceipts {
+		color: black;
+		font-size: 9pt;
+	}
+
+	.jstree-anchor-demandItems {
+		color: black;
+		font-size: 9pt;
+	}
+
+	.jstree-anchor-demandreceiptItems {
+		color: black;
+		font-size: 9pt;
+	}
+
+	.jstree-anchor-otherItems {
+		color: black;
+		font-size: 9pt;
+	}
+
+	.jstree-anchor-split {
+		color: black;
+		font-size: 9pt;
+	}
+
+	#Demandjstree .jstree-themeicon {
+		font-size: 9px; /* Adjust the font size as needed */
+	}
+
+	.jstree-default .jstree-icon {
+		width: 12px;
+		height: 12px;
+		line-height: 12px;
+	}
+
+	@@media print {
+		.exclude-print {
+			display: none;
+		}
+	}
+</style>
+
+<div class="row">
+	<div class="col-3">
+		<b>Project</b>
+		<select class="form-select" id="projectlist" onchange="LoadProjectDemand();GetDemandListInTableFormat() ">
+			<option value="0">All</option>
+			@{
+
+				foreach (DataRow row in projects.Rows)
+				{
+					<option value="@row["Project_Dbkey"]">@row["Title"]</option>
+				}
+			}
+
+		</select>
+	</div>
+	<div class="col-3">
+		<b>Demanding officer</b>
+		<select class="form-select" id="Demand-officer-select" onchange="LoadProjectDemand();GetDemandListInTableFormat()" asp-items="@DemandingOfficersList"></select>
+	</div>
+	<div class="col-3">
+		<b>Demand</b>
+		<input type="hidden" value="@ViewBag.DemandID" id="selected-demand-id" />
+		<input type="hidden" id="SelectedDemandDbKey" value="@ViewBag.DemandID" />
+		<select class="form-select" id="Demand-select" onchange="getDemandInfo(this); GetDemandListInTableFormat(); document.getElementById('details-tab').click();" asp-items="@demandSelectList"></select>
+
+	</div>
+	<div class="col-1">
+		@{
+			if (Demand_write)
+			{
+				<button onclick="EditDemandDetail(0)" class="btn btn-success btn-sm">New Demand</button>
+			}
+		}
+	</div>
+	<div class="col-1">
+		@{
+			<a  href="/DemandManagement/DemandReceiptsHistory/" class="btn btn-success btn-sm">Receipt Details</a>
+		}
+	</div>
+
+	<div class="col-1">
+		@{
+			if (canReadFinancial)
+			{
+				<button type="button" onclick="GoToBulkEditFinancialDetails()" class="btn btn-warning btn-sm">
+					View Financial Details
+				</button>
+			}
+		}
+	</div>
+
+</div>
+
+<ul class="nav nav-underline" id="myTab" role="tablist">
+	<li class="nav-item" style="margin-right:10px"><a class="nav-link active" id="list-tab" data-bs-toggle="tab" href="#tab-list" role="tab" aria-controls="tab-profile" onclick="demandListDataTbl.draw();" aria-selected="false">List</a></li>
+	<li class="nav-item" style="margin-right:10px"><a class="nav-link" id="details-tab" data-bs-toggle="tab" href="#tab-details" role="tab" aria-controls="tab-home" aria-selected="true">Details</a></li>
+	<li class="nav-item" style="margin-right:10px"><a class="nav-link" id="excecutive-summary-tab" data-bs-toggle="tab" href="#tab-executive-summary" role="tab"  aria-controls="tab-summary" aria-selected="true">Executive summary</a></li>
+	@* <li class="nav-item" style="margin-right:10px"><a class="nav-link" id="dashboard-tab" data-bs-toggle="tab" href="#tab-dashboard" role="tab" aria-controls="tab-dashboard" aria-selected="true">Dashboard</a></li> *@
+
+</ul>
+
+<div class="tab-content">
+
+
+	<div class="tab-pane fade " id="tab-details" role="tabpanel" aria-labelledby="details-tab">
+		
+		<div class="row" id="statusDisplayArea">
+		</div>
+
+		<div style="padding:2px; display:none" id="ToggleOpenControl">
+			<i class="uil uil-arrow-circle-right fs-3" style="cursor:pointer" onclick="toggleDemandTree('open')"></i>
+		</div>
+		<div class="row" style="margin-right:-55px!important">
+			<div class="col-0" style="vertical-align:top;padding:0px;display:none" id="treeControlPanel">
+				@*  <div class="row">
+				<div class="col-6">
+				<i class="uil uil-arrow-circle-left fs-3" style="cursor:pointer" onclick="toggleDemandTree('close')"></i>
+				</div>
+				<div class="col-6">
+				<button class="btn btn-sm btn-default float-end" onclick="EditDemandDetail(0)" data-bs-toggle="tooltip" data-bs-placement="top" title="Create New Demand"><i class="text-primary uil uil-focus-add fs-2"></i></button>
+				</div>
+				</div> *@
+
+				<div class="row" style="padding:0px">
+					<span>Number of search count:<span id="jstreeSearchcount">0</span></span>
+					<div class="input-group" style="padding:0px">
+						<input type="text" class="search-input form-control" placeholder="Search......." aria-label="Recipient's username" aria-describedby="basic-addon2">
+						@{
+							if (Demand_write)
+							{
+								<div class="input-group-append">
+									<span style="cursor:pointer" onclick="EditDemandDetail(0)" class="input-group-text" id="basic-addon2">New Demand</span>
+								</div>
+							}
+						}
+					</div>
+					@*  <input class="search-input form-control" placeholder="Search......." /> *@
+				</div>
+
+
+
+
+				<div class="row">
+					<div style="max-height:600px!important;overflow-y:scroll; padding-left:0px!important;" class="card" id="areaDemandjstree">
+						<div id="Demandjstree">
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<div class="col-12" id="demand-detail-area">
+				<div class="card">
+					<div class="card-body" id="DemandManagerDiv" style="padding-top:2px!important">
+					</div>
+				</div>
+			</div>
+		</div>
+
+		
+	</div>
+
+	<div class="tab-pane fade show active" id="tab-list" role="tabpanel" aria-labelledby="list-tab"></div>
+
+	<div class="tab-pane fade " id="tab-executive-summary" role="tabpanel" aria-labelledby="excecutive-summary-tab">Loading..
+	
+	</div>
+
+
+	<div class="tab-pane fade " id="tab-dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+		Loading..
+	</div>
+	
+	
+
+	
+</div>
+
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+
+	<script src="~/assets/HighCharts/highcharts.js"></script>
+	<script src="~/assets/HighCharts/data.js"></script>
+	<script src="~/assets/HighCharts/exporting.js"></script>
+	<script src="~/assets/HighCharts/accessibility.js"></script>
+
+	<script src="~/js/jstree.min.js" asp-append-version="true"></script>
+	<script src="~/mpi/Demand.js" asp-append-version="true"></script>
+	<script src="~/js/select2.min.js"></script>
+
+
+	<script>
+		$(function () {
+			UpdateNavHeading("Manage Demands");
+			GetDemandListInTableFormat();
+			var demandID = document.getElementById("selected-demand-id").value;
+			if (demandID != 0) {
+				document.getElementById("Demand-select").value = demandID;
+				document.getElementById("SelectedDemandDbKey").value = demandID;//Added
+				getDemandInfo(document.getElementById("Demand-select"));
+				// setTimeout(function() {
+			document.getElementById('details-tab').click();
+		//}, 500);  // Small delay to ensure demand info loads first
+				GetExecutiveSummary('All');
+			} else {
+				LoadProjectDemand();
+			}
+			$('#Demand-select').select2();
+			$('#projectlist').select2();
+			$('#Demand-officer-select').select2();
+			$('#demandDetailsTable').DataTable();
+			// LoadDemandJstree();
+			
+			SetTreeHeight();
+		});
+
+	</script>
+
+		
+
+
+}

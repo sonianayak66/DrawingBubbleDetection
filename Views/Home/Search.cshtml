@@ -1,0 +1,79 @@
+﻿@{
+    ViewData["Title"] = "Search Part Number";
+}
+
+<div class="row">
+    <h2>Search result of part - @ViewBag.PartNumber</h2>
+    <hr />
+    @{
+
+        if (@ViewBag.PartNumber != "NOT FOUND")
+        {
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="card">
+                        <div class="card-body">
+                            <partial name="../Home/_PartBasicInfo.cshtml" model="@ViewBag.PartNumber" />
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="card">
+                        <div class="card-body">
+                            <partial name="../Home/_RevisionHistory.cshtml" model="@ViewBag.PartNumber" />
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="card">
+                        <div class="card-body">
+                            <partial name="../Home/_MasterSearchSOPBuild.cshtml" model="@ViewBag.PartNumber" />
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="card">
+                        <div class="card-body">
+                            <partial name="../Home/_MasterSearchDemandDetails.cshtml" model="@ViewBag.PartNumber" />
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="card">
+                        <div class="card-body">
+                            <partial name="../Home/_MasterSearchMaterialIssued.cshtml" model="@ViewBag.PartNumber" />
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="card">
+                        <div class="card-body">
+                            <partial name="../Home/_MasterSearchNCR.cshtml" model="@ViewBag.PartNumber" />
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="card">
+                        <div class="card-body">
+                            <partial name="../Home/_MasterSearchACSN.cshtml" model="@ViewBag.PartNumber" />
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="row">
+                    <div class="card">
+                        <div class="card-body">
+                            <partial name="../Home/_MasterSerachOrderDetail.cshtml" model="@ViewBag.PartNumber" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    } 
+</div>

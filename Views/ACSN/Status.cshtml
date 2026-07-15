@@ -1,0 +1,105 @@
+﻿@using MPCRS.ViewModels;
+@using MPCRS.Models
+@model List<MPCRS.ViewModels.ACSNItemVm>
+@{
+    Layout = null;
+
+    if (ViewBag.ACSN != null)
+    {
+         ACSN maintableData = ViewBag.ACSN;
+
+         <div class="row col-12" >
+            <div class="col-6"><b>ACSN No:</b> @maintableData.ACSNnum </div>
+            <div class="col-6"><b>Part No:</b> @maintableData.DrawingNumber </div>
+         </div>
+    }
+}
+
+<div class="accordion" id="accordionExample">
+    @{
+        var acsnStatusList = MPCRS.Utilities.Masters.GetMaster_General("ACSN_Status", false);
+        var DocTypeList = MPCRS.Utilities.Masters.GetMasterDropDownList(MPCRS.Utilities.Constants.MetaMasterCode.DocumentType, false);
+
+        foreach (var item in Model)
+        {
+            <form id="Form_@item.ACSNStatusKey" asp-action="ACSNStatus" asp-controller="ACSN">
+                <div class="accordion-item border-top border-300">
+                    <h2 class="accordion-header" id="Heading_@item.ACSNStatusKey">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_@item.ACSNStatusKey" aria-expanded="false" aria-controls="collapse_@item.ACSNStatusKey">
+                            <span style="width:65%">@item.StepName</span>   <span style="width:35%"> <span class="float-end badge badge-phoenix fs--2 badge-phoenix-success">@item.acsnStatus</span> </span>
+                        </button>
+                    </h2>
+                    <div class="accordion-collapse collapse" id="collapse_@item.ACSNStatusKey" aria-labelledby="headingOne" data-bs-parent="#accordionExample" style="">
+                        <div class="accordion-body pt-0" style="min-height:150px">
+                            <input type="hidden" name="ACSNStatusKey" asp-for="@item.ACSNStatusKey" />
+                            <div class="col-12">
+
+                                <div class="form-group row">
+                                    <div class="col-8">
+                                        <div class="form-floating mb-3">
+                                            <select asp-for="@item.acsnStatus" name="acsnStatus" class="form-select form-select-sm" asp-items="@acsnStatusList"></select>
+                                            <label asp-for="@item.acsnStatus">Status</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="form-floating mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" asp-for="@item.isActiveStatus" name="isActiveStatus" type="checkbox" />
+                                                <label class="form-check-label" asp-for="@item.isActiveStatus">Current Step</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group row">
+                                    <div class="col-6">
+                                        <div class="form-floating mb-3">
+                                            <input class="form-control form-control-sm" name="StartDate" asp-for="@item.StartDate" type="date" placeholder="AA" />
+                                            <label asp-for="@item.StartDate"></label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-floating mb-3">
+                                            <input class="form-control form-control-sm" name="EndDate" asp-for="@item.EndDate" type="date" placeholder="AA" />
+                                            <label asp-for="@item.EndDate"></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="@item.Remarks"></label>
+                                    <textarea asp-for="@item.Remarks" rows="3" name="Remarks" class="form-control"></textarea>
+                                </div>
+
+                                <div class=" mb-3">
+                                    <label>Attachments</label>
+                                    <div id="Attachment-display" class="Attachment-display">
+                                        @{
+                                            attachmentData attData = new attachmentData();
+                                                attData.sourceAttachTable = "ACSNItems";
+                                                attData.sourceAttachTableKey = item.ACSNStatusKey;
+                                        }
+                                        <partial name="../Attachment/GetAttachments" model="@attData">
+                                    </div>
+                                    <div >
+                                        <input type="hidden" name="Source_table_key" value="@item.ACSNStatusKey" />
+                                        <input type="hidden" name="Source_table" value="ACSNItems" />
+                                        <select class="form-select form-select-sm mb-2"  name="Attachment_type" asp-items="@DocTypeList"></select> 
+                                        <input type="file" name="uploadeddocument" onchange="GlobalUploadFile(this)" />
+                                        <input type="hidden" name="deleteAccess" value="true" />
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    <button type="button" onclick="SubmitItemStatus(this)" class="btn btn-primary">Save</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+        }
+    }
+</div>

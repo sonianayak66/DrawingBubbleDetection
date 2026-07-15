@@ -1,0 +1,62 @@
+﻿@model MPCRS.ViewModels.AssignNCRWorkflowVM
+@using MPCRS.Models;
+@{
+    var modules = ViewBag.Modules as List<Master_General>;
+}
+
+<form id="AssignNCRWorkflowForm">
+    <input type="hidden" id="ncrguid" value="@Model.NCRGuid" />
+
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="">
+                <i class="fas fa-info-circle"></i>
+                <strong>NCR No. :</strong> @Model.ReferenceNumber<br />
+                <strong>Part: </strong> @Model.PartInfo
+            </div>
+        </div>
+    </div>
+
+    <!-- Module Selection -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <label for="ModuleSelect" class="form-label">
+                <strong>Select Module:</strong>
+                <span class="text-danger">*</span>
+            </label>
+            <select id="ModuleSelect"  required>
+                <option value="">-- Select Module --</option>
+                @foreach (var module in modules)
+                {
+                    <option value="@module.Master_Dbkey">@module.Master_Name</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- User Selection -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <label for="UsersSelect" class="form-label">
+                <strong>Select Users:</strong>
+                <span class="text-danger">*</span>
+            </label>
+            <select id="UsersSelect"   multiple required disabled>
+                @* <option value="">-- Select Module First --</option> *@
+            </select>
+            <small class="text-muted">Users will be loaded based on selected module</small>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <button type="button" class="btn btn-success" onclick="saveInitialNCRAssignment()">
+                <i class="fas fa-save"></i> Assign NCR
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="bootbox.hideAll()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</form>
+

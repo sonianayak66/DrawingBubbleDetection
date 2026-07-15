@@ -1,0 +1,38 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@model MPCRS.ViewModels.PartManufacturingStatusVM
+@{
+    Layout = null;
+}
+<style>
+    .jconfirm.jconfirm-modern .jconfirm-box div.jconfirm-content {
+        text-align: left;
+        font-size: 15px;
+        color: #777;
+        margin-bottom: 25px;
+    }
+</style>
+@{
+    DataTable dataTable = MPGlobals.GetDataForDatalist("Exec GetMfgStatusFromJson @PartRelationKey=" + Model.Part_relation_dbkey + "");
+
+    <div class="col-md-12">
+        <label>Manufacturing Status : @Model.PartNumber</label>
+    </div>
+    <div class="col-md-12 ">
+        <table class="table table-bordered">
+            <tbody>
+                @{
+                    foreach (DataRow item in dataTable.Rows)
+                    {
+                        <tr>
+                            <th>@item["name"]</th>
+                            <td>@item["value"]</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+
+}

@@ -1,0 +1,68 @@
+﻿@model string
+@using System.Data
+@using MPCRS.Utilities
+<style>
+	.basicinfores {
+		color: #18c68a !important;
+	}
+
+</style>
+
+@{
+	var dt = MPGlobals.GetDataForDatalist($"[dbo].[MasterSearch_BasicInfo_SSP] @PartNumber = '{Model}'");
+}
+
+@{
+	if (dt.Rows.Count > 0)
+	{
+		<table class="table table-sm">
+			<thead>
+				<tr>
+					<th colspan="9" class="basicinfores">BASIC INFO</th>
+				</tr>
+				<tr>
+					<th class="basicinfores">PART NO.</th>
+					<th class="basicinfores">DESCRIPTION</th>
+					<th class="basicinfores">TYPE</th>
+					<th class="basicinfores">REV</th>
+					<th class="basicinfores">QTY</th>
+					<th class="basicinfores">MOD RESP</th>
+					<th class="basicinfores">EXEC RESP</th>
+					<th class="basicinfores">ASSY/PART</th>
+					<th class="basicinfores">RAW MATERIAL</th>
+					<th class="basicinfores ">ATTACHMENTS</th>
+
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<th>@dt.Rows[0]["Draw_part_no"]</th>
+					<th>@dt.Rows[0]["Description"]</th>
+					<td>@dt.Rows[0]["Type_Part_Name"]</td>
+					<td>@dt.Rows[0]["Revision"]</td>
+					<td>@dt.Rows[0]["Quantity"]</td>
+					<td>@dt.Rows[0]["Module_Responsibility_"]</td>
+					<td>@dt.Rows[0]["Execution_Resp"]</td>
+					<td>@dt.Rows[0]["parent_partno"]</td>
+					<td>@dt.Rows[0]["RMName"]</td>
+					<td style="max-width:250px;">
+						@if (dt.Rows[0]["AttachmentFiles"] != DBNull.Value && !string.IsNullOrEmpty(dt.Rows[0]["AttachmentFiles"].ToString()))
+						{
+							@Html.Raw(dt.Rows[0]["AttachmentFiles"])
+						}
+						else
+						{
+							<span class="text-muted">-</span>
+						}
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	}
+	else
+	{
+		<h4>No data available</h4>
+	}
+}
+
+

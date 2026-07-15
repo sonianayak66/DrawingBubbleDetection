@@ -1,0 +1,139 @@
+﻿@model MPCRS.ViewModels.DemandDataEntryStatus
+@{
+    ViewBag.Title = "InventoryReportDetail";
+}
+ <style>
+
+    table td {
+        word-wrap: break-word;
+        max-width: 400px;
+    }
+
+    #demandstatustbl td {
+        white-space: inherit;
+    }
+
+
+ </style>
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-md-10">
+                <h4>Demand Data Entry Status</h4>
+            </div>
+            <div class="col-md-2 text-end">
+                <a href="/Report/ProcurementReports" style="margin-left: 4px;" class="btn btn-secondary  btn-smaller float-end">Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table class="table table-sm table-bordered table-hover" id="demandstatustbl"> 
+    <thead>
+        <tr>
+            <th style="width:5%!important">Sl</th>
+            <th style="width:5%!important">Demand No</th>
+            <th style="width:10%!important">Desc</th>
+            <th style="width:5%!important">Type</th>
+            <th style="width:5%!important">Officer</th>
+            <th style="width:5%!important">MMG FileNo</th>
+            <th style="width:15%!important">Items Count</th>
+            <th style="width:30%!important">Receipts & Docs</th>
+            <th style="width:5%!important">MarkStatus</th>
+        </tr>    
+    </thead>
+         <tbody>
+        @{
+            int serialNumber = 1;
+            foreach (var item in Model.procurement_Demands_VM.OrderBy(x=>x.Item_Type).ToList())
+            { 
+                var ditems = Model.Procurement_Demand_Items_VM.Where(x => x.DemandDbKey == item.DemandDbKey).ToList();
+                var dreceipts = Model.Procurement_Demand_Receipt.Where(x => x.DemandDbKey == item.DemandDbKey).ToList();
+                var itemsDivId = "#collapseItems" + item.DemandDbKey;
+                var itemsDivFor = "collapseItems" + item.DemandDbKey;
+                var RitemsDivId = "#collapseRItems" + item.DemandDbKey;
+                var RitemsDivFor = "collapseRItems" + item.DemandDbKey;
+
+
+
+
+                <tr>
+                    <td>@serialNumber</td>
+                    <td>@item.Demand_No</td>
+                        <td>@item.Item_Description</td>
+                    <td>@item.Item_Type</td>
+                    <td>@item.DemandOfficerName</td>
+                        <td>@item.MMG_File_No</td>
+                        <td>
+                        <p> <button class="btn btn-secondary ms-sm-2 mt-2" type="button" data-bs-toggle="collapse" data-bs-target="@itemsDivId" aria-expanded="false" aria-controls="@itemsDivFor">@ditems.Count()</button></p>
+                          <div class="collapse" id="@itemsDivFor">
+                                @{
+                                 <ul class="list-group">
+                                     @foreach (var Rm in ditems.OrderBy(x => x.New_Item_name))
+                                     {
+                                         <li class="list-group-item d-flex justify-content-between align-items-center">@Rm.New_Item_name<span class="badge badge-light-primary rounded-pill">@Rm.Qty</span></li>
+                                     }
+                  
+                                 </ul>  
+                                }
+                                      
+                          </div>
+                        </td>
+                        <td>
+                        <p> <button class="btn btn-secondary ms-sm-2 mt-2" type="button" data-bs-toggle="collapse" data-bs-target="@RitemsDivId" aria-expanded="false" aria-controls="@RitemsDivFor">@dreceipts.Count()</button></p>
+                        <div class="collapse" id="@RitemsDivFor">
+                            @{
+                                <ul class="list-group">
+                                    @foreach (var rcp in dreceipts.OrderBy(x => x.Receipt_Date))
+                                    {
+                                        var itemname = ditems.Where(x => x.DemandItemKey == rcp.DemandItemKey).FirstOrDefault();
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        @rcp.Receipt_No [@itemname.New_Item_name]
+                                        <span class="badge badge-light-primary rounded-pill">@rcp.Receiving_inventory</span>|
+                                            
+                                            @foreach (var splits in Model.procurement_ReceiptItemSplits.Where(x=>x.Receipt_dbkey == rcp.Receipt_dbkey).ToList())
+                                            {
+                                                if (!string.IsNullOrEmpty(splits.Attachment_Db_Key) && splits.Attachment_Db_Key != "0")
+                                                {
+                                                    <span class="badge badge-light-primary rounded-pill">@splits.Batch_No <i class="far fa-check-circle"></i></span>
+                                                }
+                                                else{
+
+                                                    <span class="badge badge-light-primary rounded-pill">@splits.Batch_No  <i class="far fa-times-circle"></i></span>
+                                                }
+                                            }
+                                          
+                                           
+                                        </li>
+                                    }
+
+                                </ul>
+                            }
+                               </div>
+                        </td>
+                        <td><button class="btn btn-sm">Mark</button></td>
+                    </tr>
+
+                serialNumber++; // Increment serial number for the next row
+               
+            }
+         }
+        </tbody>
+</table>
+
+
+@section Scripts {
+
+        <script>
+
+        $(document).ready(function () {
+            $('#demandstatustbl').DataTable({
+            paging:false
+            
+            });
+        });
+
+
+        </script>
+}
+                   

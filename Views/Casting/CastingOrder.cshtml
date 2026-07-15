@@ -1,0 +1,145 @@
+﻿@model MPCRS.ViewModels.CastingDetailViewModel
+@using MPCRS.Utilities
+
+@{
+var DemandingOfficersList = Masters.GetDemandingOfficersList();
+}
+<div class="col-12">
+       <form id="CastingForm" method="post">
+        <input asp-for="CastingDbkey" type="hidden" />
+
+        <table class="table table-sm table-bordered table-hover table-primary" style="border:1px!important solid;border-color:black">
+            <tr>
+                <th>Demand Number</th>
+                <td>
+                    <input class="form-control" asp-for="DemandNumber" type="text">
+                    <span asp-validation-for="DemandNumber" class="text-danger"></span>
+                </td>
+
+                <th>MMG Number</th>
+                <td>
+                    <input class="form-control" asp-for="MMGOrderNumber">
+                    <span asp-validation-for="MMGOrderNumber" class="text-danger"></span>
+                </td>
+
+                <th>Status</th>
+                <td>
+                    <select asp-for="OrderStatus" class="form-select">
+                        <option value="Open">Open</option>
+                        <option value="InProgress">InProgress</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                    <span asp-validation-for="DeliveryDate" class="text-danger"></span>
+                </td>
+            </tr>
+            <tr>
+                <th>Demand Description </th>
+                <td colspan="5">
+                    <input class="form-control" asp-for="DemandDesc">
+                    <span asp-validation-for="DemandDesc" class="text-danger"></span>
+                </td>
+            </tr>
+            <tr>
+                <th>Order Date</th>
+                <td>
+                    <input class="form-control" asp-for="OrderDate" type="date">
+                    <span asp-validation-for="OrderDate" class="text-danger"></span>
+                </td>
+                <th>Remarks</th>
+                <td colspan="3">
+                    <input class="form-control" asp-for="Remarks" type="text">
+                    <span asp-validation-for="Remarks" class="text-danger"></span>
+                </td>
+            
+            </tr>
+            <tr>
+                <th>Order Number(s)</th>
+                <td >
+                    <input class="form-control" asp-for="OrderNumbers" type="text">
+                    <span asp-validation-for="OrderNumbers" class="text-danger"></span>
+                </td>
+                <th>Demanding Officer</th>
+                <td colspan="3">
+                    <select asp-for="DemandingOfficer" asp-items="@DemandingOfficersList" class="form-select"></select>
+                    <span asp-validation-for=DemandingOfficer class="text-danger"></span>
+                </td>
+            </tr> 
+        </table>
+
+     @*   <div class="row">
+            <div class="col-8">
+                <label asp-for="OrderNumber"></label>
+                <input class="form-control" asp-for="OrderNumber" type="text">
+                <span asp-validation-for="OrderNumber" class="text-danger"></span>
+            </div>
+            <div class="col-4">
+                <label asp-for="OrderDate"></label>
+                <input class="form-control" asp-for="OrderDate" type="date">
+                <span asp-validation-for="OrderDate" class="text-danger"></span>
+            </div>
+        </div>
+        <br />
+        <div class="row">
+            <div class="col-12">
+                <label asp-for="VendorIds"></label>
+                <select asp-for="VendorIds" asp-items="vendorslist" class="form-select" multiple="multiple"></select>
+                <span asp-validation-for="VendorIds" class="text-danger"></span>
+            </div>
+        </div>
+        <br />
+        <div class="row">
+            <div class="col-6">
+                <label asp-for="RawMaterial"></label>
+                <select asp-for="RawMaterial" asp-items="rawmaterialList" class="form-select"></select>
+                <span asp-validation-for="RawMaterial" class="text-danger"></span>
+            </div>
+            <div class="col-3">
+                <label asp-for="DeliveryDate"></label>
+                <input class="form-control" asp-for="DeliveryDate" type="date">
+                <span asp-validation-for="DeliveryDate" class="text-danger"></span>
+            </div>
+            <div class="col-3">
+                <label asp-for="Status"></label>
+                <select asp-for="Status" class="form-select">
+                    <option value="Open">Open</option>
+                    <option value="InProgress">InProgress</option>
+                    <option value="Closed">Closed</option>
+                </select>
+                <span asp-validation-for="DeliveryDate" class="text-danger"></span>
+            </div>
+
+            <div class="col-4" style="display:none">
+                <label asp-for="TotalQty"></label>
+                <input class="form-control" asp-for="TotalQty">
+                <span asp-validation-for="TotalQty" class="text-danger"></span>
+            </div>
+            <div class="col-4" style="display:none">
+                <label asp-for="SerialNumber"></label>
+                <input class="form-control" asp-for="SerialNumber">
+                <span asp-validation-for="SerialNumber" class="text-danger"></span>
+            </div>
+        </div>
+        <br />
+        <div class="row">
+            <div class="col-12">
+                <label asp-for="MMGOrderNumbers"></label>
+                <input class="form-control" asp-for="MMGOrderNumbers">
+                <span asp-validation-for="MMGOrderNumbers" class="text-danger"></span>
+            </div>
+        </div>
+        <br />
+        <div class="row">
+            <div class="col-12">
+                <label asp-for="Remarks"></label>
+                <textarea class="form-control" asp-for="Remarks"></textarea>
+                <span asp-validation-for="Remarks" class="text-danger"></span>
+            </div>
+        </div>
+        <br />*@
+        <div class="row">
+            <div class="col-12">
+                <input type="button" value="Submit" class="btn btn-success btn-sm btn-small float-end" onclick="SubmitCastingOrder()" />
+            </div>
+        </div>
+       </form>
+</div>

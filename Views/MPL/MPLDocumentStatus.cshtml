@@ -1,0 +1,96 @@
+﻿ 
+
+<div class="page-header">
+    <h3>MPL Drawing Status</h3>
+</div>
+
+<div class="col-md-12">
+    <table id="datatables"  class="table table-bordered table-condensed" cellspacing="0" style="width:100%;">
+        <thead>
+            <tr>
+                <th>Part Type</th>
+                <th>Part Code</th>
+                <th>Part Revision</th>
+                <th>Desc</th>
+                <th>File Type</th>
+                <th>File Name</th>
+                <th>File Revision</th>
+                <th>Uploaded On</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+
+
+        $(function () {
+            GetMPLDocumentsdata();
+        });
+
+        function handleNull(data) {
+            return data === null ? '' : data;
+        }
+
+
+        var dataTable;
+        function GetMPLDocumentsdata() {
+
+            try {
+                dataTable.destroy();
+            } catch (e) {
+            }
+
+            dataTable = $("#datatables").DataTable({
+                "ajax": {
+                    "url": "/MPL/GetMPLDocumentStatus",
+                    "type": "GET",
+                    "dataSrc":  "",
+                    "datatype": "json"
+                },
+                responsive: true,
+                scrollY: 510,
+                paging: false,
+                order: false,
+                "order": [[0, "asc"]],
+                dom: 'Bfrtip',
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem(
+                        'DataTables_' + settings.sInstance,
+                        JSON.stringify(data)
+                    );
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                },
+                buttons: [{
+                    extend: 'excel',
+                    title: 'MPL Drawing Status',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7] //Your Colume value those you want
+                    }
+                }],
+
+                "columns": [
+                    { "data": "Type_Part_Name"},
+                    { "data": "Draw_part_no"},
+                    { "data": "Revision"},
+                    { "data": "Description" },
+                    { "data": "Attachment_type" },
+                    { "data": "Orginal_File_Name"},
+                    { "data": "File_Revision" },
+                    { "data": "Updated_on" } 
+                ], 
+            }); 
+        }
+    
+    </script>
+
+} 

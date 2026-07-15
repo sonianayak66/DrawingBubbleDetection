@@ -1,0 +1,475 @@
+﻿@model MPCRS.ViewModels.ReportData
+@using System.Data
+
+@{
+    ViewBag.Title = "MPLReports";
+    Layout = null;
+}
+
+
+<head>
+
+
+    <link rel="apple-touch-icon" sizes="180x180" href="~/assets/img/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="~/assets/img/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="~/assets/img/favicons/favicon-16x16.png">
+    <link rel="shortcut icon" type="image/x-icon" href="~/assets/img/favicons/favicon.ico">
+    <link rel="manifest" href="~/assets/img/favicons/manifest.json">
+    <script src="~/assets/js/config.js"></script>
+    <link href="~/fonts/gfonts/gfonts.css" rel="stylesheet" />
+    <link href="~/bundle/bundledstyles.min.css" asp-append-version="true" rel="stylesheet" />
+    <link href="~/css/bootstrap-select.min.css" rel="stylesheet" />
+
+
+    <style type="text/css">
+        .bg-mp {
+            background-color: #343b70 !important;
+        }
+
+/*        .img,.img-thumbnail{
+            width:150px;
+            height: 150px;
+            align-items:center;
+           
+        }*/
+    </style>
+
+    <style type="text/css" id="basicStyles">
+        input.larger {
+            width: 20px;
+            height: 20px;
+        }
+
+    </style>
+
+    <style type="text/css" id="style_A4" media="print">
+        @@page {
+            size: A4 landscape;
+            margin: 6mm 6mm 15mm 6mm;
+
+            @@bottom-left {
+                content: counter(page) ' of ' counter(pages);
+            }
+        }
+
+        table-condensed .dropdown-menu {
+            position: relative; /* Sometimes needs !important */
+        }
+
+        a[href]:after {
+            content: none !important;
+        }
+
+        img[src]:after {
+            content: none !important;
+        }
+
+        footer {
+            position: fixed;
+            height: 70px;
+            bottom: 0;
+            width: 100%;
+        }
+
+        input.larger {
+            width: 25px;
+            height: 25px;
+        }
+
+        .table-condensed > tfoot > tr > td {
+            border: none;
+        }
+
+        .table-condensed > thead > tr > th, .table-condensed > tbody > tr > th, .table-condensed > thead > tr > td, .table-condensed > tbody > tr > td {
+            padding: 1.5px;
+            border: 1px solid #000000 !important;
+        }
+
+        .table-condensed {
+            border: none;
+        }
+
+        @@media print {
+            .noPrint {
+                display: none;
+            }
+
+
+            a[href]:after {
+                content: none !important;
+            }
+
+            img[src]:after {
+                content: none !important;
+            }
+
+            .pagebreak {
+                clear: both;
+                page-break-before: always;
+            }
+            /* page-break-after works, as well */
+            footer {
+                position: fixed;
+                height: 70px;
+                bottom: 0;
+                width: 100%;
+            }
+
+            .footername {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                font-weight: bold
+            }
+
+            .table-condensed > thead > tr > th, .table-condensed > tbody > tr > th, .table-condensed > thead > tr > td, .table-condensed > tbody > tr > td {
+                padding: 1.5px;
+                border: 1px solid #000000 !important;
+            }
+
+            .table-condensed > tfoot > tr > td {
+                border: none;
+            }
+
+            .table-condensed {
+                border: none;
+            }
+
+            tr {
+                max-height: 40px !important;
+            }
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+        }
+
+    </style>
+
+
+    <style>
+
+        .tblMfg > tbody > tr > td, .tblMfg > tbody > tr > th, .tblMfg > tfoot > tr > td, .tblMfg > tfoot > tr > th, .tblMfg > thead > tr > td, .tblMfg > thead > tr > th {
+            padding: 2px;
+            line-height: 0.95;
+            vertical-align: top;
+            border-top: 0.5px solid rgba(0, 0, 0, .05);
+            font-size: small;
+            margin: 2px !important;
+            margin-bottom: 2px !important;
+        }
+
+        /*        .MfgStatus {
+                    visibility: hidden;
+                }*/
+
+    </style>
+
+  
+
+
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top noPrint" style="margin-bottom:50px!important; background-color:blanchedalmond">
+        <div class="col-md-6 text-center">
+            <div class="col-md-12">
+                <input class="larger displayctrl" onclick="ManageComponentDisplay(this);" type="checkbox" checked id="displayTitle" />
+                <label for="displayTitle" style="margin-right:10px">Display Title</label>
+
+                <input class="larger displayctrl" onclick="ManageComponentDisplay(this);" type="checkbox" checked id="displayApprovers" />
+                <label for="displayApprovers" style="margin-right:10px">Display Approvers</label>
+
+                <input class="larger displayctrl" onclick="ManageComponentDisplay(this);" type="checkbox" checked id="displayIndex" />
+                <label for="displayIndex" style="margin-right:10px">Display Index</label>
+
+                <input class="larger displayctrl" onclick="ManageComponentDisplay(this);" type="checkbox" checked id="DIRECT_PART" />
+                <label for="PW00000_-_DIRECT_PARTS" style="margin-right:10px">Display direct Parts</label>
+            </div>
+            <div class="col-md-6">
+                <button class="btn btn-info btn-sm" onclick="printDiv()">Print</button>
+                <button class="btn btn-info btn-sm" onclick="AdditionalColSettings()">Settings</button>
+                <button class="btn btn-info btn-sm" onclick="ExcelDownload('@ViewBag.key')">Excel</button>
+            </div>
+
+       
+        </div>
+        <div class="col-md-6 text-center">
+            <select id="AssyDisplay" data-style="btn-default" class="selectpicker" multiple>
+                @{
+                    foreach (var item in Model.mPLReportDatas.Where(x => x.IsParent != "Yes" && x.ReportGroupIdentifier != null && x.ReportGroupIdentifier != "Direct Part").Select(x => new { x.ReportGroupIdentifier }).Distinct())
+                    {
+                        int AssemblyParentID = int.Parse(item.ReportGroupIdentifier.Split('_')[item.ReportGroupIdentifier.Split('_').Length - 1]);
+                        <option value="@item.ReportGroupIdentifier.Trim().Replace(' ', '_')">@Model.mPLReportDatas.Where(x => x.Engine_Part_Dbkey == AssemblyParentID).Select(x => (x.Draw_part_no)).FirstOrDefault()</option>
+                    }
+                }
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="DisplayAssyLevel()">Filter Assy</button>
+            @{
+                SelectList Module_ResponsibilityList = MPCRS.Utilities.Masters.GetMaster_General("Module_Responsibility");
+                @Html.DropDownList("Collabs", Module_ResponsibilityList, new { @class = "selectpicker", @multiple = "multiple" })
+            }
+            
+            <button class="btn btn-primary btn-sm" onclick="DisplayCollabItems()">Filter Resp</button>
+       
+        </div>
+    </nav>
+
+ 
+      <div class="col-md-12 col-sm-12 col-lg-12" id="printableArea">
+                <div class="row displayTitle">
+                    <partial name="_MPLReportTitle" model="@Model.mPLReportDatas" />
+                </div>
+                <div class="pagebreak displayTitle"></div>
+                <div class="row displayApprovers">  
+                    <div class="col-md-12">
+                        <partial name="_BL_Engine_Approvers" model="@Model.bL_Engine_Approvers" />
+                    </div>
+                </div>
+                <div class="pagebreak displayApprovers"></div>
+                <div class="row displayIndex">
+                    <div class="col-8">
+                        <partial name="_PageIndexMPL" model="@Model.mPLReportDatas" />
+                    </div>
+                    <div class="col-4">
+                <div class="row text-center">
+                            <h3>@Model.mPLReportDatas.FirstOrDefault().engineDescription</h3>
+                        </div>
+                <div class="row text-center">
+                            <partial name="_ApproverSignatures" model="@Model.bL_Engine_Approvers" />
+                        </div>
+                    </div>
+                </div>
+                <div class="pagebreak"></div>
+                <div class="row">
+                    <div class="col-md-12">
+                                <partial name="_DirectPartsMPLNew" model="@Model.mPLReportDatas" />
+                    </div>
+                </div>
+                <footer class="fixed-bottom">
+                    <span id="engineDesc" style="font-size:small" class="pull-left align-baseline footername">@Model.mPLReportDatas.FirstOrDefault().engineDescription</span>
+                </footer>
+       </div>
+ 
+
+
+    <script src="~/bundle/bundledScripts.min.js" asp-append-version="true"></script>
+    <script src="~/js/bootstrap-select.min.js" asp-append-version="true"></script>
+    <script src="~/mpi/common.js" asp-append-version="true"></script>
+    <script src="~/mpi/attachment.js" asp-append-version="true"></script>
+    <script src="~/mpi/mpl.js" asp-append-version="true"></script>
+    <script>
+        $(document).ready(function () {
+            let rows = document.getElementsByClassName("MfgStatus");
+            for (var j = 0; j < rows.length; j++) {
+                rows[j].style.display = "none";
+            }
+        });
+
+        function printDiv() {
+            window.print();
+        }
+
+        function DisplayAssyLevel() {
+            var AssyDisplay = document.getElementById("AssyDisplay");
+            var SelectedAssy = $("#AssyDisplay").val();
+
+            for (var i = 0; i < AssyDisplay.length; i++) {
+                document.getElementsByClassName(AssyDisplay[i].value)[0].style.display = "none";
+                document.getElementsByClassName(AssyDisplay[i].value)[1].style.display = "none";
+            }
+
+            if (SelectedAssy.length == 0) {
+                for (var i = 0; i < AssyDisplay.length; i++) {
+                    document.getElementsByClassName(AssyDisplay[i].value)[0].style.display = "";
+                    document.getElementsByClassName(AssyDisplay[i].value)[1].style.display = "";
+                }
+            } else {
+                for (var i in SelectedAssy) {
+                    document.getElementsByClassName(SelectedAssy[i])[0].style.display = "";
+                    document.getElementsByClassName(SelectedAssy[i])[1].style.display = "";
+                }
+            }
+
+        }
+        function DisplayCollabReset() {
+            let rows = document.getElementsByClassName("Collabs");
+            for (var j = 0; j < rows.length; j++) {
+                rows[j].style.display = "";
+            }
+
+        }
+        function DisplayCollabItems() {
+            var CollabsDropDown = document.getElementById("Collabs");
+            var SelectedCollabs = $('#Collabs option:selected').toArray();
+
+            let rows = document.getElementsByClassName("Collabs");
+            if (SelectedCollabs.length == 0) {
+                for (var j = 0; j < rows.length; j++) {
+                    rows[j].style.display = "";
+                }
+
+            } else {
+                for (var j = 0; j < rows.length; j++) {
+                    rows[j].style.display = "none";
+                }
+            }
+
+            for (var k in SelectedCollabs) {
+                let cls = SelectedCollabs[k].innerHTML.trim().replace(' ', '-');
+                console.log(cls);
+                let rowss = document.getElementsByClassName(cls);
+                for (var y = 0; y < rowss.length; y++) {
+                    rowss[y].style.display = "";
+                }
+            }
+        }
+        function ManageComponentDisplay(ctrl) {
+            var elements = document.getElementsByClassName(ctrl.id);
+            for (i = 0; i < elements.length; i++) {
+                elements[i].style.display = '';
+                if (ctrl.checked == false) {
+                    elements[i].style.display = 'none';
+                }
+            }
+        }
+
+        function SaveAssemblyDisplyOrder(controlClass) {
+            var elements = document.getElementsByClassName(controlClass);
+            var PartsArray = new Array();
+
+            for (var i = 0; i < elements.length; i++) {
+                var items = {};
+                var part_assy = elements[i].getAttribute('data-type');
+                if (elements[i].id != 0) {
+                    items.Engine_Part_Dbkey = elements[i].id;
+                    items.AssemblyDisplayOrder = elements[i].value;
+                    items.Part_relation_dbkey = elements[i].getAttribute('data-content');
+                    items.Part_Remarks = part_assy;
+                    PartsArray.push(items);
+                }
+            }
+            $.ajax({
+                type: "POST",
+                url: "/MPL/UpdateMPLAssemblyDisplayOrder",
+                data:
+                {
+                    'MPLDisplayOrders': JSON.stringify(PartsArray)
+                },
+                dataType: 'json',
+                cache: false,
+                success: function (data) {
+                    if (data.success) {
+                        $.notify("Updated Successfully", "success");
+                        window.location.reload();
+                    } else {
+                        $.notify("Something went wrong ! Please try again", "danger");
+                        window.location.reload();
+                    }
+                }
+            });
+
+
+
+        }
+
+  // Will implement while doing Part creation
+        // function AdditionalPartsInfo(ID, Part_relation_dbkey) {
+        //     ViewChangesOnMPL('/Engines/Engine/UpdateAdditionalPartInfo?id=' + ID + '&Part_relation_dbkey=' + Part_relation_dbkey, 'Additional Parts Info')
+        // }
+
+        // Will implement while doing Part creation
+        function ViewChangesOnMPL(url, title) {
+            if (title == null) {
+                title = "Change Log";
+            }
+            $.get(url)
+                .done(function (response) {
+                    $.dialog({
+                        title: title,
+                        typeAnimated: true,
+                        closeIcon: true,
+                        closeIconClass: 'fa fa-times',
+                        theme: 'modern',
+                        type: 'dark',
+                        //modal : true,
+                        // height: "auto",
+                        //  width:"auto",
+                        columnClass: 'col-md-12',
+                        content: response,
+                    });
+
+                });
+        }
+
+ 
+
+        // To dislay Mfg status and other columns
+        function AdditionalColSettings() {
+
+            bootbox.dialog({
+                title: 'Display Settings',
+                message: "<div class='col-md-12'>" +
+                    "<input class='larger displayctrl RegularComments' onclick='ManageComponentDisplay(this);' type='checkbox' checked id='PartComments' />" +
+                    "<label for='PartComments' style='margin-right:10px'>Display Comments</label> </br>" +
+                    "<input class='larger displayctrl ManufacturingComments' onclick='ManageComponentDisplay(this);' type='checkbox' checked id='ManufacturingComments' />" +
+                    "<label for='ManufacturingComments' style='margin-right:10px'>Display Manufacturing Comments</label>  </br>" +
+                    "<input class='larger displayctrl' onclick='ManageComponentDisplay(this);' type='checkbox'  id='MfgStatus' />" +
+                    "<label for='MfgStatus' style='margin-right:10px' id='MfgStatus' onclick='ManageComponentDisplay(this);'>Display Mfg Status</label>" +
+                    "</div>",
+                centerVertical: true,
+                callback: function (result) {
+                    console.log(result);
+                }
+            });
+
+ 
+        }
+
+
+        // -- This method is commented in RowItem partial view
+        function PartManfStatus(id) {
+            var formDiv = $('<div/>');
+            var url = '/Engines/Engine/VendorStatus?id=' + id + "&Readonly=1";
+            $.get(url)
+                .done(function (response) {
+                    $.dialog({
+                        title: 'Part Manufacturing Status',
+                        typeAnimated: true,
+                        closeIcon: true,
+                        closeIconClass: 'fa fa-times',
+                        theme: 'modern',
+                        type: 'dark',
+                        //modal : true,
+                        // height: "auto",
+                        //  width:"auto",
+                        columnClass: 'col-md-12 col-sm-12 col-lg-12 col-xs-12',
+                        content: response,
+                    });
+
+                });
+        }
+
+        function ExcelDownload(key) {
+
+            var CollabsDropDown = document.getElementById("Collabs");
+            var SelectedCollabs = $('#Collabs option:selected').toArray();
+
+            //console.log(SelectedCollabs);
+            //var str = SelectedCollabs.join([separator = '#'])
+            //console.log(str);
+            var arr = [];
+            for (var k in SelectedCollabs) {
+                let cols = SelectedCollabs[k].innerHTML.trim().replace(' ', '-');
+                arr.push(cols);
+            }
+            console.log(arr.join([separator = '#']))
+            var dnlink = "/MPL/ExcelExportMPL?id=" + @ViewBag.key + "&colbs=" + arr.join([separator = ','])
+            window.open(dnlink, '_blank');
+        }
+
+    </script>
+</body>
+
+
+

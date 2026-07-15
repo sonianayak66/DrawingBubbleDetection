@@ -1,0 +1,413 @@
+﻿@model MPCRS.ViewModels.ModuleWiseNCRListVM
+@using System.Text.Json
+
+@{
+	ViewData["Title"] = "Module Wise NCR List";
+}
+
+<style>
+	.mwnl-chart-panel {
+		background: #fff;
+		border: 1px solid #dee2e6;
+		border-radius: 8px;
+		box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+		padding: 14px 16px 10px;
+		margin-bottom: 12px;
+	}
+
+	.mwnl-page-title {
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: #212529;
+		margin-bottom: 2px;
+	}
+
+	.mwnl-page-subtitle {
+		font-size: 0.78rem;
+		color: #6c757d;
+		margin-bottom: 10px;
+	}
+
+	/* ── Filter chips ── */
+	.mwnl-filter-bar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-bottom: 10px;
+		align-items: center;
+	}
+
+	.mwnl-filter-label {
+		font-size: 12px;
+		font-weight: 600;
+		color: #6c757d;
+		margin-right: 4px;
+	}
+
+	.mwnl-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 4px 10px;
+		border-radius: 999px;
+		border: 1px solid #dee2e6;
+		background: #f8f9fa;
+		font-size: 12px;
+		font-weight: 600;
+		color: #495057;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		user-select: none;
+	}
+
+		.mwnl-chip:hover {
+			background: #e9ecef;
+			border-color: #adb5bd;
+		}
+
+		.mwnl-chip.active {
+			background: #0d6efd;
+			border-color: #0d6efd;
+			color: #fff;
+		}
+
+			.mwnl-chip.active .mwnl-chip-count {
+				background: rgba(255,255,255,0.25);
+				color: #fff;
+			}
+
+		/* Status chip active states — colored bg + white text */
+		.mwnl-chip.active.mwnl-chip-cleared {
+			background: #198754 !important;
+			border-color: #198754 !important;
+			color: #fff !important;
+		}
+		.mwnl-chip.active.mwnl-chip-rejected {
+			background: #dc3545 !important;
+			border-color: #dc3545 !important;
+			color: #fff !important;
+		}
+		.mwnl-chip.active.mwnl-chip-partial {
+			background: #fd7e14 !important;
+			border-color: #fd7e14 !important;
+			color: #fff !important;
+		}
+		.mwnl-chip.active.mwnl-chip-inprocess {
+			background: #0d6efd !important;
+			border-color: #0d6efd !important;
+			color: #fff !important;
+		}
+
+	.mwnl-chip-count {
+		background: #dee2e6;
+		color: #495057;
+		border-radius: 999px;
+		padding: 1px 6px;
+		font-size: 11px;
+		font-weight: 700;
+	}
+
+	/* ── Status filter chips — default (unselected) colors ── */
+	.mwnl-chip-cleared  { border-color: #198754; color: #198754; }
+	.mwnl-chip-rejected { border-color: #dc3545; color: #dc3545; }
+	.mwnl-chip-partial  { border-color: #fd7e14; color: #fd7e14; }
+	.mwnl-chip-inprocess{ border-color: #0d6efd; color: #0d6efd; }
+
+	.modal-xl-custom {
+		max-width: 95%;
+	}
+</style>
+
+<!-- ── Page header ── -->
+<div class="d-flex justify-content-between align-items-start mb-2">
+	<div>
+		<div class="mwnl-page-title">Module Wise NCR List</div>
+		<div class="mwnl-page-subtitle">NCR assignments grouped by module</div>
+	</div>
+	<a href="/NCR/AssignedNCRList" class="btn btn-secondary btn-sm">
+		<i class="uil uil-arrow-left me-1"></i>Back
+	</a>
+</div>
+
+<!-- ── Chart panel ── -->
+<div class="mwnl-chart-panel">
+	<div style="height: 220px;">
+		<canvas id="moduleNcrChart"></canvas>
+	</div>
+</div>
+
+<!-- ── Module filter chips ── -->
+<div class="mwnl-filter-bar" id="moduleChipBar">
+	<span class="mwnl-filter-label">Module:</span>
+	<span class="mwnl-chip active" data-module="" onclick="filterByModule(this, '')">
+		All
+	</span>
+	@foreach (var m in Model.Summary.OrderBy(x => x.ModuleName))
+	{
+		<span class="mwnl-chip" data-module="@m.ModuleName" onclick="filterByModule(this, '@m.ModuleName')">
+			@m.ModuleName <span class="mwnl-chip-count">@m.NCRCount</span>
+		</span>
+	}
+</div>
+
+<!-- ── Status filter chips ── -->
+<div class="mwnl-filter-bar" id="statusChipBar">
+	<span class="mwnl-filter-label">Status:</span>
+	<span class="mwnl-chip active" data-status="" onclick="filterByStatus(this, '')">All</span>
+	<span class="mwnl-chip mwnl-chip-cleared" data-status="Cleared" onclick="filterByStatus(this, 'Cleared')">Cleared</span>
+	<span class="mwnl-chip mwnl-chip-rejected" data-status="Rejected" onclick="filterByStatus(this, 'Rejected')">Rejected</span>
+	<span class="mwnl-chip mwnl-chip-partial" data-status="Processed - Partially Cleared" onclick="filterByStatus(this, 'Processed - Partially Cleared')">Partially Cleared</span>
+	<span class="mwnl-chip mwnl-chip-inprocess" data-status="__inprocess__" onclick="filterByStatus(this, '__inprocess__')">In Process</span>
+</div>
+
+<!-- ── Detail table ── -->
+<div class="row">
+	<div class="col-md-12 table-responsive">
+		<table class="table table-bordered table-sm fs--1" id="moduleWiseNcrTbl">
+			<thead>
+				<tr>
+					<th>NCR No &amp; Received Date</th>
+					<th>Part No</th>
+					<th style="width:200px;">Serial No</th>
+					<th>Revision</th>
+					<th style="width:180px;">Vendor</th>
+					<th>Module</th>
+					<th>Status</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var item in Model.Items)
+				{
+					<tr>
+						<td>
+							<strong>
+								<a href="/NCR/NCR?NCRGuid=@item.NCRGuid">@item.ReferenceNumber</a>
+							</strong>
+							<br />
+							<small class="text-muted">@(item.ReceivedDate.HasValue? item.ReceivedDate.Value.ToString("dd-MMM-yyyy") : "")</small>
+						</td>
+						<td>@item.PartNo</td>
+						<td style="max-width:200px;">
+							@if (!string.IsNullOrEmpty(item.SerialNumber))
+							{
+								<div style="max-height:60px; overflow-y:auto; display:flex; flex-wrap:wrap; gap:2px;">
+									@foreach (var serial in item.SerialNumber.Split(','))
+									{
+										if (!string.IsNullOrWhiteSpace(serial))
+										{
+											<span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark">@serial.Trim()</span>
+										}
+									}
+								</div>
+							}
+						</td>
+						<td>@item.Revision</td>
+						<td style="max-width:180px; white-space:normal; word-break:break-word;">@item.VendorName</td>
+						<td>@item.ModuleName</td>
+						<td>
+							@{
+								var status = item.Status ?? "";
+								var badgeClass = status.StartsWith("Cleared") ? "bg-success"
+								: status.StartsWith("Rejected") ? "bg-danger"
+								: status == "Processed - Partially Cleared" ? "bg-warning text-dark"
+								: status == "" ? "bg-secondary"
+								: "bg-primary";
+							}
+							<span class="badge @badgeClass">@(status == "" ? "Not Set" : status)</span>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<!-- ── Popup modal ── -->
+<div class="modal fade" id="modulePopupModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-xl modal-xl-custom">
+		<div class="modal-content">
+			<div class="modal-header py-2" style="background:#f8f9fa; border-bottom:1px solid #dee2e6;">
+				<div>
+					<h6 class="modal-title mb-0 fw-semibold">
+						<i class="uil uil-layer-group me-1 text-muted"></i>
+						<span id="popupModuleName"></span>
+					</h6>
+					<div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+						<span class="badge bg-secondary">Total: <span id="popupTotalCount"></span></span>
+						<span class="badge bg-primary">In Process: <span id="popupInprocessCount"></span></span>
+						<span class="badge bg-success">Cleared: <span id="popupClearedCount"></span></span>
+						<span class="badge bg-warning text-dark">Partial: <span id="popupPartialCount"></span></span>
+						<span class="badge bg-danger">Rejected: <span id="popupRejectedCount"></span></span>
+					</div>
+				</div>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body p-2">
+				<div class="table-responsive">
+					<table class="table table-bordered table-sm fs--1" id="popupModuleTable">
+						<thead>
+							<tr>
+								<th>NCR No &amp; Received Date</th>
+								<th>Part No</th>
+								<th>Serial No</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody id="popupModuleTableBody"></tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@section Scripts {
+	<script>
+		let moduleTable;
+		let activeModuleFilter = '';
+		let activeStatusFilter = '';
+
+		$(document).ready(function () {
+
+			// ── DataTable ──
+			moduleTable = $('#moduleWiseNcrTbl').DataTable({
+				paging: true,
+				ordering: true,
+				pageLength: 25,
+				searching: true,
+				info: true,
+				dom: 'Bfrtip',
+				buttons: [{ extend: 'excelHtml5', title: 'ModuleWiseNCRList', text: 'Export Excel' }]
+			});
+
+			// ── Chart ──
+			var summaryData = @Html.Raw(Json.Serialize(Model.Summary));
+
+			if (summaryData && summaryData.length > 0) {
+				var labels = summaryData.map(function (x) { return x.moduleName; });
+				var counts = summaryData.map(function (x) { return x.ncrCount; });
+
+						var ctx = document.getElementById('moduleNcrChart').getContext('2d');
+
+		var barCountLabels = {
+			id: 'barCountLabels',
+			afterDatasetsDraw: function (chart) {
+				var c = chart.ctx;
+				chart.data.datasets.forEach(function (dataset, i) {
+					var meta = chart.getDatasetMeta(i);
+					meta.data.forEach(function (bar, index) {
+						var value = dataset.data[index];
+						c.save();
+						c.font = 'bold 11px sans-serif';
+						c.fillStyle = '#495057';
+						c.textAlign = 'center';
+						c.textBaseline = 'bottom';
+						c.fillText(value + ' NCR(s)', bar.x, bar.y - 3);
+						c.restore();
+					});
+				});
+			}
+		};
+
+		new Chart(ctx, {
+			type: 'bar',
+			plugins: [barCountLabels],
+			data: {
+				labels: labels,
+				datasets: [{
+					label: 'NCR Count',
+					data: counts,
+					backgroundColor: 'rgba(13, 110, 253, 0.65)',
+					borderColor: 'rgba(13, 110, 253, 1)',
+					borderWidth: 1,
+					borderRadius: 3
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				onClick: function (evt, elements) {
+					if (elements && elements.length > 0) {
+						var moduleName = labels[elements[0].index];
+						var chip = document.querySelector('#moduleChipBar .mwnl-chip[data-module="' + moduleName + '"]');
+						if (chip) filterByModule(chip, moduleName);
+					}
+				},
+				onHover: function (evt, elements) {
+					evt.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+				},
+				plugins: {
+					legend: { display: false },
+					tooltip: {
+						callbacks: {
+							label: function (context) {
+								return 'NCR Count: ' + context.parsed.y;
+							}
+						}
+					}
+				},
+				scales: {
+					x: { ticks: { font: { size: 11 } }, grid: { display: false } },
+					y: {
+						beginAtZero: true,
+						ticks: { precision: 0, font: { size: 11 } }
+					}
+				}
+			}
+		});
+			}
+		});
+
+		// ── Module chip filter ──
+		function filterByModule(el, moduleName) {
+			activeModuleFilter = moduleName;
+			document.querySelectorAll('#moduleChipBar .mwnl-chip').forEach(c => c.classList.remove('active'));
+			el.classList.add('active');
+			applyTableFilters();
+		}
+
+		// ── Status chip filter ──
+		function filterByStatus(el, statusVal) {
+			activeStatusFilter = statusVal;
+			document.querySelectorAll('#statusChipBar .mwnl-chip').forEach(c => c.classList.remove('active'));
+			el.classList.add('active');
+			applyTableFilters();
+		}
+
+		function applyTableFilters() {
+			// Module filter on column 5
+			moduleTable.column(5).search(activeModuleFilter).draw(false);
+
+			// Status filter — custom search on column 6
+			$.fn.dataTable.ext.search = $.fn.dataTable.ext.search.filter(f => f._mwnlStatus !== true);
+
+			if (activeStatusFilter !== '') {
+				var statusFn = function (settings, data, dataIndex) {
+					if (settings.nTable.id !== 'moduleWiseNcrTbl') return true;
+					var cellText = data[6] || '';
+					if (activeStatusFilter === '__inprocess__') {
+						return !cellText.includes('Cleared')
+							&& !cellText.includes('Rejected')
+							&& !cellText.includes('Partially Cleared')
+							&& cellText !== ''
+							&& cellText !== 'Not Set';
+					}
+					return cellText.includes(activeStatusFilter);
+				};
+				statusFn._mwnlStatus = true;
+				$.fn.dataTable.ext.search.push(statusFn);
+			}
+
+			moduleTable.draw();
+		}
+
+
+		function formatDate(dateValue) {
+			const d = new Date(dateValue);
+			if (isNaN(d)) return '';
+			const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+			return String(d.getDate()).padStart(2,'0') + '-' + months[d.getMonth()] + '-' + d.getFullYear();
+		}
+
+	</script>
+}

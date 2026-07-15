@@ -1,0 +1,530 @@
+﻿@model MPCRS.ViewModels.PrintMaterialIssueVM
+
+
+<!doctype html>
+<html lang='en-us'>
+<head>
+    <meta charset='utf-8'>
+
+    <style>
+
+
+
+        @@media print {
+            #button-container {
+                display: none;
+            }
+        }
+
+        @@media print {
+            @@page {
+                margin: 0;
+            }
+
+            tfoot {
+                display: table-footer-group
+            }
+        }
+
+        div.tablePage {
+            page-break-inside: avoid;
+            page-break-after: always;
+        }
+    </style>
+
+
+
+    <style type="text/css">
+        .tg {
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+
+            .tg td {
+                border-color: black;
+                border-style: solid;
+                border-width: 1px;
+                font-family: Arial, sans-serif;
+                font-size: 13px;
+                overflow: hidden;
+                padding: 0px 12px;
+                word-break: normal;
+            }
+
+            .tg th {
+                border-color: black;
+                border-style: solid;
+                border-width: 1px;
+                font-family: Arial, sans-serif;
+                font-size: 13px;
+                font-weight: normal;
+                overflow: hidden;
+                padding: 0px 12px;
+                word-break: normal;
+            }
+
+            .tg .tg-c3ow {
+                border-color: inherit;
+                text-align: center;
+                vertical-align: top
+            }
+
+            .tg .tg-0pky {
+                border-color: inherit;
+                text-align: left;
+                vertical-align: top;
+                font-size: 13px;
+            }
+
+    </style>
+
+
+
+</head>
+
+<body style="font-family:Arial;font-size:small!important">
+    <div media="print">
+        <table style="width:100%">
+            <thead>
+                <tr>
+                    <th>
+                        <table style="width:100%">
+                            <tr>
+                                <td style="width:100%">
+                                    <table style="width: 100%;">
+                                        <tr>
+                                            <td style="font-size:x-large; text-align:center; width:10%">
+                                                <button onclick="window.print()" id="button-container">Print</button>
+                                                @*<label>Items height:</label><input id="Paperheight" type="number" value="280"/>*@
+                                            </td>
+                                            <td style="font-size:x-large; text-align:center; width:75%"><strong>MATERIAL RELEASE NOTE</strong> </td>
+                                            <td style="font-size:larger; text-align:center; width:15%"><strong>@Model.materialIssues.FirstOrDefault().Form_Number</strong> </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <hr />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width:100%">
+                                    <table style="width:100%">
+                                        <tr>
+                                            <td style="font-size:larger; text-align:center; width: 10%">@Model.materialIssues.FirstOrDefault().Ref_Number</td>
+                                            <td style="font-size:larger; text-align:left; width: 40%"><strong> REQUEST FOR ISSUE OF MATERIAL</strong></td>
+                                            <td style="font-size:larger; text-align:center; width: 15%">@Model.materialIssues.FirstOrDefault().Returnable</td>
+                                            <td style="font-size:larger; text-align:center; width:15%"> @Model.materialIssues.FirstOrDefault().Issue_Purpose</td>
+                                            <td style="font-size:larger; text-align:center; width:20%"> Engine: @Model.materialIssues.FirstOrDefault().Engine_Name</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td style="width:100%">
+                                    <table border="1" style="border-collapse: collapse;width:100%!important;">
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="1" style="font-size:medium; text-align: left; width: 25%"><strong>Demand Number</strong></td>
+                                                <td colspan="3" style="font-size:medium; text-align:left; width:75%">@Model.materialIssues.FirstOrDefault().Demand_No</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: medium; text-align: left; width: 25%"><strong>Order Ref Number</strong></td>
+                                                <td style="font-size: medium; text-align: left; width: 45%"> @Model.materialIssues.FirstOrDefault().Order_Ref_No</td>
+                                                <td style="font-size: medium; text-align: left; width: 10%"><strong>Date</strong></td>
+                                                <td style="font-size: medium; text-align: left; width: 20%">@Model.materialIssues.FirstOrDefault().Order_Ref_Date.ToString("dd-MM-yyyy") </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: medium; text-align: left; width: 25%"><strong>PO (STFE) Ref Number</strong></td>
+                                                <td style="font-size: medium; text-align: left; width: 45%">@Model.materialIssues.FirstOrDefault().PMO_Ref_No</td>
+                                                <td style="font-size: medium; text-align: left; width: 10%"><strong>Date</strong></td>
+                                                <td style="font-size: medium; text-align: left; width: 20%">@Model.materialIssues.FirstOrDefault().PMO_Ref_Date.ToString("dd-MM-yyyy") </td>
+                                            </tr>
+                                        </tbody>
+
+                                    </table>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <table style="border-collapse: collapse;width:100%!important;margin-top:15px!important">
+                                        <tr>
+                                            <td style="font-size: medium; text-align: center; width: 40%"><strong>Components as per Contract</strong></td>
+                                            <td style="font-size: medium; text-align: center; width: 60%"><strong>*******MATERIAL ISSUE PARTICULARS*******</strong></td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+
+                        @*<table border="1" style="border-collapse: collapse;width:100%!important; font-size:smaller">
+                        <thead>
+                        <tr>
+                        <th style="text-align: center;width: 5%">Sl No</th>
+                        <th style="text-align: center;width: 25%">Desc/Drg No</th>
+                        <th style="text-align: center;width: 5%">Qty</th>
+                        <th style="text-align: center;width: 10%">RM Specs</th>
+                        <th style="text-align: center;width: 10%">Dia<br />(mm)</th>
+                        <th style="text-align: center;width: 10%">Thick <br />(mm)</th>
+                        <th style="text-align: center;width: 5%">Denom</th>
+                        <th style="text-align: center;width: 5%">Qty</th>
+                        <th style="text-align: center;width: 10%">Heat No</th>
+                        <th style="text-align: center;width: 5%">wt <br /> (KG)</th>
+                        <th style="text-align: center;width: 10%">Cost</th>
+                        </tr>
+                        </thead>
+                        </table>*@
+
+
+                    </th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>
+
+
+                        <table border="1" style="border-collapse: collapse;width:100%!important; font-size:smaller" class="splitForPrint">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: center;width: 5%">Sl No</th>
+                                    <th style="text-align: center;width: 25%">Desc/Drg No</th>
+                                    <th style="text-align: center;width: 5%">Qty</th>
+                                    <th style="text-align: center;width: 10%">RM Specs</th>
+                                    <th style="text-align: center;width: 10%">Dia<br />(mm)</th>
+                                    <th style="text-align: center;width: 10%">Thick <br />(mm)</th>
+                                    <th style="text-align: center;width: 5%">Denom</th>
+                                    <th style="text-align: center;width: 5%">Qty</th>
+                                    <th style="text-align: center;width: 10%">Heat No</th>
+                                    <th style="text-align: center;width: 5%">wt <br /> (KG)</th>
+                                    <th style="text-align: center;width: 10%">Cost</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @{
+                                    int slno = 1;
+
+                                    //Repeat:
+                                    string test = "";
+                                    foreach (var item in Model.materialIssues)
+                                    {
+                                        <tr class="page-break">
+                                            <td style="text-align: center;width: 5%">@slno</td>
+                                            <td style="font-size: small; text-align: left; width: 25%">@item.Drawing_no</td>
+                                            <td style="text-align: center;width: 5%">
+                                                @{
+                                                    if (item.Qty != 0)
+                                                    {
+                                                        @item.Qty
+                                                    }
+                                                }
+                                            </td>
+                                            <td style="text-align: center;width: 10%">@item.Material_name</td>
+
+                                            <td style="text-align: center; width: 10%">
+                                                @{
+                                                    if (item.outer_dia == "Select")
+                                                    {
+                                                        <span>-</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@item.outer_dia</span>
+                                                    }
+                                                }
+
+                                            </td>
+                                            <td style="text-align: center; width: 10%">
+                                                @{
+                                                    if (item.thickness == "Select")
+                                                    {
+                                                        <span>-</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@item.thickness</span>
+                                                    }
+                                                }
+
+                                            </td>
+
+                                            <td style="text-align: center; width: 5%">@item.Denom</td>
+                                            <td style="text-align: center; width: 5%">
+                                                @{
+                                                    if (item.Qty_Issue != 0)
+                                                    {
+                                                        @item.Qty_Issue
+                                                    }
+                                                }
+
+                                            </td>
+                                            <td style="text-align: center; width: 10%">@item.Heat_No</td>
+                                            <td style="text-align: center; width: 5%">@item.Weight_Kg</td>
+                                            <td style="text-align: center; width: 10% ">
+                                                @{
+                                                    if (item.Amount != 0)
+                                                    {
+                                                        @item.Amount
+                                                    }
+                                                }
+
+                                            </td>
+                                        </tr>
+
+                                        slno = slno + 1;
+                                    }
+
+                                        //if (slno < 35)
+                                    //{
+                                    //    goto Repeat;
+                                    //}
+
+                                }
+
+
+                            </tbody>
+                            @*<tfoot>
+                            <tr>
+
+                            <td colspan="8" style="text-align: center;"></td>
+                            <td style="text-align: center;"><strong>Total:</strong></td>
+                            <td style="text-align: center;">@Model.materialIssues.FirstOrDefault().Total_Cost</td>
+                            </tr>
+                            </tfoot>*@
+
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+            <tfoot id="footerOne">
+                <tr>
+                    <td colspan="10">
+                        <table style="width:100%">
+                            <tr>
+                                <td>
+                                    <table style="border-collapse: collapse;width:100%!important;margin-top:10px!important">
+                                        <tr>
+                                            <td style="font-size: medium; text-align: right; width: 80%"><strong>SRMS SIGNATURE:</strong></td>
+                                            <td style="font-size: medium; text-align: right; width: 20%"></td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    <table border="1" style="border-collapse: collapse; width: 100% !important; margin-top: 10px !important">
+                                        <tr>
+                                            <td colspan="5"><strong>Note : Weight and Cost are as per estimation .These can vary,during issuing materials while cutting</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td rowspan="2"></td>
+                                            <td style="font-size: medium; text-align: center;">
+                                                <strong>Demanding Officer</strong>
+                                            </td>
+                                            <td style="font-size: medium; text-align: center;">
+                                                <strong>Technology Director</strong>
+                                            </td>
+                                            <td style="font-size: medium; text-align: center;">
+                                                <strong>Project Director</strong>
+                                            </td>
+                                            <td style="font-size: medium; text-align: center; width:120px">
+                                                <strong> Issue Material To</strong>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding-top: 60px !important; font-size: medium; text-align: center;">
+                                                <strong>@Model.materialIssues.FirstOrDefault().DemandingOfficer</strong>
+                                            </td>
+                                            <td style="padding-top: 60px !important; font-size: medium; text-align: center;">
+                                                <strong>@Model.materialIssues.FirstOrDefault().TechOfficer</strong>
+                                            </td>
+                                            <td style="padding-top: 60px !important; font-size: medium; text-align: center;">
+                                                <strong>@Model.materialIssues.FirstOrDefault().PD</strong>
+                                            </td>
+                                            <td rowspan="4">
+                                                <span style="font-size:12px!important">
+                                                    @Model.materialIssues.FirstOrDefault().Vendor_Name <br />
+                                                    @Model.materialIssues.FirstOrDefault().Vendor_Adress <br />
+                                                    @Model.materialIssues.FirstOrDefault().Vendor_City <br />
+                                                    @Model.materialIssues.FirstOrDefault().Vendor_Pincode @Model.materialIssues.FirstOrDefault().Vendor_State <br />
+                                                </span>
+
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td><strong>Desig</strong> </td>
+                                            <td style="font-size: medium; text-align: center;">@Model.materialIssues.FirstOrDefault().DODesignation</td>
+                                            <td style="font-size: medium; text-align: center;">@Model.materialIssues.FirstOrDefault().TODesignation</td>
+                                            <td style="font-size: medium; text-align: center;">@Model.materialIssues.FirstOrDefault().PDDesignation </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Section</strong> </td>
+                                            <td style="font-size: medium; text-align: center;">@Model.materialIssues.FirstOrDefault().DOSection</td>
+                                            <td style="font-size: medium; text-align: center;">@Model.materialIssues.FirstOrDefault().TOSection</td>
+                                            <td style="font-size: medium; text-align: center;">@Model.materialIssues.FirstOrDefault().PDSection </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Date</strong> </td>
+                                            <td style="font-size: medium; text-align: center;"></td>
+                                            <td style="font-size: medium; text-align: center;"></td>
+                                            <td style="font-size: medium; text-align: center;"> </td>
+                                        </tr>
+
+                                    </table>
+                                </td>
+
+                            </tr>
+                            <tr>
+                                <td>
+                                    <table class="tg" style="border-collapse: collapse; width: 100% !important; margin-top: 10px !important">
+                                        <tr>
+                                            <th class="tg-c3ow"><strong>FOR THE USE OF QAG</strong> </th>
+                                            <th class="tg-c3ow"><strong>FOR THE USE OF MMD</strong></th>
+                                            <th class="tg-c3ow" colspan="6"><strong>TO BE USED BY R&D, MMD</strong></th>
+                                        </tr>
+
+                                        <tr>
+                                            <td class="tg-0pky"><span style="font-size:11px!important">MATERIAL INSPECTION REPORT</span><br><span><br>ISSUED / NOT ISSUED</span><br /></td>
+                                            <td class="tg-0pky"><span style="font-size:11px!important">AVAILABLE/NOT AVAILABLE</span></td>
+                                            <td class="tg-0pky" colspan="6" rowspan="2">Material Gate Pass No &<span>Date</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="tg-0pky" rowspan="7">
+                                                Material Identified And Released with all Documents.<br>
+                                                <br>......................................................
+                                                <br>......................................................
+                                                <br>......................................................
+                                                <br>......................................................
+                                                <br>......................................................<br>
+                                            </td>
+                                            <td class="tg-0pky"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="tg-0pky"></td>
+                                            <td class="tg-0pky" colspan="6">RAISED BY<br>COLLECTED BY</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="tg-0pky">I/C STORES</td>
+                                            <td class="tg-0pky" colspan="6">FIRST NAME <br>DATE</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="tg-0pky">Name :</td>
+                                            <td class="tg-c3ow" colspan="5">DISTRIBUTION </td>
+                                            <td class="tg-0pky">TICKBOX</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="tg-0pky"></td>
+                                            <td class="tg-0pky">P-50</td>
+                                            <td class="tg-0pky">R&amp;D</td>
+                                            <td class="tg-0pky">QAG</td>
+                                            <td class="tg-0pky">EMG</td>
+                                            <td class="tg-0pky">MMD</td>
+                                            <td class="tg-0pky"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="tg-0pky">DATE</td>
+                                            <td class="tg-0pky"></td>
+                                            <td class="tg-0pky"></td>
+                                            <td class="tg-0pky"></td>
+                                            <td class="tg-0pky"></td>
+                                            <td class="tg-0pky"></td>
+                                            <td class="tg-0pky"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="tg-0pky">ISSUE&nbsp;&nbsp;APPROVED</td>
+                                            <td class="tg-0pky" colspan="4" rowspan="3"></td>
+                                            <td class="tg-0pky">MRN </td>
+                                            <td class="tg-0pky">@Model.materialIssues.FirstOrDefault().Ref_Number</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="tg-0pky">Inspector's Signature:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                                            <td class="tg-0pky"></td>
+                                            <td class="tg-0pky">BOOK</td>
+                                            <td class="tg-0pky">@Model.materialIssues.FirstOrDefault().Book_Serial_No</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="tg-0pky">Name:</td>
+                                            <td class="tg-0pky">Office Incharge ,<br>P50 Stores</td>
+                                            <td class="tg-0pky">VOLUME </td>
+                                            <td class="tg-0pky">@Model.materialIssues.FirstOrDefault().Volume_No</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="tg-0pky">DATE</td>
+                                            <td class="tg-0pky">Date:</td>
+                                            <td class="tg-0pky" colspan="6"></td>
+                                        </tr>
+
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </tfoot>
+
+
+        </table>
+    </div>
+
+
+</body>
+</html>
+
+
+<script src="~/Scripts/jquery-1.12.4.min.js"></script>
+
+
+<script>
+    $(document).ready(function () {
+        adjustprinter();
+    });
+
+    function adjustprinter() {
+        var MaxHeight = 165;
+        var RunningHeight = 0;
+        var PageNo = 1;
+
+        //$('table.splitForPrint>tbody>tr').each(function () {
+
+        //    if (RunningHeight + $(this).height() > MaxHeight) {
+        //        RunningHeight = 0;
+        //        PageNo += 1;
+        //    }
+
+        //    RunningHeight += $(this).height();
+
+        //    $(this).attr("data-page-no", PageNo);
+
+        //});
+
+        //for (i = 1; i <= PageNo; i++) {
+
+        //    $('table.splitForPrint').parent().append("<div class='tablePage'><table id='Table" + i + "'><tbody></tbody></table></div>");
+
+        //    var rows = $('table tr[data-page-no="' + i + '"]');
+        //    $('#Table' + i).find("tbody").append(rows);
+
+        //    var pagenodisplay = "<tr style='width:100%'><td colspan='10' style='text-align:right'> Page " + i + "/" + PageNo + "</td></tr>"
+        //    var foot = $('#Table' + i).find('tfoot');
+        //    if (!foot.length) foot = $('<tfoot>').appendTo('#Table' + i);
+        //    foot.append(document.getElementById("footerOne").innerHTML);
+        //    foot.append(pagenodisplay);
+        //}
+        //$('table.splitForPrint').remove();
+        //$("#footerOne").remove();
+    }
+
+</script>
+
+
+
+

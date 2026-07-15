@@ -1,0 +1,30 @@
+{
+ 
+  "results": [
+    {
+      "key": 3532,
+      "nameKey": 75396,
+      "datasetKey": "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c",
+      "constituentKey": "7ddf754f-d193-4cc9-b351-99906754a03b",
+      "nubKey": 3532,
+      "parentKey": 3210,
+      "parent": "Animalia",
+      "kingdom": "Animalia",
+      "phylum": "Acanthocephala",
+      "kingdomKey": 1,
+      "phylumKey": 3532,
+      "scientificName": "Acanthocephala",
+      "canonicalName": "Acanthocephala",
+      "authorship": "",
+      "nameType": "SCIENTIFIC",
+      "taxonomicStatus": "ACCEPTED",
+      "rank": "PHYLUM",
+      "origin": "SOURCE",
+      "numDescendants": 1911,
+      "numOccurrences": 0,
+      "extinct": false
+ 
+    }
+  ]
+  
+}

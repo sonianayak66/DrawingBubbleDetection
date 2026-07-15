@@ -1,0 +1,160 @@
+﻿@model List<MPCRS.ViewModels.Procurement_Demands_VM>
+@using MPCRS.Utilities
+@using System.Globalization
+@{
+	Layout = null;
+	CultureInfo Indian = new CultureInfo("hi-IN");
+	var ItemTypelist = Masters.GetProcurementItemTypelist();
+}
+
+<style>
+	.btn-primary {
+		color: white !important; /* Ensure white text on primary button */
+	}
+</style>
+
+<div class="col-md-12 col-sm-12 col-lg-12 divc" style="padding-bottom:5px">
+	<div class="row">
+		<div class="col-12">
+			<div class="btn-group  float-end" role="group">
+				<button type="button" class="btn"><b>Item Type</b></button>
+
+				@{
+					System.Data.DataTable dt = ItemTypelist;
+					foreach (System.Data.DataRow dr in dt.Rows)
+					{
+						<button type="button" onclick="filterItemtype('@dr["Master_Name"].ToString()')" class="btn btn-smaller btn-outline-primary">@dr["Master_Name"].ToString()</button>
+
+					}
+				}
+
+			</div>
+			<div class="btn-group float-end" role="group">
+				<button type="button" class="btn"><b>Current status</b></button>
+				<button type="button" id="btn-All" onclick="filterExeSumDemand('All')" class="btn btn-smaller btn-outline-primary">All</button>
+				<button type="button" id="btn-Open" onclick="filterExeSumDemand('Open')" class="btn btn-smaller btn-outline-primary">Open</button>
+				<button type="button" id="btn-Close"  onclick="filterExeSumDemand('Close')" class="btn btn-smaller btn-outline-primary">Close</button>
+			</div>
+		
+	
+
+		</div>
+	</div>
+</div>
+<table class="table table-bordered" id="executive-summary-tbl">
+	<thead>
+		<tr>
+			<th>ProjectTitle</th>
+			<th>SanctionedCost</th>
+			<th>MMG Number</th>
+			<th>Order Date</th>
+			<th>Description</th>
+			<th>Item type</th>
+			<th>Tender Mode</th>
+			<th>Demanding Officer</th>
+			<th>Vendor</th>
+			<th>Order Value</th>
+			<th>Advance Paid</th>
+			<th>Balance</th>
+			<th>Current Status</th>
+			<th style="min-width:5%;">PDC</th>
+			<th>Receipt Status</th>
+			@* <th>Milestone Due dates</th> *@
+			<th>Remarks</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		@{
+			@foreach (var item in Model.GroupBy(x => x.DemandDbKey).Select(g => g.First()))
+			{
+
+				<tr data-demand-db-key="@item.DemandDbKey">
+					<td>@item.ProjectTitle</td>
+					<td>@string.Format(Indian, "{0:#,#}", item.ProjectSanctionedCost) </td>
+					<td class="p-2">@item.MMG_File_No</td>
+					<td>@MPGlobals.GetFormattedDate(item.EstimatedOrderDate)</td>
+
+					<td style="max-width:25%">@item.Item_Description</td>
+					<td class="Item_Typeclass ">
+						@item.Item_Type
+					</td>
+					<td>@item.TenderMode</td>
+					<td>@item.DemandOfficerName</td>
+					<td>@item.VendorName</td>
+					<td>@string.Format(Indian, "{0:#,#}", item.ActualCost)</td>
+					<td>@string.Format(Indian, "{0:#,#}", item.AdvancePaid)</td>
+					@{
+						decimal? balance = 0;
+						balance = item.ActualCost - item.AdvancePaid;
+						<td>@string.Format(Indian, "{0:#,#}", balance)</td>
+					}
+					<td>
+						@item.CurrentStatus
+						@* <br />
+				// @MPGlobals.GetFormattedDate(item.Updated_On)
+				// @{
+				// 	var daysAgo = @item.Updated_On.HasValue
+				// 	? (DateTime.Now - @item.Updated_On.Value).Days.ToString()
+				// 	: "N/A";
+				// }
+				// (@daysAgo days ago) *@
+
+					</td>
+					<td>@MPGlobals.GetFormattedDate(item.Planned_Date_of_receipt)</td>
+					<td>
+						@{
+							foreach (var milestone in Model.Where(x => x.DemandDbKey == item.DemandDbKey))
+							{
+								<label>
+									@milestone.MilestoneName
+								</label>
+								<label>
+									@if(item.DueDate != null)
+									{
+										<span>[</span>	
+										@MPGlobals.GetFormattedDate(item.DueDate)
+										<span>]</span>
+									}
+								</label>
+								if (milestone.MilestoneStatus != null)
+								{
+									<span class="badge badge-phoenix fs--2 badge-phoenix-@(milestone.MilestoneStatus == "Completed" ? "success" : (milestone.MilestoneStatus == "Overdue" ? "danger" : "warning"))">
+										@milestone.MilestoneStatus
+									</span>
+								}
+								<br />
+							}
+						}
+					</td>
+					@*<td>
+					// 	@{
+					// 		foreach (var milestone in Model.Where(x => x.DemandDbKey == item.DemandDbKey))
+					// 		{
+					// 			<label>
+					// 				@MPGlobals.GetFormattedDate(item.DueDate)
+								
+					// 			</label>
+					// 			<br />
+					// 		}
+					// 	}
+					// </td>*@
+					<td>@item.Remarks</td>
+					<td class="d-flex">
+						<div class="p-2">
+							<i class="text-primary uil uil-edit fs-1 float-end" style="cursor:pointer" onclick="EditDemandDetail(@item.DemandDbKey)" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Demand"></i>
+					</div>
+						<div class="details-control  p-2">
+							<a class="fas fa-angle-double-down fs-1 float-end" id="di-icon-Open-@item.DemandDbKey" style="cursor:pointer; color:#3874ffe3" title="Show Demand items"></a>
+							<a class="fas fa-angle-double-up fs-1 float-end" id="di-icon-Close-@item.DemandDbKey" style="cursor:pointer; display:none;color:#3874ffe3" title="close Demand items"></a>
+					</div>
+				
+						
+					</td>
+					@*<button class="btn btn-small btn-primary" onclick="goTODetailsTab(@item.DemandDbKey)">View</button></td>*@
+				</tr>
+			}
+		}
+	</tbody>
+</table>
+

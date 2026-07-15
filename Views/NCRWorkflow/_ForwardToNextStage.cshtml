@@ -1,0 +1,63 @@
+﻿@using MPCRS.Models;
+@{
+    var modules = ViewBag.Modules as List<Master_General>;
+    var stageName = ViewBag.StageName as string;
+    var workflowGuid = ViewBag.WorkflowGuid as string;
+    var nextStageID = (int)ViewBag.NextStageID;
+}
+
+<form id="ForwardToNextStageForm">
+    <input type="hidden" id="workflowGuid" value="@workflowGuid" />
+    <input type="hidden" id="nextStageID" value="@nextStageID" />
+
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-arrow-right"></i>
+                <strong>Forwarding to: @stageName</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Module Selection -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <label for="ForwardModuleSelect" class="form-label">
+                <strong>Select Module:</strong>
+                <span class="text-danger">*</span>
+            </label>
+            <select id="ForwardModuleSelect" class="form-control" required>
+                <option value="">-- Select Module --</option>
+                @foreach (var module in modules)
+                {
+                    <option value="@module.Master_Dbkey">@module.Master_Name</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- User Selection -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <label for="ForwardUsersSelect" class="form-label">
+                <strong>Select Users:</strong>
+                <span class="text-danger">*</span>
+            </label>
+            <select id="ForwardUsersSelect" class="form-control" multiple required disabled>
+                <option value="">-- Select Module First --</option>
+            </select>
+            <small class="text-muted">Users will be loaded based on selected module</small>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <button type="button" class="btn btn-primary" onclick="submitForwardToNextStage()">
+                <i class="fas fa-arrow-right"></i> Forward to @stageName
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="bootbox.hideAll()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</form>

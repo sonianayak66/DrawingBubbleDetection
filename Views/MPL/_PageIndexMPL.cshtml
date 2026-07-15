@@ -1,0 +1,39 @@
+﻿@model IEnumerable<MPCRS.ViewModels.MPLReportData>
+@{
+    Layout = null;
+}
+
+@{ 
+    int index = 1;
+}
+<table class="table table-sm table-bordered table-condensed" id="index">
+    <thead>
+        <tr>
+            <th>SL No</th>
+            <th>Description</th>
+            <th>Drawing No</th>
+            <th>Page No</th>
+        </tr>
+    </thead>
+    <tbody>
+         <tr>
+            <td style="padding-left:4px !important;width:5%">@index</td>
+            <td style="padding-left: 4px !important; width: 50%">STFE - DIRECT PARTS</td>
+            <td style="padding-left:4px !important; width: 10%">PW00000</td>
+            <td style="width:35%"></td>
+        </tr>
+        @foreach (var item in Model.Where(x=>x.Reporting_Type!= null).Where(x=>x.Reporting_Type.ToString().Contains("Main Assembly")).OrderBy(x=>x.ReportDisplayOrder))
+        {
+            index++;
+        <tr>
+            <td style="padding-left:4px !important;width:5%">@index</td>
+            <td style="padding-left: 4px !important; width: 50%">@item.Description</td>
+            <td style="padding-left:4px !important; width: 10%">
+                <a href="#@item.Draw_part_no" >@item.Draw_part_no</a>            
+            </td>
+            <td style="width:35%"></td>
+        </tr>
+        }
+    </tbody>
+</table>
+

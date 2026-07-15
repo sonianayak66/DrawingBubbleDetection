@@ -1,0 +1,61 @@
+﻿@model List<MPCRS.Models.ExceptionLog>
+@{
+    ViewData["Title"] = "ExceptionLogs";
+}
+
+<h2>Exception Logs</h2>
+
+<hr />
+<div class="card-body">
+    <table class="table table-bordered" id="exceptionlogs">
+        <thead>
+            <tr><th>Sl no.</th>
+                <th>Date Error Raised</th>
+                <th>Error Line</th>
+                <th>Error Message</th>
+                <th>Error Number</th>
+                <th>Error Procedure</th>
+                <th>Error Severity</th>
+                <th>Error State</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                int i = 1;
+                foreach (var item in Model)
+                {
+                    <tr>
+                    <td>@i</td>
+                        <td>@item.DateErrorRaised?.ToString("dd-MM-yyyy HH:mm:ss")</td>
+                        <td>@item.ErrorLine</td>
+                        <td>@item.ErrorMessage</td>
+                        <td>@item.ErrorNumber</td>
+                        <td>@item.ErrorProcedure</td>
+                        <td>@item.ErrorSeverity</td>
+                        <td>@item.ErrorState</td>
+                    </tr>
+                    i++;
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            $('#exceptionlogs').DataTable({
+                dom: 'Bfrtip',
+                paging:false,
+                buttons: [
+                    'excel'
+                ]
+            });
+        });
+
+
+    </script>
+}

@@ -1,0 +1,137 @@
+﻿@model MPCRS.ViewModels.RMCDataPopupVM
+@{
+    Layout = null;
+    var status = Model.Diagnostic?.Status ?? "RMC_NOT_IN_JSON";
+}
+
+<div class="p-1">
+
+    @* ── RMC Meta Info ── *@
+    <table class="table table-bordered table-sm mb-3" style="background:#f8f9fa;">
+        <tbody>
+            <tr>
+                <td style="width:140px;"><strong>RMC Number</strong></td>
+                <td>@Model.Diagnostic?.RMC_Number</td>
+                <td style="width:80px;"><strong>Status</strong></td>
+                <td>
+                    @if (status == "OK")
+                    {
+                        <span class="badge" style="background-color:#198754;">Matched</span>
+                    }
+                    else if (status == "RMC_NOT_IN_JSON")
+                    {
+                        <span class="badge" style="background-color:#842029;color:#fff;">Not in RMC Data</span>
+                    }
+                    else if (status == "GUID_NOT_IN_MASTER")
+                    {
+                        <span class="badge" style="background-color:#664d03;color:#fff;">Material not in Master</span>
+                    }
+                    else if (status == "NO_PROCUREMENT_MATCH")
+                    {
+                        <span class="badge" style="background-color:#664d03;color:#fff;">No Procurement Match</span>
+                    }
+                </td>
+            </tr>
+            @if (status != "RMC_NOT_IN_JSON")
+            {
+                <tr>
+                    <td><strong>Raw Material</strong></td>
+                    <td colspan="3">@(Model.Diagnostic?.Raw_material_Name ?? "—")</td>
+                </tr>
+                <tr>
+                    <td><strong>Heat No</strong></td>
+                    <td>@(Model.Diagnostic?.Heat_No ?? "—")</td>
+                    <td><strong>Batch No</strong></td>
+                    <td>@(Model.Diagnostic?.Batch_No ?? "—")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @* ── Diagnostic Messages ── *@
+    @if (status == "RMC_NOT_IN_JSON")
+    {
+        <div class="alert alert-secondary py-2" style="font-size:0.875rem;">
+            This RMC number was not found in the RMC Data. It may have been created before the RMC mapping system was introduced, or it may be invalid.  
+        </div>
+    }
+    else if (status == "GUID_NOT_IN_MASTER")
+    {
+        <div class="alert alert-secondary py-2" style="font-size:0.875rem;">
+            This RMC number exists in the RMC Data but the linked raw material could not be found in the Raw Material Master. Please check the raw material records.
+        </div>
+    }
+    else if (status == "NO_PROCUREMENT_MATCH")
+    {
+        <div class="alert alert-secondary py-2" style="font-size:0.875rem;">
+            The RMC data above was found, but no matching procurement receipt split was found for this combination of raw material, heat number and batch number.  
+        </div>
+    }
+    else if (status == "OK" && Model.Splits.Any())
+    {
+        @* ── Splits Table ── *@
+        <table class="table table-sm table-bordered mb-3">
+            <thead class="table-light">
+                <tr>
+                    
+                    <th>Raw Material</th>
+                    <th>Heat No</th>
+                    <th>Batch No</th>
+                   
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var split in Model.Splits)
+                {
+                    <tr>
+                       
+                        <td>@split.Raw_material_Name</td>
+                        <td>@split.Heat_No</td>
+                        <td>@split.Batch_No</td>
+                        
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @* ── Attachments ── *@
+        @if (Model.Attachments.Any())
+        {
+            <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:50px;">Sl No</th>
+                        <th>File Name</th>
+                        <th style="width:140px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int sl = 1;
+                    }
+                    @foreach (var att in Model.Attachments)
+                    {
+                        <tr>
+                            <td>@sl</td>
+                            <td>@att.Orginal_File_Name</td>
+                            <td>
+                                <a href="/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=false&fileKey=@att.Attachment_Db_Key"
+                                   target="_blank" class="btn btn-sm btn-outline-secondary">
+                                    View / Download
+                                </a>
+                            </td>
+                        </tr>
+                        sl++;
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-secondary py-2 mt-2" style="font-size:0.875rem;">
+                No attachments found against these receipt splits.
+            </div>
+        }
+    }
+
+</div>

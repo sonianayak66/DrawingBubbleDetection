@@ -1,0 +1,706 @@
+﻿@model List<MPCRS.ViewModels.ConsolidatedInventoryReportVM>
+
+@{
+	ViewData["Title"] = "Consolidated Inventory Report";
+}
+
+<style>
+	.filter-section {
+		background-color: #f8f9fa;
+		padding: 15px;
+		border-radius: 5px;
+		margin-bottom: 20px;
+	}
+
+	.filter-row {
+		margin-bottom: 10px;
+	}
+
+	.job-card-link {
+		color: #0066cc;
+		text-decoration: none;
+		cursor: pointer;
+		margin-right: 10px;
+	}
+
+		.job-card-link:hover {
+			text-decoration: underline;
+		}
+
+	.balance-positive {
+		color: green;
+		font-weight: bold;
+	}
+
+	.balance-negative {
+		color: red;
+		font-weight: bold;
+	}
+
+	.balance-zero {
+		color: #666;
+	}
+
+	/* Style for the checkbox container */
+	.demand-columns-toggle {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 8px;
+		background-color: #fff;
+		border: 1px solid #dee2e6;
+		border-radius: 4px;
+	}
+
+		.demand-columns-toggle input[type="checkbox"] {
+			cursor: pointer;
+			width: 8px;
+			height: 18px;
+		}
+
+		.demand-columns-toggle label {
+			cursor: pointer;
+			margin: 0;
+			font-weight: 500;
+		}
+
+	/* Pills styling */
+	.demand-pill {
+		display: inline-block;
+		font-size: 0.85em;
+		padding: 4px 8px;
+		border-radius: 10px;
+		white-space: nowrap;
+		background-color: #e3f2fd;
+		color: #1976d2;
+		border: 1px solid #bbdefb;
+	}
+
+	.mmg-pill {
+		display: inline-block;
+		font-size: 0.85em;
+		padding: 4px 10px;
+		border-radius: 12px;
+		white-space: nowrap;
+		background-color: #e3f2fd;
+		color: #1976d2;
+		border: 1px solid #bbdefb;
+	}
+
+	.receipt-pill {
+		display: inline-block;
+		font-size: 0.85em;
+		padding: 4px 10px;
+		border-radius: 12px;
+		white-space: nowrap;
+		background-color: #e0f7fa;
+		color: #00838f;
+		border: 1px solid #b2ebf2;
+	}
+
+	.demand-pill-hidden, .receipt-pill-hidden {
+		display: none;
+	}
+
+	.show-more-demands, .show-more-receipts,
+	.show-less-demands, .show-less-receipts {
+		color: #0066cc;
+		cursor: pointer;
+		text-decoration: none;
+		margin-top: 5px;
+		display: inline-block;
+	}
+
+		.show-more-demands:hover, .show-more-receipts:hover,
+		.show-less-demands:hover, .show-less-receipts:hover {
+			text-decoration: underline;
+		}
+
+	.job-card-pill {
+		display: inline-block;
+		font-size: 0.85em;
+		padding: 4px 10px;
+		border-radius: 12px;
+		white-space: nowrap;
+		background-color: #f3e5f5; /* light purple */
+		color: #6a1b9a; /* darker purple */
+		border: 1px solid #ce93d8;
+		margin: 2px;
+	}
+
+	.jobcardno-column {
+		width: 120px; /* fixed width */
+		max-width: 120px;
+		white-space: normal; /* allow wrapping */
+		word-break: break-word;
+	}
+
+	.vendor-pill {
+		display: inline-block;
+		font-size: 0.85em;
+		padding: 4px 10px;
+		border-radius: 12px;
+		white-space: nowrap;
+		background-color: #fff3e0; /* light orange */
+		color: #e65100; /* darker orange */
+		border: 1px solid #ffb74d;
+		margin: 2px;
+	}
+
+	.vendor-column {
+	 
+		max-width: 300px;
+		white-space: normal; /* allow wrapping */
+		word-break: break-word;
+	}
+
+	.vendor-pill-hidden {
+		display: none;
+	}
+
+	.show-more-vendors, .show-less-vendors {
+		color: #0066cc;
+		cursor: pointer;
+		text-decoration: none;
+		margin-top: 5px;
+		display: inline-block;
+	}
+
+		.show-more-vendors:hover, .show-less-vendors:hover {
+			text-decoration: underline;
+		}
+
+</style>
+
+<div class="page-header row">
+	<div class="col-7">
+		<h3>Consolidated Inventory Report</h3>
+	</div>
+	<div class="col-3 text-end">
+		<a href="/Report/ProductionPlanningReport" class="btn btn-primary">
+			<i class="fas fa-industry"></i> Raw material stock availability
+		</a>
+	</div>
+
+	<div class="col-2 text-end">
+		<a class="btn btn-secondary btn-sm" href="/Report/ProcurementReports">Back</a>
+	</div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+	<div class="row align-items-end">
+		<div class="col-md-2">
+			<label for="filterRMType" class="form-label"><i class="fas fa-box"></i> RM Type</label>
+			<select id="filterRMType" class="form-select form-select-sm">
+				<option value="">All</option>
+			</select>
+		</div>
+		<div class="col-md-2">
+			<label for="filterExecResp" class="form-label"><i class="fas fa-user-tie"></i> Execution Responsibility</label>
+			<select id="filterExecResp" class="form-select form-select-sm">
+				<option value="">All</option>
+			</select>
+		</div>
+		<!-- NEW: Vendor Filter -->
+		<!-- Vendor Filter with LINQ-based population -->
+		<div class="col-md-2">
+			<label for="filterVendor" class="form-label"><i class="fas fa-building"></i> Vendor</label>
+			<select id="filterVendor" class="form-select form-select-sm">
+				<option value="">All</option>
+				@{
+					var allVendors = Model
+					.Where(x => !string.IsNullOrEmpty(x.VendorNames))
+					.SelectMany(x => x.VendorNames.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries))
+					.Select(v => v.Trim())
+					.Distinct()
+					.OrderBy(v => v)
+					.ToList();
+
+					foreach (var vendor in allVendors)
+					{
+						<option value="@vendor">@vendor</option>
+					}
+				}
+			</select>
+		</div>
+		<div class="col-md-2">
+			<label for="filterBalance" class="form-label"><i class="fas fa-warehouse"></i> Inventory Balance</label>
+			<select id="filterBalance" class="form-select form-select-sm">
+				<option value="">All</option>
+				<option value="positive">Positive (> 0)</option>
+				<option value="zero">Zero (= 0)</option>
+				<option value="negative">Negative (< 0)</option>
+			</select>
+		</div>
+		<div class="col-md-2">
+			<label for="filterProcBalance" class="form-label"><i class="fas fa-truck"></i> Procurement Balance</label>
+			<select id="filterProcBalance" class="form-select form-select-sm">
+				<option value="">All</option>
+				<option value="positive">Positive (> 0)</option>
+				<option value="zero">Zero (= 0)</option>
+				<option value="negative">Negative (< 0)</option>
+			</select>
+		</div>
+
+		<div class="col-md-2 d-flex justify-content-end align-items-center gap-2">
+			<div class="form-check m-0">
+				<input class="form-check-input" type="checkbox" id="chkShowDemandColumns" />
+				<label class="form-check-label" for="chkShowDemandColumns">
+					<i class="fas fa-file-invoice me-1"></i> Show MMG &amp; Receipt Numbers
+				</label>
+			</div>
+
+			<button id="btnResetFilters" class="btn btn-secondary btn-sm">
+				<i class="fas fa-redo"></i> Reset Filters
+			</button>
+		</div>
+	</div>
+</div>
+<hr />
+
+<!-- Data Table -->
+<div class="row">
+	<div class="col-12">
+		<table id="consolidatedInventoryTable" class="table table-sm table-bordered table-hover fs--1" style="width:100%;">
+			<thead>
+				<tr>
+					<th>Material Name</th>
+					<th>UOM</th>
+					<th>RM Type</th>
+					<th class="text-end">Total Ordered</th>
+					<th class="text-end">Total Received</th>
+					<th class="text-end">Procurement Balance</th>
+					<th class="text-end">Total Issued</th>
+					<th class="text-end">Inventory Balance</th>
+					<th>Execution Responsibility</th>
+					<th>Vendors</th>  
+					<th class="jobcardno-column">Job Card No.</th>
+					<th>Job Cards</th>
+					<!-- Hidden columns -->
+					@* <th class="demand-column" style="display:none;">Demand Numbers</th> *@
+					<th class="demand-column" style="display:none;">MMG File Number</th>
+					<th class="demand-column" style="display:none;">Receipt Numbers</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var item in Model)
+				{
+					<tr> 
+						<td onclick="getRMPopUP(@item.Raw_material_Dbkey, '@item.MaterialName')" style="cursor:pointer"><strong>@item.MaterialName</strong></td>
+						<td>@item.UOM</td>
+						<td>@item.RMType</td>	
+						<td class="text-end">@item.TotalOrdered.ToString("N1")</td>
+						<td class="text-end">@item.TotalReceived.ToString("N1")</td>
+						<td class="text-end">
+							<span class="@(item.ProcurementBalance > 0 ? "balance-negative" : "balance-zero")">
+								@item.ProcurementBalance.ToString("N1")
+							</span>
+						</td>
+						<td class="text-end">@item.TotalIssued.ToString("N1")</td>
+						<td class="text-end">
+							<span class="@(item.InventoryBalance > 0 ? "balance-positive" : item.InventoryBalance < 0 ? "balance-negative" : "balance-zero")">
+								@item.InventoryBalance.ToString("N1")
+							</span>
+						</td>
+						<td>@item.ExecutionResponsibility</td>
+						<!-- NEW: Vendor Column -->
+						<!-- Vendor Column with Pills and Show More/Less -->
+						<td class="vendor-column">
+							@{
+								var vendorNames = (item.VendorNames ?? "")
+								.Split(',', StringSplitOptions.RemoveEmptyEntries)
+								.Select(x => x.Trim())
+								.ToArray();
+
+								var vendorKeys = (item.VendorDbkeys ?? "")
+								.Split(',', StringSplitOptions.RemoveEmptyEntries)
+								.Select(x => x.Trim())
+								.ToArray();
+
+								var vendorRowId = "vendor-" + item.Raw_material_Dbkey;
+							}
+
+
+							@if (vendorNames.Length > 0)
+							{
+								<div class="vendor-pills-container" id="@vendorRowId">
+									@for (int i = 0; i < vendorNames.Length; i++)
+									{
+										var name = vendorNames[i];
+										var key = (i < vendorKeys.Length) ? vendorKeys[i] : "0";
+										var isHidden = i >= 2 ? "vendor-pill-hidden" : "";
+
+										<span class="vendor-pill @isHidden"
+											  style="cursor:pointer;"
+											  onclick="getVendorDetails(@key, @item.Raw_material_Dbkey)"
+											  title="Click to view vendor details for @name">
+											@name
+										</span>
+									}
+
+									@if (vendorNames.Length > 2)
+									{
+										<br />
+										<a href="javascript:void(0)" class="show-more-vendors" data-target="@vendorRowId" style="font-size:0.85em;">
+											<i class="fas fa-plus-circle"></i> Show @(vendorNames.Length - 2) more
+										</a>
+										<a href="javascript:void(0)" class="show-less-vendors" data-target="@vendorRowId" style="font-size:0.85em; display:none;">
+											<i class="fas fa-minus-circle"></i> Show less
+										</a>
+									}
+								</div>
+							}
+							else
+							{
+								<span class="text-muted">-</span>
+							}
+						</td>
+
+						<td class="jobcardno-column">
+							@if (!string.IsNullOrEmpty(item.JobCardNumber))
+							{
+								var jobCardNos = item.JobCardNumber.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+
+								foreach (var jcNo in jobCardNos)
+								{
+									<span class="job-card-pill" style="cursor:pointer;" onclick="getJcDetails('@jcNo')">@jcNo</span>
+								}
+							}
+							else
+							{
+								<span class="text-muted">-</span>
+							}
+						</td>
+						<td>
+							@if (!string.IsNullOrEmpty(item.JobCardFileNames) && !string.IsNullOrEmpty(item.JobCardFileLocations))
+							{
+								var fileNames = item.JobCardFileNames.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+								var fileLocations = item.JobCardFileLocations.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+
+								for (int i = 0; i < Math.Min(fileNames.Length, fileLocations.Length); i++)
+								{
+									<a href="@fileLocations[i]" target="_blank" class="job-card-link" title="@fileNames[i]">
+										@fileNames[i]
+									</a>
+									if (i < fileNames.Length - 1)
+									{
+										<br />
+									}
+								}
+							}
+							else
+							{
+								<span class="text-muted">-</span>
+							}
+						</td>
+						<!-- Hidden Columns -->
+						@* <td class="demand-column" style="display:none;">
+							@if (!string.IsNullOrEmpty(item.DemandNumbers))
+							{
+								var demandNums = item.DemandNumbers.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+								var demandRowId = "demand-" + item.Raw_material_Dbkey;
+
+								<div class="demand-pills-container" id="@demandRowId">
+									@for (int i = 0; i < demandNums.Length; i++)
+									{
+										var isHidden = i >= 4 ? "demand-pill-hidden" : "";
+										<span class="demand-pill @isHidden" style="margin: 2px;">@demandNums[i]</span>
+									}
+									@if (demandNums.Length > 4)
+									{
+										<br />
+										<a href="javascript:void(0)" class="show-more-demands" data-target="@demandRowId" style="font-size: 0.85em;">
+											<i class="fas fa-plus-circle"></i> Show @(demandNums.Length - 4) more
+										</a>
+										<a href="javascript:void(0)" class="show-less-demands" data-target="@demandRowId" style="font-size: 0.85em; display: none;">
+											<i class="fas fa-minus-circle"></i> Show less
+										</a>
+									}
+								</div>
+							}
+							else
+							{
+								<span class="text-muted">-</span>
+							}
+						</td> *@
+						<td class="demand-column" style="display:none;">
+							@if (!string.IsNullOrEmpty(item.MMGFileNumbers))
+							{
+								var mmgNums = item.MMGFileNumbers.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+
+								// Parse the mapping: "5:MMG-001, 8:MMG-002"
+								var mmgMapping = new Dictionary<string, int>();
+								if (!string.IsNullOrEmpty(item.MMGDemandMapping))
+								{
+									var mappings = item.MMGDemandMapping.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+									foreach (var mapping in mappings)
+									{
+										var parts = mapping.Split(':');
+										if (parts.Length == 2 && int.TryParse(parts[0], out int demandDbkey))
+										{
+											mmgMapping[parts[1]] = demandDbkey;
+										}
+									}
+								}
+
+								foreach (var mmg in mmgNums)
+								{
+									if (mmgMapping.ContainsKey(mmg))
+									{
+										var demandDbkey = mmgMapping[mmg];
+										<span class="mmg-pill"
+											  style="margin: 2px; cursor: pointer;"
+											  onclick="window.open('/DemandManagement/DemandTree?id=@demandDbkey', '_blank')"
+											  title="Click to view demand details for @mmg">
+											@mmg
+										</span>
+									}
+									else
+									{
+										<span class="mmg-pill" style="margin: 2px;">@mmg</span>
+									}
+								}
+							}
+							else
+							{
+								<span class="text-muted">-</span>
+							}
+						</td>
+						<td class="demand-column" style="display:none;">
+							@if (!string.IsNullOrEmpty(item.DemandReceiptNumbers))
+							{
+								var receiptNums = item.DemandReceiptNumbers.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+								var receiptRowId = "receipt-" + item.Raw_material_Dbkey;
+
+								<div class="receipt-pills-container" id="@receiptRowId">
+									@for (int i = 0; i < receiptNums.Length; i++)
+									{
+										var isHidden = i >= 4 ? "receipt-pill-hidden" : "";
+										<span class="receipt-pill @isHidden" style="margin: 2px;">@receiptNums[i]</span>
+									}
+									@if (receiptNums.Length > 4)
+									{
+										<br />
+										<a href="javascript:void(0)" class="show-more-receipts" data-target="@receiptRowId" style="font-size: 0.85em;">
+											<i class="fas fa-plus-circle"></i> Show @(receiptNums.Length - 4) more
+										</a>
+										<a href="javascript:void(0)" class="show-less-receipts" data-target="@receiptRowId" style="font-size: 0.85em; display: none;">
+											<i class="fas fa-minus-circle"></i> Show less
+										</a>
+									}
+								</div>
+							}
+							else
+							{
+								<span class="text-muted">-</span>
+							}
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+@section Scripts {
+	<script src="~/mpi/common.js" asp-append-version="true"></script>
+	<script>
+		$(document).ready(function () {
+			// Initialize DataTable
+			var table = $('#consolidatedInventoryTable').DataTable({
+				dom: 'Bfrtip',
+				buttons: [
+					{
+						extend: 'excelHtml5',
+						text: '<i class="fas fa-file-excel"></i> Export to Excel',
+						className: 'btn btn-success btn-sm',
+						title: 'Consolidated Inventory Report',
+						exportOptions: {
+							columns: ':visible'  // Only export visible columns
+						}
+					},
+				],
+				responsive: true,
+				pageLength: 25,
+				lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+				order: [[0, 'asc']], // Sort by Material Name
+						columnDefs: [
+			{ targets: [3, 4, 5, 6, 7], className: 'text-end' },
+			{ targets: [12, 13], visible: false } // MMG/Receipt columns hidden by default (Demand Numbers removed)
+		]
+			});
+
+			// Populate filter dropdowns with unique values
+			populateFilters();
+
+			// Filter by RM Type
+			$('#filterRMType').on('change', function () {
+				var val = $(this).val();
+				table.column(2).search(val ? '^' + val + '$' : '', true, false).draw();
+			});
+
+			// Filter by Execution Responsibility
+			$('#filterExecResp').on('change', function () {
+				var val = $(this).val();
+				table.column(8).search(val, false, false).draw();
+			});
+
+			// NEW: Filter by Vendor
+			$('#filterVendor').on('change', function () {
+				var val = $(this).val();
+				table.column(9).search(val, false, false).draw();
+			});
+
+			// Filter by Inventory Balance
+			$('#filterBalance').on('change', function () {
+				$.fn.dataTable.ext.search.push(
+					function (settings, data, dataIndex) {
+						var filterValue = $('#filterBalance').val();
+						if (filterValue === '') return true;
+
+						var balance = parseFloat(data[7].replace(/,/g, '')) || 0;
+
+						if (filterValue === 'positive') return balance > 0;
+						if (filterValue === 'zero') return balance === 0;
+						if (filterValue === 'negative') return balance < 0;
+
+						return true;
+					}
+				);
+				table.draw();
+				$.fn.dataTable.ext.search.pop();
+			});
+
+			// Filter by Procurement Balance
+			$('#filterProcBalance').on('change', function () {
+				$.fn.dataTable.ext.search.push(
+					function (settings, data, dataIndex) {
+						var filterValue = $('#filterProcBalance').val();
+						if (filterValue === '') return true;
+
+						var balance = parseFloat(data[5].replace(/,/g, '')) || 0;
+
+						if (filterValue === 'positive') return balance > 0;
+						if (filterValue === 'zero') return balance === 0;
+						if (filterValue === 'negative') return balance < 0;
+
+						return true;
+					}
+				);
+				table.draw();
+				$.fn.dataTable.ext.search.pop();
+			});
+
+			// Reset Filters
+			$('#btnResetFilters').on('click', function () {
+				$('#filterRMType').val('').trigger('change');
+				$('#filterExecResp').val('').trigger('change');
+				$('#filterVendor').val('').trigger('change'); // NEW: Reset vendor filter
+				$('#filterBalance').val('').trigger('change');
+				$('#filterProcBalance').val('').trigger('change');
+				table.search('').columns().search('').draw();
+			});
+
+					// Toggle Demand Columns Visibility
+		$('#chkShowDemandColumns').on('change', function () {
+			var isChecked = $(this).is(':checked');
+			table.columns([12, 13]).visible(isChecked); // MMG and Receipt columns only (Demand Numbers removed)
+			if (isChecked) {
+				$('.demand-column').show();
+			} else {
+				$('.demand-column').hide();
+			}
+		});
+
+			// Show more/less demands
+			// $(document).on('click', '.show-more-demands', function () {
+			// 	var targetId = $(this).data('target');
+			// 	$('#' + targetId + ' .demand-pill-hidden').removeClass('demand-pill-hidden');
+			// 	$(this).hide();
+			// 	$('#' + targetId + ' .show-less-demands').show();
+			// });
+
+			// $(document).on('click', '.show-less-demands', function () {
+			// 	var targetId = $(this).data('target');
+			// 	$('#' + targetId + ' .demand-pill').each(function (index) {
+			// 		if (index >= 4) {
+			// 			$(this).addClass('demand-pill-hidden');
+			// 		}
+			// 	});
+			// 	$(this).hide();
+			// 	$('#' + targetId + ' .show-more-demands').show();
+			// });
+
+			// Show more/less receipts
+			$(document).on('click', '.show-more-receipts', function () {
+				var targetId = $(this).data('target');
+				$('#' + targetId + ' .receipt-pill-hidden').removeClass('receipt-pill-hidden');
+				$(this).hide();
+				$('#' + targetId + ' .show-less-receipts').show();
+			});
+
+			$(document).on('click', '.show-less-receipts', function () {
+				var targetId = $(this).data('target');
+				$('#' + targetId + ' .receipt-pill').each(function (index) {
+					if (index >= 4) {
+						$(this).addClass('receipt-pill-hidden');
+					}
+				});
+				$(this).hide();
+				$('#' + targetId + ' .show-more-receipts').show();
+			});
+
+			// Function to populate filter dropdowns
+					// Function to populate filter dropdowns
+		function populateFilters() {
+			// Populate RM Type
+			var rmTypes = [];
+			table.column(2).data().unique().sort().each(function (d) {
+				if (d && d.trim() !== '') {
+					rmTypes.push(d);
+				}
+			});
+			rmTypes.forEach(function (type) {
+				$('#filterRMType').append('<option value="' + type + '">' + type + '</option>');
+			});
+
+			// Populate Execution Responsibility
+			var execResps = new Set();
+			table.column(8).data().each(function (d) {
+				if (d && d.trim() !== '') {
+					// Split by comma in case there are multiple responsibilities
+					var items = d.split(',').map(item => item.trim());
+					items.forEach(item => execResps.add(item));
+				}
+			});
+			Array.from(execResps).sort().forEach(function (resp) {
+				$('#filterExecResp').append('<option value="' + resp + '">' + resp + '</option>');
+			});
+
+			// Vendor dropdown is now populated via Razor/LINQ - no JavaScript needed
+		}
+		});
+
+		
+				// Show more/less vendors
+		$(document).on('click', '.show-more-vendors', function () {
+			var targetId = $(this).data('target');
+			$('#' + targetId + ' .vendor-pill-hidden').removeClass('vendor-pill-hidden');
+			$(this).hide();
+			$('#' + targetId + ' .show-less-vendors').show();
+		});
+
+		$(document).on('click', '.show-less-vendors', function () {
+			var targetId = $(this).data('target');
+			$('#' + targetId + ' .vendor-pill').each(function (index) {
+				if (index >= 2) {
+					$(this).addClass('vendor-pill-hidden');
+				}
+			});
+			$(this).hide();
+			$('#' + targetId + ' .show-more-vendors').show();
+		});
+
+	</script>
+}

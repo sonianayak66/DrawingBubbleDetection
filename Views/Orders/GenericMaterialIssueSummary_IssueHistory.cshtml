@@ -1,0 +1,41 @@
+﻿@using MPCRS.Utilities
+@model List<MPCRS.ViewModels.GenericMaterialIssueSummary_IssueHistory_VM>
+@{
+    Layout = null;
+}
+
+@if (Model != null && Model.Count > 0)
+{
+    <table class="table table-bordered table-hover table-condensed table-primary p-0 m-0" style="font-size:small;">
+        <thead>
+            <tr>
+                <th style="padding:6px 10px;">Issue Date</th>
+                <th style="padding:6px 10px;">Reference No</th>
+                <th style="padding:6px 10px;">Vendor</th>
+                <th style="padding:6px 10px;">For Engine</th>
+                <th style="padding:6px 10px; text-align:right;">Issued Qty</th>
+                <th style="padding:6px 10px; text-align:right;">Available Qty</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td style="padding:4px 10px;"> 
+                    @MPGlobals.GetFormattedDate(item.IssueDate)</td>
+                    <td style="padding:4px 10px;">@item.Reference_No</td>
+                    <td style="padding:4px 10px;"><b>@item.Vendor_Name</b></td>
+                    <td style="padding:4px 10px;">@item.ForEngine</td>
+                    <td style="padding:4px 10px; text-align:right;">@item.IssuedQty</td>
+                    <td style="padding:4px 10px; text-align:right;">@item.AvailableQty</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="col-12 text-center p-3">
+        <h6>No issue history available</h6>
+    </div>
+}

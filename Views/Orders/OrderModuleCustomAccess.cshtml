@@ -1,0 +1,56 @@
+﻿@using System.Data;
+@using MPCRS.Utilities;
+@model MPCRS.ViewModels.OrdersModuleUserDetails
+
+
+<table>
+    <tr>
+        <th>Module:</th>
+        <td> @Model.castingDetail.OrderType</td>
+        <td>|</td>
+        <th>Order Number :</th>
+        <td> @Model.castingDetail.MMGOrderNumber</td>
+        <td>|</td>
+        <th>Description:</th>
+        <td> @Model.castingDetail.DemandDesc</td>
+    </tr>
+</table>
+
+<table class="table" style="width:100%">
+    <tr>
+        <td style="width:50%">
+            <table class="table table-bordered" style="width:100%">
+                <thead>
+                    <tr>
+                        <th style="width:30%">Select</th>
+                        <th style="width:70%">User</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @{
+                        foreach (var user in Model.orderModuleUserMappings)
+                        {
+                            <tr>
+                                <td style="text-align:center; vertical-align:middle;">
+                                    <input type="checkbox" class="ModuleUserselected"
+                                           data-userguid="@user.UserGuid"
+                                           data-orderid="@Model.castingDetail.CastingDbkey"
+                                           data-ordertype="@Model.castingDetail.OrderType"
+                                           data-mappingid="@user.Id"
+                                           style="width:18px; height:18px;" @(user.Id != 0 ? "checked" : "") />
+                                </td>
+                                <td>@user.UserName</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </td>
+        <td style="width:20%">
+            <button class="btn btn-success btn-sm" onclick="SubmitOrderModuleUserMapping()">Save</button>
+        </td>
+    </tr>
+</table>
+ 
+

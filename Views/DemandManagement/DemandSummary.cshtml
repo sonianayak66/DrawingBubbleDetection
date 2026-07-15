@@ -1,0 +1,94 @@
+﻿@model MPCRS.ViewModels.BuildViewModel
+@using MPCRS.Utilities;
+@{
+    ViewData["Title"] = "";
+    var Permission_Buid_Write = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Write);
+}
+<link href="~/css/style.min.css" rel="stylesheet" />
+<style>
+    .jstree-node {
+        font-size: 10pt;
+    }
+
+    .Isupdated {
+        color: #0eb438
+    }
+
+    .IsInactivated {
+        color: #e22111
+    }
+
+    .Notupdated {
+        color: black;
+    }
+
+    .soppartonly {
+        color: #e67c29;
+    }
+</style>
+
+  
+ 
+<div class="row">
+    <div class="col-md-6">
+        <div>
+            <input class="search-input form-control" placeholder="Search......." />
+        </div>
+        <div style="max-height:600px!important;overflow-y:scroll">
+            <div id="jstree">
+            </div>
+        </div>
+
+    </div>
+    <div class="col-md-4 offset-1" id="Div_ComponentDetail">
+    </div>
+</div>
+
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/js/jstree.min.js" asp-append-version="true"></script>
+   
+    <script>
+        function LoadJstree() {
+            var BuildGuid = document.getElementById("BuildGuid").value;
+            $.ajax({
+                type: "Get",
+                url: "/SOPManagement/GetBuildJsTreeData?buidguid=" + BuildGuid,
+                success: function (data) {
+
+                    var nodelog = $('#jstree').jstree(
+                        {
+                            'core': {
+                                'data': data,
+                            },
+                            "search": {
+                                "case_insensitive": true,
+                                "show_only_matches": true,
+                                "show_only_matches_children": true
+                            },
+                            "plugins": ["html_data", "dnd", "contextmenu", "search", "types", "adv_search", "themes"],
+                            "contextmenu": {
+                                "items": function ($node) {
+                                    return {
+                                        "Edit": {
+                                            "label": "Add New",
+                                            "action": function (obj) {
+                                                AddSopPart(0, $node.id);
+                                            }
+                                        }
+                                    };
+                                }
+                            }
+                        }).on('changed.jstree', function (e, data) {
+                            var nodedata = data.instance.get_node(data.selected[0]).id;
+                            var buildId = nodedata.split("_")[1];
+                            GetComponentDetail(buildId);
+                        });
+                }
+            });
+        }
+    </script>
+
+}

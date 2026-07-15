@@ -1,0 +1,102 @@
+﻿@model string
+@using System.Data
+@using MPCRS.Utilities
+
+<style>
+    .basicinfores {
+        color:aqua ;
+    }
+</style>
+
+@{
+    var dt = MPGlobals.GetDataForDatalist($"[dbo].[MasterSearch_HeatBatchSearch] @SearchText = '{Model}'");
+}
+
+@{
+    if (dt.Rows.Count > 0)
+    {
+        <table class="table table-sm table-bordered">
+            <thead>
+                
+                <tr style="background-color: #e9ecef;">
+                 
+                    <th class="Details">MMG FileNo</th>
+                    <th class="Details">Vendor Name</th>
+                    <th class="Details">Raw Material Name</th>
+                    <th class="Details">Receipt No</th>
+                    <th class="Details">Receipt Date</th>
+                    <th class="Details">Heat No</th>
+                    <th class="Details">Batch No</th>
+
+                    
+                    <th class="Details">
+                        <span>Weight</span>
+                    </th>
+                
+                    <th class="Details">Length</th>
+                    <th class="Details">Breadth</th>
+                    <th class="Details">DocumentBadges</th>
+                    <th class="Details"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (DataRow row in dt.Rows)
+                {
+                    <tr>
+                        
+                        <td>@row["MMG_File_No"]</td>
+                        <td>
+                            @if (row["Vendor_Name"] != DBNull.Value && !string.IsNullOrEmpty(row["Vendor_Name"].ToString()))
+                            {
+                                // <span style="display: inline-block; font-size: 0.85em; padding: 4px 10px; border-radius: 12px; background-color: #fff3e0; color: #e65100; border: 1px solid #ffb74d;">
+                                    @row["Vendor_Name"]
+                                // </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>@row["Raw_Material_Name"]</td>
+                        <td>@row["Receipt_No"]</td>
+                        
+                        <td>
+                            @row["Receipt_Date"]
+                        </td>
+                        <td>@row["Heat_No"]</td>
+                        <td>@row["Batch_No"]</td>
+                        <td>@row["Weight"] @row["Split_UOM"]</td>
+                        
+                        <td>@row["Measurement"]</td>
+                        <td>@row["Measurement_breadth"]</td>
+                        <td>
+                            @if (row["DocumentBadges"] != DBNull.Value && !string.IsNullOrEmpty(row["DocumentBadges"].ToString()))
+                            {
+                                @Html.Raw(row["DocumentBadges"])
+                            }
+                            else
+                            {
+                                <span class="text-muted"></span>
+                            }
+                        </td>
+                        
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No batch details available for this batch number.
+        </div>
+    }
+
+
+
+
+
+}
+        
+
+

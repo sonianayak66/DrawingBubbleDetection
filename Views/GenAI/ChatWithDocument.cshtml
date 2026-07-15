@@ -1,0 +1,416 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+
+<style>
+    .chat-container {
+        width: 100%;
+        margin: 10px auto;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .chat-box {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+        height: 400px;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .input-container {
+        display: flex;
+        padding: 10px;
+    }
+
+    #user-input {
+        flex: 1;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    #send-button {
+        margin-left: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+    }
+
+    #clear-button {
+        margin-left: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+    }
+
+    #send-button:hover {
+        background-color: #0056b3;
+    }
+
+    .scrollable-div {
+        height: 70vh; /* Adjust to a percentage of the viewport height */
+        overflow-y: auto; /* Enable vertical scrolling */
+        border: 1px solid #ccc; /* Optional: Add a border for better visualization */
+        padding: 10px; /* Optional: Add some padding */
+        box-sizing: border-box; /* Ensure padding and border are included in the width and height */
+    }
+
+
+    .card-header {
+        padding: 0;
+        margin: 0;
+    }
+
+    #responseHistory {
+       max-height:70vh;
+        transition: height 0.3s ease, opacity 0.3s ease; 
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+
+    }
+
+    .historyDiv{
+        padding: 3px; /* Padding for each history item */
+        border-bottom: 1px solid #eee; /* Light border between items */
+        border-radius:10px;
+        cursor:pointer;
+    }
+
+    .historyDiv:hover{
+        padding: 3px; /* Padding for each history item */
+        border-bottom: 1px solid #eee; /* Light border between items */
+        color: #888;
+        background-color: #f4f4f4;
+        border-radius:10px;
+    }
+
+    .card.collapsed {
+        display: none; /* Completely hide when collapsed */
+    }
+
+    .toggle-icon {
+        background-color: #f1f1f1; /* Icon background */
+        padding: 10px; /* Padding for the icon */
+        margin-bottom: 5px; /* Space between icon and input */
+        display: inline-flex; /* Aligns icon properly */
+        align-items: center; /* Centers icon vertically */
+    }
+
+    #logsTable {
+        height: 80vh; /* Adjust to a percentage of the viewport height */
+        overflow-y: auto; /* Enable vertical scrolling */
+        /* display: block; */
+    }
+
+
+</style>
+@* <div>
+    <div class="toggle-icon" onclick="toggleCard()" style="cursor: pointer;">
+        <i class="fas fa-arrow-right" id="toggleicon"></i> 
+    </div>
+</div> *@
+<div class="row">
+    <div class="col-2">
+        <div class="card">
+            <div class="card-body">
+                <div id="logsTable"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-10" id="mainContent">
+        <div class="col-3" id="iconContainer" style="display: none;">
+        </div>
+        <div class="row mb-3">
+            <div class="col-9" id="inputColumn">
+                <input type="text" class="form-control" id="user-input" placeholder="Type your message here..."  required/>
+            </div>
+
+            <div class="col-3">
+                <button class="btn btn-sm btn-primary" id="send-button">Send</button>
+                <button class="btn btn-sm btn-danger" id="clear-button" onclick="Reload()">Clear</button>
+                <a class="btn btn-sm btn-primary" onclick="uploadFile()" style="display:none">Upload</a>
+            </div>
+        </div>
+        <ul class="nav nav-underline" id="myTab" role="tablist">
+            <li class="nav-item" style="margin-right:10px"><a class="nav-link active" id="list-tab" data-bs-toggle="tab" href="#tab-list" role="tab" aria-controls="tab-profile" aria-selected="true">Documents List</a></li>
+            <li class="nav-item" style="margin-right:10px"><a class="nav-link" id="details-tab" data-bs-toggle="tab" href="#responsebodydiv" role="tab" aria-controls="tab-home" aria-selected="false">Summary</a></li>
+        </ul>
+        <div class="tab-content">
+
+
+           <div class="tab-pane fade show active" id="tab-list" role="tabpanel" aria-labelledby="list-tab">
+                <br />
+                <div class="card scrollable-div" id="documentsList">
+                </div>
+            </div>
+            <div class="tab-pane fade " id="responsebodydiv" role="tabpanel" aria-labelledby="details-tab">
+                <br />
+                <div class="card scrollable-div" id="responsebody">
+                </div>
+             </div>
+        
+             </div>
+ 
+    </div>
+</div>
+
+
+
+
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+
+        $(document).ready(function () {
+            getDocResponseLogs();
+            UpdateNavHeading("Chat with Document");
+            //adjustHeightandWidth();
+
+        });
+        // function adjustHeightandWidth() {
+        //     var width = window.innerWidth;
+        //     var height = window.innerHeight;
+        //     document.getElementById("responsebody").style.width = width -350 + 'px';
+        //     document.getElementById("responseHistory").style.height = height - 180 + 'px';
+        // }
+
+        document.getElementById('user-input').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                document.getElementById('send-button').click();
+            }
+        });
+        var response = "";
+       
+        $('#send-button').on('click', function () {
+            var userInput = $('#user-input').val().trim();
+            if (userInput === '') {
+                return false;
+            }
+
+            let LoadingDialog = bootbox.dialog({
+                message: '<p class="text-center mb-0"><img src="/assets/img/searching_doc.gif" alt="Loading..." width="200" height="200"> <p class="text-center mb-0">Searching relevant documents...</p></p>',
+                closeButton: false
+            });
+
+            document.getElementById("responsebody").innerHTML = '';
+            $('#responsebody').append('<p>' + userInput + '</p>');
+            $('#responsebody').append('<p> Generating response... </p>');
+
+            // Create a new EventSource for streaming responses
+            const eventSource = new EventSource('/GenAI/GetDoc_Response?userPrompt=' + userInput);
+           
+            var i = 0;
+            eventSource.onmessage = function (event) {
+                var response = event.data;
+                bootbox.hideAll();
+              //  console.log(response);
+                if (response.includes("!No Relevant documnets found!") || response.includes("NoRelevantDocFoundFromPYTHON")) {
+                    response = response.replace("NoRelevantDocFoundFromPYTHON", "");
+                    document.getElementById('documentsList').innerHTML = '<p>' + response + '</p>'; // Update the HTML element with event data
+                    document.getElementById('responsebody').innerHTML = '<p>' + userInput + '</p>';
+                    eventSource.close(); // Close the EventSource connection
+                    return;
+                }
+
+               if(i==0){
+                    document.getElementById('documentsList').innerHTML = event.data;
+               }
+               else{
+                    document.getElementById('responsebody').innerHTML = event.data;
+                    eventSource.close();
+               }
+                i++;
+
+            };
+
+
+            eventSource.onerror = function (err) {
+                bootbox.hideAll();
+                console.log(err);
+                console.error('Error occurred while receiving data:', err);
+                if (err.target.readyState === EventSource.CLOSED) {
+                    console.error('EventSource connection was closed.');
+                } else {
+                    console.error('EventSource encountered an error. Status:', err.target.readyState);
+                }
+                eventSource.close(); // Close the connection on error
+            };
+
+            // Close the loading dialog once the responses are received
+            // eventSource.addEventListener('close', function () {
+            //     bootbox.hideAll();
+            //     eventSource.close(); // Close the connection after receiving all responses
+            // });
+        });
+
+
+        function toggleCard() {
+            const card = document.getElementById('responseHistory');
+            const inputColumn = document.getElementById('responsebody');
+            const iconContainer = document.getElementById('iconContainer');
+            const icon = document.querySelector('.toggle-icon i');
+
+            const isCollapsed = card.classList.toggle('collapsed');
+
+            // Adjust icon based on the card state
+            if (isCollapsed) {
+                icon.classList.remove('fas', 'fa-arrow-right');
+                icon.classList.add('fas', 'fa-arrow-left');
+                iconContainer.style.display = 'block';
+            } else {
+                icon.classList.remove('fas', 'fa-arrow-left');
+                icon.classList.add('fas', 'fa-arrow-right');
+                iconContainer.style.display = 'none'; 
+            }
+        }
+
+        var DocResponseList = [];
+        function getDocResponseLogs() {
+            $.ajax({
+                type: "Get",
+                url: "/GenAI/GetDocResponseLog",
+                success: function (data) {
+                    DocResponseList = JSON.parse(data);
+                    generateTable();
+                   // console.log(DocResponseList);
+                }
+            })
+        }
+        function generateTable() {
+            var groupedLogs = getDateGroups(DocResponseList);
+            let tableHtml = `<div class="card-header"><b>History</b></div><br />`;
+
+            Object.entries(groupedLogs).forEach(([timeFrame, ids]) => {
+                
+                if (ids.length > 0) { 
+                    var timeFrameDisplay = timeFrame.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/(\d+)/g, ' $1 ').trim();
+                    var formattedTimeFrame = timeFrameDisplay.charAt(0).toUpperCase() + timeFrameDisplay.slice(1);
+
+                    tableHtml += `<div><b>${formattedTimeFrame}</b></div>`;
+
+                    ids.forEach(id => { 
+                        var questionData = DocResponseList.find(q => q.Id === id);
+                        //console.log(questionData);
+                        if (questionData) { // Check if questionData exists
+                            const truncatedQuestion = truncateString(questionData.Question);
+                           // tableHtml += `<div><a class="cursor-pointer" onclick="showResponseHistory('${encodeURIComponent(questionData)}')" title="${questionData.Question}">${truncatedQuestion}</a></div>`;
+                            tableHtml += `<div class="historyDiv"><a onclick="showResponseHistory('${id}')" title="${questionData.Question}">${truncatedQuestion}</a></div>`;
+                        }
+                    });
+
+                    tableHtml += `<br />`;
+                }
+            });
+
+            document.getElementById('logsTable').innerHTML = tableHtml;
+        }
+
+        function getDateGroups(logs) {
+            var today = new Date();
+            today.setHours(0, 0, 0, 0); // Set time to midnight
+            //console.log(logs);
+            var groupedLogs = {
+                today: [],
+                yesterday: [],
+                previous7Days: [],
+                previous30Days: [],
+                previous90Days: [],
+                previous180Days: [],
+                previous365Days: []
+            };
+
+            logs.forEach(log => {
+                var updatedOn = new Date(log.UpdatedOn);
+                updatedOn.setHours(0, 0, 0, 0); // Set log time to midnight
+
+                var diffDays = Math.floor((today - updatedOn) / (1000 * 60 * 60 * 24));
+
+                if (diffDays === 0) {
+                    groupedLogs.today.push(log.Id);
+                } else if (diffDays === 1) {
+                    groupedLogs.yesterday.push(log.Id);
+                } else if (diffDays <= 7) {
+                    groupedLogs.previous7Days.push(log.Id);
+                } else if (diffDays <= 30) {
+                    groupedLogs.previous30Days.push(log.Id);
+                } else if (diffDays <= 90) {
+                    groupedLogs.previous90Days.push(log.Id);
+                }else if (diffDays <= 180) {
+                    groupedLogs.previous90Days.push(log.Id);
+                } else if (diffDays <= 365) {
+                    groupedLogs.previous365Days.push(log.Id);
+                }
+            });
+            //console.log(groupedLogs);
+            return groupedLogs;
+        }
+       
+
+        function showResponseHistory(questionID) {
+            //console.log(questionID);
+            var questionData = DocResponseList.find(q => q.Id == questionID);
+            response = CheckforNewLine(questionData.SqlQuery);
+
+           
+            if (questionData) {
+
+                //console.log(response);
+                document.getElementById("user-input").value = questionData.Question || '';
+                document.getElementById("responsebody").innerHTML = response || questionData.SqlQuery || '';
+                document.getElementById("documentsList").innerHTML = questionData.Prompt;
+               // document.getElementById('details-tab').click();
+            }
+        }
+
+        function CheckforNewLine(responseData) {
+            var formatedResponse = responseData.replace(/\\n/g, '<br>');
+            return formatedResponse;
+        }
+
+        function truncateString(str) {
+            const words = str.split(' '); 
+            if (words.length > 5) {
+                const firstWord = words[0]; 
+                const secondWord = words[1]; 
+                if (secondWord.length > 15) {
+                    return `${firstWord} ${secondWord.substring(0, 15)}...`; 
+                }
+                return `${firstWord} ${secondWord}...`; 
+            }
+            return str;
+        }
+
+
+        function Reload() {
+            window.location.reload();
+        }
+
+
+        function uploadFile() {
+            window.open('/GenAI/RagUpload', '_blank');
+        }
+
+        function getDoc(docID) {
+            window.location.href = "/DownloadFiles/DownloadRequest?fileKey=" + docID + "&SourceTable=Documentation";
+        }
+    </script>
+
+
+}

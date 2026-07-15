@@ -1,0 +1,104 @@
+﻿@model MPCRS.ViewModels.MasterPartViewModel
+@using System.Data
+@using MPCRS.Utilities
+@{
+    var UserList_For_RevisionManagement_DropDown = Masters.Get_UserList_For_RevisionManagement_DropDown();
+}
+
+<form asp-controller="MPL" asp-action="CreateEnginepartsWithExisting" id="MPLExistingPartCreateForm">
+    <input asp-for="Engine_Part_Dbkey" type="hidden" />
+    <input asp-for="Engine_Dbkey" type="hidden" />
+    <input asp-for="Parent_id" type="hidden" />
+    <input asp-for="is_active" type="hidden" />
+    <input asp-for="RevisionApplied" type="hidden" />
+    <input asp-for="is_rm_verified" type="hidden" />
+    <input asp-for="rm_verified_by" type="hidden" />
+    <input asp-for="Part_relation_dbkey" type="hidden" />
+    <input asp-for="Count_of_PendingApproving" type="hidden" />
+    <input asp-for="rm_updated_on" type="date" style="display:none"/>
+
+    <div id="CreatePartsMain">
+        <div class="row">
+            <div class="col-md-7">
+                    @{
+                        if (Model.Engine_Part_Dbkey == 0)
+                        {
+                            <h3>Create Engine Parts :<br /> @Html.Raw(@Model.Engine_Title)</h3>
+                        }
+                        else
+                        {
+                            <h3>Edit Engine Parts :<br /> @Html.Raw(@Model.Engine_Title)</h3>
+                            <br />
+                            if (Model.Count_of_PendingApproving != 0)
+                            {
+                                <label style="color:red">Note : You cannot update this Part; because there are changes awaiting approval</label>
+                            }
+
+                        }
+                    }
+                <p>Note: Changes made here requires approval. </p>
+            </div>
+            <div class="col-md-4">
+                <label class="required"> Please select an approriate approver to proceed:</label>
+                @* <select asp-for="Approver_ID" asp-items="Model.UserList" class="form-select form-sm"></select> *@
+                <select asp-for="Approver_ID" asp-items="UserList_For_RevisionManagement_DropDown" class="form-select form-sm"></select>
+                <span asp-validation-for="Approver_ID" id="validateMsg_Approver_ID" class="text-danger"></span>
+            </div>
+            <div class="col-md-1">
+                @{
+                    if (Model.Count_of_PendingApproving != 0)
+                    {
+                        <input type="button" value="Save" class="btn btn-success" disabled />
+                    }
+                    else
+                    {
+                        <input type="button" value="Save" class="btn btn-success" id="lnk_save_mpl" onclick="SaveEnginepartsinfoWithExistingParts()" />
+                    }
+                }
+
+            </div>
+        </div>
+
+ 
+        <hr />
+        <div class="col-md-12 col-sm-12 col-lg-12" style="height:500px!important">
+            <div>
+                <span id="CustomValidationMessageforPartselected" class="text-danger"></span>
+                <table class="table table-bordered" id="MPL_Existing">
+                    <thead>
+                        <tr>
+                            <th>Select</th>
+                            <th>Part No</th>
+                            <th>Parent</th>
+                            <th>Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            DataTable dataTable = MPGlobals.GetDataForDatalist("[dbo].[Get_MPL_TreeData]");
+                            var sortedtable = dataTable.AsEnumerable().OrderBy(x => x.Field<int>("Engine_Part_Dbkey")).CopyToDataTable();
+                            foreach (DataRow datarow in sortedtable.Rows)
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" style="width:18px!important;height:18px!important" class="partsSelector" onchange="ValidatePartsSelect(this,@datarow["Engine_Part_Dbkey"],@datarow["Part_relation_dbkey"])" />
+                                        <input type="hidden" value="@datarow["Engine_Part_Dbkey"]" />
+                                    </td>
+                                    <td class="text-left">@datarow["Type_Part_Name"]</td>
+                                    <td class="text-left">@datarow["Parent_Draw_part_no"]</td>
+                                    <td class="text-right">@datarow["Qty_per_Engine"]</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+      
+    </div>
+
+
+</form>
+ 

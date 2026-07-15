@@ -1,0 +1,184 @@
+﻿@model List<MPCRS.ViewModels.BaseLineEngineVM>
+@using MPCRS.Utilities;
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Base Line Engines";
+    var hasPermission = UserData.IsAuthorized(User, Constants.UserPermissions.BaseLineEngine_Write);
+}
+
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-md-6 col-sm-6">
+                <h3>Base Line Engines</h3>
+            </div>
+            <div class="col-md-3 col-sm-3">
+                <a class="btn btn-success float-end" style="margin-right:4px" onclick="location.href='@Url.Action("MPL_Comaprision", "MPL")'">MPL Comaprision</a>
+            </div>
+            
+            <div class="col-md-3 col-sm-3 pull-right">
+                <a class="btn btn-secondary float-end" style="margin-right:4px" onclick="location.href='@Url.Action("Index", "Home")'">Back</a>
+                <a class="btn btn-primary float-end" style="margin-right:10px;" type="button" onclick="EditEngine(0)">Create</a>
+            </div>
+        </div>
+    </div>
+</div>
+<hr />
+
+<div class="col-md-12 col-sm-12 col-lg-12 divc">
+
+    <table data-toggle="table" class="table table-sm fs--1 mb-2" id="BaseLineengtbl">
+        <thead>
+            <tr styel="height:2px" role="row">
+                <th data-sortable="true" scope="col">Base Line Engine</th>
+                <th data-sortable="true" scope="col">Description</th>
+                <th data-sortable="true" scope="col">State </th>
+                <th data-sortable="true" scope="col">Revision Date</th>
+                <th data-sortable="true" scope="col">Revision Title </th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                foreach (var item in Model)
+                {
+                    if (@item.Revision_date != null)
+                    {
+                        <tr>
+                            <td>@item.Engine_Title</td>
+                            <td>@item.Engine_Description</td>
+                            <td>@item.is_active</td>
+                            <td>@Convert.ToDateTime(@item.Revision_date).ToString("dd-MM-yyyy")</td>
+                            <td>@item.Revision_title</td>
+
+                            <td>
+                                     <div class="font-sans-serif btn-reveal-trigger position-static">
+                                            <button class="btn btn-sm dropdown-toggle dropdown-caret-none  transition-none btn-reveal fs--2" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs--2"></span></button>
+                                            <ul class="dropdown-menu dropdown-menu-end py-2" style="cursor:pointer">
+
+                                                @{
+                                                    if (hasPermission)
+                                                    {
+                                                        <li><a class="dropdown-item" onclick="EditEngine(@item.BL_Engine_Dbkey)">Edit</a></li>
+                                                        <li><a class="dropdown-item" onclick="CloneConfirmation(@item.BL_Engine_Dbkey)">Clone</a></li>
+                                                        <li><a class="dropdown-item" href="/MPL/ApproverList?BlEngineDbKey=@item.BL_Engine_Dbkey">Add Addition Info</a></li>
+                                                    }
+
+                                                    if (@item.is_active == "Active")
+                                                    {
+                                                        <li><a class="dropdown-item" onclick="ManageBLEParts(@item.BL_Engine_Dbkey)">Manage Engine Parts</a></li>
+                                                    }
+                                                }
+                                            
+                                                 <li><a class="dropdown-item" target="_blank" href="/MPL/Report?key=@item.BL_Engine_Dbkey">View MPL report</a></li>
+                                                <li><a class="dropdown-item" onclick="DownloadJsonFile(@item.BL_Engine_Dbkey)">Download Json Tree</a></li>
+                                                <li><a class="dropdown-item" onclick="DownloadDocJsonFile(@item.BL_Engine_Dbkey)">Download Json Doc</a></li>
+                                            </ul>
+                                        </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            }
+        </tbody>
+    </table>
+
+</div>
+
+@section scripts
+    {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            $('#BaseLineengtbl').DataTable({
+                sorting: false,
+
+            });
+        });
+
+        function EditEngine(BLengineDbkey) {
+            $.ajax({
+                url: '/SOPManagement/CreateBaseLineEngine?BlEngineDbKey=' + BLengineDbkey,
+
+                type: 'GET',
+                success: function (data) {
+                    bootbox.alert({
+                        message: data,
+                        size: 'large',
+                        buttons: {
+                            ok: {
+                                className: 'd-none',
+                                //callback: function () {
+                                //    if (!$('#FrmRecp').valid()) { return false }
+                                //}
+                            }
+                        },
+                    });
+                }
+            });
+        }
+
+        function SubmitBLEngine() {
+            var Bldbkey = document.getElementById("BL_Engine_Dbkey").value;
+            if (!$('#createBLEngine').valid()) {
+                return false
+            }
+            var data = $("#createBLEngine").serialize();
+            $.ajax({
+                type: 'POST',
+                url: '/SOPManagement/CreateBaseLineEngine',
+                data: data,
+                success: function (data) {
+                    bootbox.alert(data.msg,
+                        function () {
+                            var btn = document.getElementsByClassName("bootbox-close-button")[0];
+                            btn.click();
+                        });
+                },
+                error: function (data) { bootbox.alert(data.msg) }
+            });
+        }
+
+
+        function CloneConfirmation(Dbkey) {
+            bootbox.confirm("Are you sure you wish to Clone?", function (result) {
+                if (result) {
+                    $.ajax({
+                        type: "POST",
+                        url: "/MPL/CloneBLEngine?id=" + Dbkey,
+                        success: function (data) {
+                            if (data.success) {
+                                bootbox.alert("Cloned Successfully");
+                            }
+                            else {
+                                bootbox.alert(data.msg)
+                            }
+                        },
+                    });
+                }
+                else {
+                    bootbox.alert("Clone Failed.");
+                }
+            }
+            );
+        }
+        function DownloadJsonFile(Dbkey) {
+            window.open('/MPL/DownloadMplJsonFiles?BL_Engine_Dbkey=' + Dbkey, '_blank');
+        }
+
+        function DownloadDocJsonFile(Dbkey) {
+            window.open('/MPL/DownloadMplDocJsonFiles?BL_Engine_Dbkey=' + Dbkey, '_blank');
+        }
+
+
+        function ManageBLEParts(Dbkey) {
+            window.open('/MPL/ManageBaselineEngineParts?BaselineEngineDbkey=' + Dbkey, '_blank');
+        }
+
+
+    </script>
+}
+
+

@@ -1,0 +1,204 @@
+﻿@model List<MPCRS.ViewModels.ProcurementAdditionalInfo>
+@using MPCRS.Utilities
+@{
+    var DemandReceiptWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write_Receipts);
+    var DemandDelete = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Delete);
+    var PartList = Masters.GetEnginePartList();
+    SelectList DocumentList = Masters.DemandReciptDocsReference(ViewBag.Receipt_dbkey);
+    string[] attachkeys;
+    var attachmentIdentifier = 0;
+}
+<style>
+    .select2-selection--multiple {
+        overflow: hidden !important;
+        height: auto !important;
+    }
+
+    .table-sm td {
+        padding: 10px !important;
+        white-space: nowrap;
+    }
+
+    .table-sm th {
+        padding: 10px !important;
+    }
+
+    .table-sm {
+        padding: 10px !important;
+    }
+
+        .table-sm input,
+        .table-sm select {
+            border-radius: 0;
+            border: none;
+        }
+</style>
+
+<div class="row" id="adnlInfoDataForm">
+    <div class="col-12">
+        <table class="table table-bordered table-sm" id="TblAdnlInfoEntry">
+            <thead>
+                <tr>
+                    <th style="display: none">SplitID</th>
+                    <th style="display: none">RecordGuid</th>
+                    <th style="width:5%!important">Sl No</th>
+                    <th style="width:25%!important">Part / Item</th>
+                    <th style="width:15%!important">Ref Nos</th>
+                    <th style="width:30%!important;display:none">Documents</th>
+                    <th style="width:20%!important">Remarks</th>
+                    <th style="width:5%!important"></th>
+                </tr>
+            </thead>
+
+            <tbody id="TblAdnlInfoEntryBody">
+                <tr style="display:none">
+
+                    @* <tr style="Display:"none"> need to add this *@
+                    <td style="display:none">
+                        <input type="hidden" value="@ViewBag.parentKey" data-attrType="parentKey" class="parentKey" />
+
+                    </td>
+                    <td style="display:none">
+                        <input value="new" type="hidden" data-attrType="recordGUID" class="recordGUID">
+                    </td>
+                    <td style="width:5%!important"><input type="text" value="1" class="form-control SerialNumber" data-attrType="SerialNumber" /></td>
+                    <td style="text-align:left; width:25%">
+                        <select asp-items="@PartList" class="adnlInfoItem form-control" data_attrType="adnlInfoItem"></select>
+                    </td>
+                    <td style="width:15%!important">
+                        <input type="text" class="form-control refNos" data-attrType="refNos" />
+                    </td>
+                    @*  <td style="width:15%!important">
+                    <select asp-items="@DocumentReference" class="adnlInfoDocs form-select" , data_attrType="adnlInfoDocs"></select>
+                    </td> *@
+
+                    <td style="display:none">
+                        <div class="input-group" id="selec2div" style="max-height:100px!important; overflow-y:scroll">
+                            <ul style="list-style-type: none; margin: 2px; padding: 0;">
+                                @{
+                                    foreach (var uploadedFile in DocumentList.Where(x => x.Text != "Select"))
+                                    {
+                                        <li>
+                                            <input data-attachmentKey="@uploadedFile.Value" value="@uploadedFile.Value" class="Attachment_Db_Key_@attachmentIdentifier" type="checkbox" /> @uploadedFile.Text   <a class="uil uil-cloud-download fs-1" style="cursor:pointer" href="/Attachment/DownloadfileWithKey?id=@uploadedFile.Value"></a>
+                                        </li>
+                                    }
+                                }
+                            </ul>
+                        </div>
+                    </td>
+
+                    <td style="width:20%!important">
+                        <input type="text" class="form-control remarks" data-attrType="remarks" />
+                    </td>
+                    <td style="width:15%!important">
+                        @{
+                            if (DemandDelete)
+                            {
+                                <i class="uil uil-trash-alt fs-2" style="color:red;text-align:center;cursor:pointer" onclick="delRowAdnlInfo(this)"></i>
+                            }
+                        }
+                    </td>
+                </tr>
+
+                @foreach (var item in Model)
+                {
+
+                    <tr>
+                        @* <tr style="Display:"none"> need to add this *@
+                        <td style="display:none">
+                            <input type="hidden" value="@ViewBag.parentKey" data-attrType="parentKey" class="parentKey" asp-for="@item.parentKey" />
+                        </td>
+                        <td style="display:none">
+                            <input value="@item.recordGUID" type="hidden" data-attrType="recordGUID" class="recordGUID" asp-for="@item.recordGUID" />
+                        </td>
+                        <td style="width:5%!important">
+                            <input type="text" asp-for="@item.item_SerialNumber" class="form-control SerialNumber" data-attrType="SerialNumber" />
+                        </td>
+                        <td style="text-align:left; width:25%">
+                            <select asp-items="@PartList" asp-for="@item.Item_Part" class="adnlInfoItem form-control" data_attrType="adnlInfoItem"></select>
+                        </td>
+                        <td style="width:15%!important">
+                            <input type="text" class="form-control refNos" asp-for="@item.refNos" data-attrType="refNos" />
+                        </td>
+                        @* <td style="width:15%!important">
+                    <select asp-items="@DocumentReference" asp-for="@item.documents" class="adnlInfoDocs form-select" , data_attrType="adnlInfoDocs" multiple></select>
+                    </td> *@
+                       @*  <td>
+                            <div class="input-group" id="selec2div" style="max-height:100px!important; overflow-y:scroll">
+                                <ul style="list-style-type: none; margin: 2px; padding: 0;">
+                                    @{
+                                        if (!string.IsNullOrEmpty(item.documents))
+                                        {
+                                            attachkeys = item.documents.Split(",");
+                                        }
+                                        else
+                                        {
+                                            attachkeys = new string[0];
+                                        }
+
+                                        foreach (var uploadedFile in DocumentList.Where(x => x.Text != "Select"))
+                                        {
+                                            <li>
+                                                @{
+                                                    if (Array.Exists(attachkeys, element => element == uploadedFile.Value))
+                                                    {
+                                                        <input data-attachmentKey="@uploadedFile.Value" value="@uploadedFile.Value" class="Attachment_Db_Key_@attachmentIdentifier" type="checkbox" checked /> @uploadedFile.Text   <a class="uil uil-cloud-download fs-1" style="cursor:pointer" href="/Attachment/DownloadfileWithKey?id=@uploadedFile.Value"></a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <input data-attachmentKey="@uploadedFile.Value" value="@uploadedFile.Value" class="Attachment_Db_Key_@attachmentIdentifier" type="checkbox" /> @uploadedFile.Text   <a class="uil uil-cloud-download fs-1" style="cursor:pointer" href="/Attachment/DownloadfileWithKey?id=@uploadedFile.Value"></a>
+                                                    }
+                                                }
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        </td> *@
+
+                        <td style="width:20%!important">
+                            <input type="text" class="form-control remarks" asp-for="@item.remarks" data-attrType="remarks" />
+                        </td>
+                        <td style="width:15%!important">
+                            @{
+                                if (DemandDelete)
+                                {
+                                    <i class="uil uil-trash-alt fs-2" style="color:red;text-align:center;cursor:pointer" onclick="delRowAdnlInfo(this)"></i>
+                                }
+                            }
+                        </td>
+                    </tr>
+                    attachmentIdentifier = attachmentIdentifier + 1;
+                }
+
+            </tbody>
+            @{
+                if (DemandReceiptWriteAccess)
+                {
+                    <tfoot>
+                        <tr>
+                            <td colspan="7">
+                                <button id="addrows" onclick="AddRowAdnlInfo()" class="btn float-start">+Add row</button>
+                            </td>
+                        </tr>
+                    </tfoot>
+                }
+            }
+
+        </table>
+    </div>
+    <div class="col-2">
+        @{
+            if (DemandReceiptWriteAccess)
+            {
+                <button class="btn btn-success float-right" onclick="SaveAdditionalInfo()">Save</button>
+            }
+        }
+      
+    </div>
+</div>
+@*<script type="text/javascript">
+    $(document).ready(function () {
+        $('.adnlInfoDocs').select2(); 
+    });
+</script>*@

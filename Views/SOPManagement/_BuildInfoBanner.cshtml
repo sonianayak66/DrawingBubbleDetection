@@ -1,0 +1,82 @@
+﻿@model string
+@using MPCRS.Utilities;
+@using System.Data;
+<style>
+    .avatar-xl .avatar-name {
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+    
+</style>
+@{
+    try
+    {
+        DataTable dataTable = MPGlobals.GetDataForDatatable($"SOPBuildComponentSummaryBanner_SSP @BuildGuid='{Model}'");
+        if (dataTable.Rows.Count > 0)
+        {
+            int Updated = int.Parse(dataTable.Rows[0]["Updated"].ToString());
+            int Replaced = int.Parse(dataTable.Rows[0]["Replaced"].ToString());
+            // Updated = Updated - Replaced;
+
+
+            <table style="width:100%" class="text-center">
+                <tr>
+                    <td style="text-align:initial!important">
+                        <h4><a href="/SOPManagement/BuildComponents?buidguid=@dataTable.Rows[0]["BuildGuid"]">SOP Components for @dataTable.Rows[0]["BuildName"]</a></h4>
+                        <span>@dataTable.Rows[0]["Engine_Title"]</span>
+                        <br />
+                        <small>Counts are shown relative to the build created from @dataTable.Rows[0]["ClonedFromBuild"]</small>
+
+                    </td>
+
+                    <td onclick="LoadJstree('[NoChanges]')">
+                        <div class="avatar avatar-xl" >
+                            <div class="avatar-name rounded-circle" style="color:black"><span>@dataTable.Rows[0]["Nochanges"]</span></div>
+
+                        </div>
+                        <h5>NO CHANGES</h5>
+                    </td>
+
+                    <td onclick="LoadJstree('[Updated]')">
+                        <div class="avatar avatar-xl ">
+                            @*<div class="avatar-name rounded-circle" style="color:#0eb438"><span>@dataTable.Rows[0]["Updated"]</span></div>*@
+                            <div class="avatar-name rounded-circle" style="color:#0eb438"><span>@Updated</span></div>
+
+                        </div>
+                        <h5>UPDATED</h5>
+                    </td>
+                    <td onclick="LoadJstree('[NewlyAdded]')">
+                        <div class="avatar avatar-xl ">
+                            <div class="avatar-name rounded-circle" style="color:#e67c29"><span>@dataTable.Rows[0]["NewlyAdded"]</span></div>
+                        </div>
+                        <h5>NEWLY ADDED</h5>
+                    </td>
+                    <td onclick="LoadJstree('[Replaced]')">
+                        <div class="avatar avatar-xl ">
+                            <div class="avatar-name rounded-circle" style="color:#800080"><span>@dataTable.Rows[0]["Replaced"]</span></div>
+                        </div>
+                        <h5>REPLACED</h5>
+                    </td>
+                    <td onclick="LoadJstree('[Removed]')">
+                        <div class="avatar avatar-xl ">
+                            <div class="avatar-name rounded-circle" style="color:#e22111"><span>@dataTable.Rows[0]["Removed"]</span></div>
+
+                        </div>
+                        <h5>REMOVED</h5>
+                    </td>
+                </tr>
+            </table>
+           
+        }
+    }
+    catch (Exception ex)
+    {
+        <span>@ex.Message</span>
+    }
+
+}
+ 
+ 
+
+ 
+

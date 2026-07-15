@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "description": "Production benchmark manifest. Expected values are used only by benchmark_production.py after detection; detector.py must never read this file.",
+  "acceptance": {
+    "min_bubble_recall": 0.8,
+    "min_value_accuracy": 0.8,
+    "max_spurious_rate": 0.1,
+    "max_runtime_ms_per_megapixel": 120000
+  },
+  "cases": [
+    {
+      "name": "ui_screenshot_1png",
+      "image_path": "DrawingBubble/1.png",
+      "category": "clean_ui_screenshot",
+      "exact_bubbles": true,
+      "expected_bubbles": ["1", "2"],
+      "expected_dimensions": {
+        "1": "1.500",
+        "2": "\u00d8.800\u00b1.001"
+      }
+    },
+    {
+      "name": "dense_drawing_3png",
+      "image_path": "DrawingBubble/3.png",
+      "category": "dense_clean_drawing",
+      "exact_bubbles": false,
+      "expected_bubbles": ["1", "2", "5", "7"],
+      "expected_dimensions": {
+        "1": "65.05",
+        "2": "R72.55",
+        "5": "204.08",
+        "7": "25.95"
+      }
+    },
+    {
+      "name": "photo_monitor_newjpeg",
+      "image_path": "Images/new.jpeg",
+      "category": "photo_monitor",
+      "exact_bubbles": false,
+      "expected_bubbles": ["5", "6", "13", "14"],
+      "expected_dimensions": {
+        "5": "59.5",
+        "6": "9\u00b0(REF)",
+        "14": "27.9"
+      }
+    },
+    {
+      "name": "mn_m1",
+      "image_path": "Images/m1.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": ["5", "6", "13", "14"],
+      "expected_dimensions": {
+        "5": "59.5",
+        "6": "9\u00b0(REF)",
+        "14": "27.9"
+      }
+    },
+    {
+      "name": "mn_m2",
+      "image_path": "Images/m2.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "notes": "Readable drawing, but it contains repeated balloon IDs in different views. Needs instance-level benchmark schema before scoring.",
+      "needs_manual_expected": true
+    },
+    {
+      "name": "mn_m3",
+      "image_path": "Images/m3.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "needs_manual_expected": true
+    },
+    {
+      "name": "mn_m4",
+      "image_path": "Images/m4.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "needs_manual_expected": true
+    },
+    {
+      "name": "mn_m5",
+      "image_path": "Images/m5.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "needs_manual_expected": true
+    },
+    {
+      "name": "mn_m6",
+      "image_path": "Images/m6.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "needs_manual_expected": true
+    },
+    {
+      "name": "mn_m7",
+      "image_path": "Images/m7.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "needs_manual_expected": true
+    },
+    {
+      "name": "mn_n1",
+      "image_path": "Images/n1.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": ["1", "2", "3", "4"],
+      "expected_dimensions": {
+        "1": "\u00d8.800\u00b1.001",
+        "2": "1.500",
+        "3": ".340",
+        "4": "\u00d8.600"
+      }
+    },
+    {
+      "name": "mn_n2",
+      "image_path": "Images/n2.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "needs_manual_expected": true
+    },
+    {
+      "name": "mn_n3",
+      "image_path": "Images/n3.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "needs_manual_expected": true
+    },
+    {
+      "name": "mn_n4",
+      "image_path": "Images/n4.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "needs_manual_expected": true
+    },
+    {
+      "name": "mn_n5",
+      "image_path": "Images/n5.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "needs_manual_expected": true
+    },
+    {
+      "name": "mn_n6",
+      "image_path": "Images/n6.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "needs_manual_expected": true
+    },
+    {
+      "name": "mn_n7",
+      "image_path": "Images/n7.jpeg",
+      "category": "stress_mn_suite",
+      "exact_bubbles": false,
+      "expected_bubbles": [],
+      "expected_dimensions": {},
+      "needs_manual_expected": true
+    }
+  ]
+}

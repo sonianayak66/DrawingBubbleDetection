@@ -1,0 +1,244 @@
+﻿@model MPCRS.ViewModels.SOPReportTemplateVM
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "SOPReportTemplate";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var UsersList = MPCRS.Utilities.Masters.GetUsersList();
+    var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.Sop_ReportTemplate_Write);
+}
+
+ 
+
+@*<link href="~/assets/summernote/summernote.min.css" rel="stylesheet" />*@
+
+
+<form id="SOPreport" class="needs-validation" novalidate="novalidate">
+<div class="col-12">
+    <div class="row">
+        <div class="col-sm-8">
+            @{
+                if (Model.Id==0)
+                {
+                    <h3>Create New Report Section</h3>
+                }
+                else
+                {
+                    <h3>Edit Section </h3>
+                }
+            }
+        </div>
+        
+        <div class="col-6 col-sm-4 pull-right">
+                <a class="btn btn-secondary float-end" href="/SOPReport/TemplateSections">Back</a>
+            @{
+                if (Permission_Write)
+                {
+                    <input type="button" class="btn btn-primary float-end" style="margin-right:10px;" value="Save" onclick="SubmitReport()" />
+                }
+            }
+     
+                
+        </div>
+    </div>
+</div>
+<hr/>
+<div class="offset-2 col-12">
+    
+        <input class="form-control" asp-for="Id" type="hidden">
+        <input class="form-control" asp-for="TemplateSectionGuid" type="hidden">
+        
+        <div class="col-12">
+
+            <div class="form-group row">
+                
+                <div class="col-md-6">
+                    <div class="form-floating mb-1">
+                        <input class="form-control" asp-for="SectionHeader" type="text">
+                        <label asp-for="SectionHeader"></label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-6">
+                    <div class="form-floating mb-1">
+                        
+                        <input class="form-control" asp-for="DisplayOrder" type="number">
+                        <label asp-for="DisplayOrder"></label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-6">
+                    <label asp-for="AccessibleUsers" class="control-label">Accessible Users</label>
+                    <select asp-for="AccessibleUsers" class="form-select form-select-sm multiselect userlist" multiple asp-items="@UsersList">
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-6">
+                    <div class="form-floating mb-1">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" asp-for="PageBreakAfter" name="PageBreakAfter" type="checkbox" />
+                            <label class="form-check-label" asp-for="PageBreakAfter">Page Break After</label>
+                        </div>
+                    </div>
+                    <div class="form-floating mb-1">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" asp-for="PageBreakBefore" name="PageBreakBefore" type="checkbox" />
+                            <label class="form-check-label" asp-for="PageBreakBefore">Page Break Before</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-6">
+                    <div class="form-floating mb-1">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" asp-for="isActive" name="isActive" type="checkbox" />
+                            <label class="form-check-label" asp-for="isActive">Is Active</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3"style="display:none;">
+                <label asp-for="Body"></label>
+                <textarea asp-for="Body" id="mytextarea"></textarea>
+            </div>
+        </div>
+</div>
+</form>
+
+@section scripts{
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+@*    <script src="~/assets/summernote/summernote.min.js"></script>*@
+ 
+
+
+    <script src="~/vendors/tinymce/tinymce.min.js"></script>
+    <script>
+ 
+         //Initialize the editor with basic editor.
+        tinymce.init({
+            selector: '#mytextarea',
+            height: 500,
+            branding: false,
+            menubar: true,
+            plugins: [
+                'a11ychecker', 'advlist', 'advcode', 'advtable', 'autolink', 'checklist', 'export',
+                'lists', 'link', 'image', 'charmap', 'preview', 'anchor', 'searchreplace', 'visualblocks',
+                'powerpaste', 'fullscreen', 'formatpainter', 'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | formatselect | ' +
+                'bold italic backcolor | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | ' +
+                'removeformat | table | paste',
+            content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+            paste_retain_style_properties: "all",
+            paste_strip_class_attributes: "none",
+            powerpaste_word_import: "prompt",
+            extended_valid_elements: "a[name|href|target|title|onclick],img[class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name],table[style|class|border=2|width|cellspacing|cellpadding|bgcolor],colgroup,col[style|width],tbody,tr[style|class],td[style|class|colspan|rowspan|width|height],hr[class|width|size|noshade],font[face|size|color|style],span[class|align|style]",
+            paste_preprocess: function (plugin, args) {
+                console.log(args.content); // your content
+                args.content = args.content.replace(/<b>\s*<td>([^td]+)<\/td>\s*<\/b>/gmi, "<td>$1</td>");
+            }
+        });
+
+        function SubmitReport() {
+            if (!$('#SOPreport').valid()) { return false }
+
+         
+           
+            var details = { 
+                    SectionHeader:  $('#SectionHeader').val(),
+                    Id: $('#Id').val(),
+                    DisplayOrder: $('#DisplayOrder').val(),
+                    AccessibleUsers: $('#AccessibleUsers').val(),                  
+                    PageBreakAfter: document.getElementById("PageBreakAfter").checked,
+                    PageBreakBefore: document.getElementById("PageBreakBefore").checked,                  
+                    TemplateSectionGuid: $('#TemplateSectionGuid').val(),
+                    isActive: document.getElementById("isActive").checked
+                //Body :tinymce.get("mytextarea").getContent(),
+
+            };
+           
+            //var data = $("#SOPreport").serialize();
+            //alert(details);
+            $.ajax({
+                type: 'POST',
+                url: '/SOPReport/SaveTemplate',
+                data: details,
+                success: function (data) {
+                    bootbox.alert(data.msg
+                        , function () {
+                            window.location.href = "/SOPReport/TemplateSections";
+                        });
+                },
+                error: function (data) {
+                    bootbox.alert(data.msg
+                        , function () {
+                            window.location.href = "/SOPReport/TemplateSections";
+                        });
+                }
+            });
+        }
+
+        //tinymce.init({
+        //    selector: "#mytextarea",
+        //    id: "tinymce_jquery_editor",
+        //    name: "tinymce_jquery_editor",
+        //    autoWidth: true,
+        //    height: 500,
+        //    fontsize_formats: "8pt 9pt 10pt 11pt 12pt 14pt 16pt 18pt 20pt 26pt 36pt",
+        //    menubar: true,
+        //    menu: {
+        //        file: { title: 'File', items: 'newdocument' },
+        //        edit: { title: 'Edit', items: 'undo redo | cut copy paste pastetext | selectall' },
+        //        insert: { title: 'Insert', items: 'link media | template hr' },
+        //        view: { title: 'View', items: 'visualaid' },
+        //        format: { title: 'Format', items: 'bold italic underline strikethrough superscript subscript | formats | removeformat' },
+        //        table: { title: 'Table', items: 'inserttable tableprops deletetable | cell row column' },
+        //        tools: { title: 'Tools', items: 'spellchecker code' }
+        //    },
+        //    plugins: [
+        //        "advlist autolink lists link image charmap print preview hr anchor pagebreak",
+        //        "searchreplace wordcount visualblocks visualchars code fullscreen",
+        //        "insertdatetime media nonbreaking save table contextmenu directionality",
+        //        "emoticons template textcolor paste"
+        //    ],
+        //    toolbar1: "insertfile undo redo pastetext | styleselect | fontselect | fontsizeselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
+
+        //    toolbar2: "print preview media | forecolor backcolor emoticons | code | table",
+        //    theme: "modern",
+        //    statusbar: false,
+        //    verify_html: true,
+        //    theme_advanced_resizing: false,
+        //    verify_html: true,
+        //    forced_root_block: 'div',
+        //    force_br_newlines: true,
+        //    force_p_newlines: false,
+        //    remove_linebreaks: false,
+        //    remove_trailing_nbsp: false,
+        //    paste_auto_cleanup_on_paste: false,
+        //    paste_retain_style_properties: "all",
+        //    paste_strip_class_attributes: "none",
+        //    extended_valid_elements: "a[name|href|target|title|onclick],img[class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name],table[style|class|border=2|width|cellspacing|cellpadding|bgcolor],colgroup,col[style|width],tbody,tr[style|class],td[style|class|colspan|rowspan|width|height],hr[class|width|size|noshade],font[face|size|color|style],span[class|align|style]",
+          
+        //});
+    
+
+
+        $(document).ready(function () {
+            //$('#Body').summernote(
+            //{
+            //    height:200
+            //});
+            applySelect2();
+        });
+        function applySelect2() {
+            $('.userlist').select2();
+        }
+    </script>
+}

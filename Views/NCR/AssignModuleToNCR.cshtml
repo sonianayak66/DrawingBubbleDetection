@@ -1,0 +1,53 @@
+﻿@model MPCRS.ViewModels.NonConformanceReportVM;
+@using MPCRS.Utilities;
+@{
+    Layout = null;
+    var ModuleResponsibility = Masters.GetMaster_General("Module_Responsibility");
+    var UserList = Masters.GetUsersForWorkflowAssignment(0);
+}
+
+<style>
+    .AssignModuleToNCR{
+        min-height:300px;
+    }
+    .ts-wrapper.multi .ts-control [data-value] {
+        background-image: none;
+    }
+
+    .ts-wrapper.multi .ts-control > div {
+        background-color: #e3e6ed; /* Change to your desired color */
+        color: black; /* Ensure text is readable */
+    }
+</style>
+
+@* <table class="table" >
+	<tbody>
+		<tr><th>Referenece No: </th><td class="text-left" >@Model.nonConformanceReport.ReferenceNumber</td></tr>
+		<tr><th>Part No: </th><td>@Model.nonConformanceReport.FileLocation</td></tr>
+	</tbody>
+</table> *@
+<div class="AssignModuleToNCR" >
+    <h5>Referenece No: @Model.ReferenceNumber</h5>
+    <h5>Part No: @Model.FileLocation</h5>
+    <hr />
+    <form method="post" , id="AssignModuleToNCR">
+        <div class="col">
+            <input asp-for="NCRGuid" id="ncrguid" hidden />
+
+            <div class="row-3 mb-3">
+                <label>Module</label>
+                <select asp-for="Module_Responsibilty" asp-items="ModuleResponsibility" id="ModuleID" onchange="filterUsers()"></select>
+                <span asp-validation-for="Module_Responsibilty" class="text-danger"></span>
+            </div>
+            <div class="row-3 mb-3">
+                <label>Users</label>
+                <select asp-for="AssignedUserGuid" id="UsersSelectList" asp-items="UserList" multiple></select>
+                <span asp-validation-for="AssignedUserGuid" class="text-danger"></span>
+            </div>
+            <div class="row-3 mb-3">
+                <button type="button" onclick="saveAssignModuleToNCR()" class="btn btn-success">Assign</button>
+            </div>
+        </div>
+    </form>
+</div>
+

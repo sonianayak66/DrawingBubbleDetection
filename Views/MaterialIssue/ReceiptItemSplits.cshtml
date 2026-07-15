@@ -1,0 +1,214 @@
+﻿@model List<MPCRS.ViewModels.ForgingSplitsVM>
+@using MPCRS.Utilities;
+@{
+    var ForgingReceiptsAccess = UserData.IsAuthorized(User, Constants.UserPermissions.MaterialIssue_ForgingReceipts);
+    var MIDelete = UserData.IsAuthorized(User, Constants.UserPermissions.MaterialIssue_Delete);
+    SelectList DocumentList = Masters.ForgingItemsDocsReference(ViewBag.forging_item_dbkey);
+    string[] attachkeys;
+}
+
+<style>
+
+    .table-sm td, tr {
+        padding: 0 !important;
+        white-space: nowrap;
+    }
+
+    .table-sm tbody {
+        padding: 6px !important;
+    }
+
+    .table-sm input,
+    .table-sm select {
+        border-radius: 0;
+        border: none;
+    }
+</style>
+
+
+
+<div style="display:none">
+    <input type="hidden" id="RecevingInven" value="@(Model[0].Receiving_Inventory)" />
+    <input type="hidden" id="IsAlreadySplited" value="@Model[0].forging_item_split_dbkey" />
+    <input type="hidden" id="forging_item_dbkey" value="@Model[0].forging_item_dbkey" />
+</div>
+
+<div class="col-md-12 col-sm-12 col-lg-12"  > 
+    <table class="table table-bordered pull-right" style="width:100%">
+        <tr>
+            <td style="width:60%" style="display:none"><b>Forging Item Split - @Model[0].Receipt_Number </b></td>
+            @{
+                if (ForgingReceiptsAccess)
+                {
+                       <td style="width:15%"><button class="btn btn-success float-end btn-small" onclick="SaveForgingItemSplits(@Model[0].forging_item_dbkey)">Save</button>  </td>
+                }
+            }
+         
+        </tr>
+    </table>
+</div>
+
+<div class="col-md-12 col-sm-12 col-lg-12">
+    <table class="table table-sm table-bordered table-responsive table-condensed" style="width:100%;border:1px!important">
+        <thead>
+            <tr>
+                <th style="display:none"></th>
+                @* <th>Sl no</th> *@
+                <th>Part Name</th>
+                <th>GTRE Drawing No</th>
+                <th>Batch No</th>
+                <th>Heat No</th>
+                <th>Forging Sl No</th>
+                <th>Document</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="forgingSplits">
+            @{
+
+                var dummyArraItem = Model.FirstOrDefault();
+                <tr style="display:none">
+                    <td style="display:none">
+                        <input type="hidden" value="0" />
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => dummyArraItem.part_name)
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" value="@dummyArraItem.GTRE_Drawing_No" />
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" value="" />
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" value="" />
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" value="" />
+                    </td>
+                    <td>
+                        <div class="input-group" id="selec2div" style="max-height:100px!important; overflow-y:scroll">
+                            <ul style="list-style-type: none; margin: 2px; padding: 0;">
+                                @{
+                                    if(DocumentList != null)
+                                    {
+                                        foreach (var uploadedFile in DocumentList.Where(x => x.Text != "Select"))
+                                        {
+                                            <li>
+                                                <input data-attachmentKey="@uploadedFile.Value" value="@uploadedFile.Value" type="checkbox" /> @uploadedFile.Text   <i class="uil uil-cloud-download fs-1" aria-hidden="true" onclick="viewFile(@uploadedFile.Value)"></i>
+                                            </li>
+                                        }
+                                    }
+                                   
+                                }
+                            </ul>
+                        </div>
+                    </td>
+                    <td>
+                        <a class="uil uil-trash-alt fs-2" style="color:red;cursor:pointer" onclick="delforgingSplitrow(this)"></a>
+                    </td>
+                    <td>
+                    <a class="uil uil-edit-alt fs-2" style="color:cornflowerblue;cursor:pointer"></a>
+                    </td>
+                </tr>
+
+                foreach (var item in Model)
+                {
+                    <tr >
+                        <td style="display:none">
+                            <input type="hidden" value="@item.forging_item_split_dbkey" />
+                        </td>
+
+                        <td>
+                            @Html.DisplayFor(modelItem => item.part_name)
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm" value="@item.GTRE_Drawing_No" readonly />
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm" value="@item.Batch_Number" readonly />
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm" value="@item.Heat_Number" readonly />
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm" value="@item.Sl_No_Forging" readonly />
+                        </td>
+                        <td>
+                            <div class="input-group" id="selec2div" style="max-height:100px!important; overflow-y:scroll">
+                                <ul style="list-style-type: none; margin: 2px; padding: 0;">
+                                    @{
+
+                                        if (!string.IsNullOrEmpty(item.Attachment_Db_Key))
+                                        {
+                                            attachkeys = item.Attachment_Db_Key.Split(",");
+                                        }
+                                        else
+                                        {
+                                            attachkeys = new string[0];
+                                        }
+
+                                        foreach (var uploadedFile in DocumentList.Where(x => x.Text != "Select"))
+                                        {
+                                            <li>
+                                                @{
+                                                    if (Array.Exists(attachkeys, element => element == uploadedFile.Value))
+                                                    {
+                                                        <input data-attachmentKey="@uploadedFile.Value" value="@uploadedFile.Value" class="Attachment_Db_Key" type="checkbox" checked /> @uploadedFile.Text   <i class="uil uil-cloud-download fs-1" aria-hidden="true" onclick="viewFile(@uploadedFile.Value)"></i>
+                                                    } 
+                                                }
+                                            </li>
+                                        }
+                                        foreach (var uploadedFile in DocumentList.Where(x => x.Text != "Select"))
+                                        {
+                                            <li>
+                                                @{
+                                                    if (Array.Exists(attachkeys, element => element == uploadedFile.Value) == false)
+                                                    { 
+                                                        <input data-attachmentKey="@uploadedFile.Value" value="@uploadedFile.Value" class="Attachment_Db_Key" type="checkbox" /> @uploadedFile.Text   <i class="uil uil-cloud-download fs-1" aria-hidden="true" onclick="viewFile(@uploadedFile.Value)"></i>
+                                                    }
+                                                }
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        </td>
+                        <td>
+                            @{
+                                if (MIDelete)
+                                {
+                                    <a class="uil uil-trash-alt fs-2" style="color:red;cursor:pointer" onclick="delforgingSplitrow(this)"></a>
+                                }
+                            }
+                            
+                        </td>
+                        <td>
+                            @{
+                                if (ForgingReceiptsAccess)
+                                {
+                                    <a class="uil uil-edit-alt fs-2" style="color:cornflowerblue;cursor:pointer" onclick="editForgingSplitRow(@Model[0].forging_recp_dbkey,@item.forging_item_split_dbkey)"></a>
+                                }
+                            }
+                          
+                        </td>
+                    </tr>
+                }
+            }
+
+        </tbody>
+        <tfoot>
+            <tr>
+                @* <td></td> *@
+                <td colspan="7">
+                    <a href="#" onclick="editForgingSplitRow(@Model[0].forging_recp_dbkey,0)">Add Rows</a>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+
+
+ 

@@ -1,0 +1,1701 @@
+﻿@model MPCRS.ViewModels.ProcurementDashboardVM
+
+<style>
+    /* ============================================ */
+    /* DASHBOARD KPI CARDS - COMPACT & UNIFORM */
+    /* ============================================ */
+    .dashboard-kpi-card {
+        background: #fff;
+        border-radius: 6px; 
+        padding: 0.675rem;
+        border: 2px solid;
+        transition: all 0.3s ease;
+        height: 100%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        display: flex;
+        flex-direction: column;
+    }
+
+        .dashboard-kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+        }
+
+    /* Background Icon */
+    .kpi-bg-icon {
+        position: absolute;
+        right: -5px;
+        bottom: -10px;
+        font-size: 85px;
+        opacity: 0.06;
+        pointer-events: none;
+    }
+
+    /* Content wrapper */
+    .kpi-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        justify-content: space-between;
+    }
+
+    /* Label */
+    .kpi-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 0.35rem;
+        line-height: 1.2;
+    }
+
+    /* Main Value */
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Detail Rows */
+    .kpi-detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.35rem;
+        font-size: 0.95rem;
+    }
+
+    .kpi-text {
+        color: #6c757d;
+        font-size: 0.9rem;
+        line-height: 1.3;
+    }
+
+    .kpi-value-sm {
+        font-weight: 600;
+        color: #212529;
+        font-size: 0.95rem;
+    }
+
+    /* Highlight Box */
+    .kpi-highlight-compact {
+        font-size: 0.95rem;
+        color: #212529;
+        font-weight: 600;
+        padding: 0.35rem 0.5rem;
+        background: rgba(0,0,0,0.03);
+        border-radius: 3px;
+        margin-top: auto;
+        margin-bottom: 0.35rem;
+        text-align: center;
+    }
+
+    /* Action Hint */
+    .kpi-action-hint {
+        font-size: 0.85rem;
+        color: #adb5bd;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        margin-top: auto;
+    }
+
+    .dashboard-kpi-card:hover .kpi-action-hint {
+        opacity: 1;
+    }
+
+    /* Small Badges */
+    .badge-xs {
+        font-size: 0.85rem;
+        padding: 0.15rem 0.35rem;
+        font-weight: 600;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 576px) {
+        .dashboard-kpi-card
+
+    {
+            height: 100%;
+        padding: 0.75rem;
+    }
+
+    .kpi-value {
+        font-size: 1.75rem;
+    }
+
+    .kpi-bg-icon {
+        font-size: 70px;
+    }
+
+    .kpi-label {
+        font-size: 0.6rem;
+    }
+
+    }
+
+    @@media (min-width: 577px) and (max-width: 991px) {
+        .dashboard-kpi-card
+
+    {
+            height: 100%;
+    }
+
+    }
+
+    @@media (min-width: 992px) and (max-width: 1199px) {
+        .kpi-value
+
+    {
+        font-size: 1.75rem;
+    }
+
+    .kpi-bg-icon {
+        font-size: 75px;
+    }
+
+    }
+
+    /* Compact summary card (for other dashboard cards) */
+    .compact-summary-card {
+        background: #fff;
+        border-radius: 6px;
+        padding: 0.875rem;
+        border: 2px solid;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .compact-card {
+        background: #fff;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .compact-card-header {
+        padding: 0.75rem 1rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .compact-card-body {
+        padding: 1rem;
+    }
+
+    .compact-card-body-table {
+        padding: 0;
+    }
+
+        .compact-card-body-table .table {
+            margin-bottom: 0;
+        }
+
+    .clickable {
+        cursor: pointer;
+    }
+
+    .collapse-icon {
+        transition: transform 0.3s ease;
+    }
+
+    .kpi-sublabel {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+        line-height: 1.2;
+    }
+
+    a(0,0,0,0.08);
+    }
+</style>
+
+<style>
+    /* ============================================ */
+    /* PROFESSIONAL MODAL STYLES */
+    /* ============================================ */
+
+    /* Summary Cards in Modal */
+    .dashboard-summary-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.25rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        border: 1px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+
+        .dashboard-summary-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+
+    .summary-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #212529;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+
+    .summary-subtext {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    .summary-footer {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    /* Professional Tabs */
+    .nav-tabs-custom {
+        border-bottom: 2px solid #dee2e6;
+    }
+
+        .nav-tabs-custom .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+            .nav-tabs-custom .nav-link:hover {
+                color: #495057;
+                background: #f8f9fa;
+            }
+
+            .nav-tabs-custom .nav-link.active {
+                color: #495057;
+                background: white;
+                border-bottom: 3px solid #667eea;
+            }
+
+    /* Table Card */
+    .table-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    /* Professional Badges */
+    .badge-urgent {
+        background-color: #dc3545;
+        color: white;
+        font-weight: 600;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
+    }
+
+    .badge-warning-soft {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+        font-weight: 600;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
+    }
+
+    .badge-danger-soft {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #dc3545;
+        font-weight: 600;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
+    }
+
+    /* Table Row Highlights */
+    .table-row-urgent {
+        background-color: #fff3cd !important;
+    }
+
+    .table-row-warning {
+        background-color: #ffe5e5 !important;
+    }
+
+    .table-row-critical {
+        background-color: #f8d7da !important;
+    }
+
+    .table-bordered thead th {
+        border-bottom-width: 2px;
+    }
+
+    /* Progress Bar Text */
+    .progress-bar small {
+        line-height: 20px;
+    }
+
+    /* Grade Badges */
+    .badge-grade-a {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: 700;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+        border-radius: 6px;
+    }
+
+    .badge-grade-b {
+        background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+        color: white;
+        font-weight: 700;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+        border-radius: 6px;
+    }
+
+    .badge-grade-c {
+        background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
+        color: white;
+        font-weight: 700;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+        border-radius: 6px;
+    }
+
+    .badge-grade-d {
+        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        color: white;
+        font-weight: 700;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+        border-radius: 6px;
+    }
+
+    /* Grade Stats */
+    .grade-stat {
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+
+    .grade-stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .grade-stat-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        font-weight: 600;
+    }
+</style>
+<!-- ============================================ -->
+<!-- SECTION 1: KPI CARDS (4 Cards) - COMPACT & UNIFORM -->
+<!-- ============================================ -->
+<div class="row mb-3 g-2">
+    <!-- Card 1: Urgent Actions - CLEAR LABELS -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="dashboard-kpi-card border-danger clickable h-100"
+             data-bs-toggle="modal"
+             data-bs-target="#urgentActionsModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <!-- Background Icon (Faded) -->
+            <i class="uil uil-exclamation-triangle kpi-bg-icon" style="color: #dc3545;"></i>
+
+            <!-- Content -->
+            <div class="kpi-content">
+                <div class="kpi-label">URGENT ACTIONS REQUIRED</div>
+                <div class="kpi-value text-danger">@Model.UrgentActions.TotalUrgentDemands</div>
+                <div class="kpi-sublabel">Demands Need Attention</div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Due This Week:</span>
+                    <span class="kpi-value-sm text-warning">@Model.UrgentActions.DemandsDueIn7Days</span>
+                </div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Already Overdue:</span>
+                    <span class="kpi-value-sm text-danger">@Model.UrgentActions.DemandsOverdue</span>
+                </div>
+
+                <div class="kpi-highlight-compact">
+                    ₹@((Model.UrgentActions.TotalValueAtRisk / 10000000).ToString("N2")) Cr at Risk
+                </div>
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Vendor Accountability -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="dashboard-kpi-card border-warning clickable h-100"
+             data-bs-toggle="modal"
+             data-bs-target="#vendorAccountabilityModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <!-- Background Icon (Faded) -->
+            <i class="uil uil-user-times kpi-bg-icon" style="color: #ffc107;"></i>
+
+            <!-- Content -->
+            <div class="kpi-content">
+                <div class="kpi-label">VENDOR ACCOUNTABILITY</div>
+                <div class="kpi-value text-warning">@Model.VendorAccountability.VendorsBehindSchedule  <span class="kpi-text">Vendors</span></div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Overdue Milestones:</span>
+                    <span class="kpi-value-sm text-danger">@Model.VendorAccountability.TotalOverdueMilestones</span>  
+                </div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Avg Delay:</span>
+                    <span class="kpi-value-sm">@Model.VendorAccountability.AvgDelayDays.ToString("N0") days</span>   
+                </div>
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Material Production Capacity -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="dashboard-kpi-card border-info clickable h-100" 
+             onclick="window.open('/Report/ProductionPlanningReport', '_blank')"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <!-- Background Icon (Faded) -->
+            <i class="uil uil-box kpi-bg-icon" style="color: #17a2b8;"></i>
+
+            <!-- Content -->
+            <div class="kpi-content">
+                <div class="kpi-label">MATERIAL PRODUCTION CAPACITY</div>
+                <div class="kpi-value text-info">@Model.MaterialFlow.MinEnginesCanProduce</div>
+                <div class="kpi-sublabel">Engines Can Be Produced</div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Target:</span>
+                    <span class="kpi-value-sm">@Model.MaterialFlow.TargetEngineCount engines</span>
+                </div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">In Shortage:</span>
+                    <span class="kpi-value-sm text-danger">@Model.MaterialFlow.MaterialsInShortage materials</span>
+                </div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Sufficient:</span>
+                    <span class="kpi-value-sm text-success">@Model.MaterialFlow.MaterialsSufficient materials</span>
+                </div>
+
+                @* @if (Model.MaterialFlow.CriticalMaterials > 0)
+                {
+                    <div class="kpi-highlight-compact" style="background-color: #dc3545; color: white;">
+                        <i class="uil uil-exclamation-triangle"></i> @Model.MaterialFlow.CriticalMaterials Critical Materials
+                    </div>
+                }
+                else
+                {
+                    <div class="kpi-highlight-compact">
+                        <i class="uil uil-check-circle"></i> All materials available
+                    </div>
+                } *@
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for detailed report
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Untracked Demands (Without Milestones) -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="dashboard-kpi-card border-secondary clickable h-100"
+             data-bs-toggle="modal"
+             data-bs-target="#untrackedDemandsModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <!-- Background Icon (Faded) -->
+            <i class="uil uil-eye-slash kpi-bg-icon" style="color: #6c757d;"></i>
+
+            <!-- Content -->
+            <div class="kpi-content">
+                <div class="kpi-label">UNTRACKED DEMANDS</div>
+                <div class="kpi-value text-secondary">@Model.UntrackedDemands.TotalUntrackedDemands</div>
+                <div class="kpi-sublabel">Without Milestone Tracking</div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Overdue & Incomplete:</span>
+                    <span class="kpi-value-sm text-danger">@Model.UntrackedDemands.OverdueIncomplete</span>
+                </div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Due Soon:</span>
+                    <span class="kpi-value-sm text-warning">@Model.UntrackedDemands.DueSoon</span>
+                </div>
+
+                <div class="kpi-highlight-compact">
+                    ₹@((Model.UntrackedDemands.TotalUntrackedValue / 10000000).ToString("N2")) Cr Untracked Value
+                </div>
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 2: CHARTS (2 Charts Side by Side) -->
+<!-- ============================================ -->
+<div class="row mb-3">
+    <!-- Chart 1: Material Health Distribution -->
+    <div class="col-12 col-md-5">
+        <div class="compact-card">
+            <div class="compact-card-header">
+                <h6 class="mb-0">Active Demands by Status</h6>
+                <small class="text-muted">Distribution of @Model.ProcurementByStatus.Sum(x => x.DemandCount) active demands</small>
+            </div>
+            <div class="compact-card-body">
+                <canvas id="procurementStatusChart" style="max-height: 170px;"></canvas>
+            </div>
+        </div>  
+    </div>
+
+    <!-- Chart 2: Top 5 At-Risk Demands -->
+    <div class="col-12 col-md-7">
+        <div class="compact-card">
+            <div class="compact-card-header">
+                <h6 class="mb-0">Top Vendors by Order Value</h6>
+                <small class="text-muted">Top 5 vendors by total active orders</small>
+            </div>
+            <div class="compact-card-body">
+                <canvas id="topVendorsChart" style="max-height: 200px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+  
+<!-- Table 6: Cost Variance Analysis - OPTIMIZED -->
+@if (Model.CostVarianceAnalysis != null && Model.CostVarianceAnalysis.Any())
+{
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="compact-card">
+                <div class="compact-card-header d-flex justify-content-between align-items-center clickable"
+                     data-bs-toggle="collapse"
+                     data-bs-target="#costVarianceTable">
+                    <h6 class="mb-0">
+                        <i class="uil uil-angle-down collapse-icon"></i>
+                        💰 Cost Variance Analysis (@Model.CostVarianceAnalysis.Count demands)
+                    </h6>
+                    <small class="text-muted">
+                        @{
+                            var overBudget = Model.CostVarianceAnalysis.Count(x => x.Variance > 0);
+                            var underBudget = Model.CostVarianceAnalysis.Count(x => x.Variance < 0);
+                        }
+                        <span class="text-danger">▲ @overBudget</span> |
+                        <span class="text-success">▼ @underBudget</span>
+                    </small>
+                </div>
+                <div class="collapse" id="costVarianceTable">
+                    <div class="compact-card-body-table">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 10%;">MMG File</th>
+                                        <th style="width: 30%;">Description</th>
+                                        <th style="width: 25%;" class="text-center">Cost Comparison</th>
+                                        <th style="width: 12%;" class="text-center">Variance</th>
+                                        <th style="width: 23%;">Vendor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CostVarianceAnalysis)
+                                    {
+                                        var varianceClass = item.Variance > 0 ? "text-danger" :
+                                        item.Variance < 0 ? "text-success" : "text-muted";
+                                        var varianceBadge = item.Variance > 0 ? "bg-danger" :
+                                        item.Variance < 0 ? "bg-success" : "bg-secondary";
+                                        var varianceIcon = item.Variance > 0 ? "↑" :
+                                        item.Variance < 0 ? "↓" : "=";
+
+                                        // Truncate description if too long
+                                        var shortDesc = item.Item_Description != null && item.Item_Description.Length > 50
+                                        ? item.Item_Description.Substring(0, 47) + "..."
+                                        : item.Item_Description;
+
+                                        // Calculate percentage of actual vs estimated for progress bar
+                                        var costRatio = item.EstimatedCost > 0
+                                        ? (double)(item.ActualCost / item.EstimatedCost * 100)
+                                        : 0;
+                                        var progressBarClass = costRatio > 100 ? "bg-danger" : "bg-success";
+
+                                        <tr>
+                                            <td><strong class="text-primary">@item.MMG_File_No</strong></td>
+                                            <td>
+                                                <small title="@item.Item_Description">@shortDesc</small>
+                                            </td>
+                                            <td>
+                                                <div style="font-size: 0.85rem;">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span class="text-muted" style="font-size: 0.75rem;">Est:</span>
+                                                        <strong>₹@((item.EstimatedCost / 10000000).ToString("N2")) Cr</strong>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="text-muted" style="font-size: 0.75rem;">Act:</span>
+                                                        <strong class="@varianceClass">₹@((item.ActualCost / 10000000).ToString("N2")) Cr</strong>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge @varianceBadge" style="font-size: 0.85rem; min-width: 65px;">
+                                                    @varianceIcon @Math.Abs(item.VariancePercent).ToString("N1")%
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    @if (item.Vendor_Name != null && item.Vendor_Name.Length > 30)
+                                                    {
+                                                        <span title="@item.Vendor_Name">@item.Vendor_Name.Substring(0, 27)...</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        @item.Vendor_Name
+                                                    }
+                                                </small>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Summary Footer -->
+                        @* <div class="p-3 bg-light border-top">
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Total Estimated</small>
+                                    <strong>₹@((Model.CostVarianceAnalysis.Sum(x => x.EstimatedCost) / 10000000).ToString("N2")) Cr</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Total Actual</small>
+                                    <strong>₹@((Model.CostVarianceAnalysis.Sum(x => x.ActualCost) / 10000000).ToString("N2")) Cr</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Total Variance</small>
+                                    <strong class="@(Model.CostVarianceAnalysis.Sum(x => x.Variance) > 0 ? "text-danger" : "text-success")">
+                                        ₹@((Model.CostVarianceAnalysis.Sum(x => x.Variance) / 10000000).ToString("N2")) Cr
+                                    </strong>
+                                </div>
+                            </div>
+                        </div> *@
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+<!-- ============================================ -->
+<!-- SECTION 3: ORDER TYPE CARDS (Casting, Forging, Pyro) -->
+<!-- ============================================ -->
+<div class="row mb-3 g-2">
+    <!-- Card 1: Casting -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="dashboard-kpi-card border-info clickable"
+             data-bs-toggle="modal"
+             data-bs-target="#castingModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <!-- Background Icon (Faded) -->
+            <i class="uil uil-wrench kpi-bg-icon" style="color: #17a2b8;"></i>
+
+            <!-- Content -->
+            <div class="kpi-content">
+                <div class="kpi-label">CASTING</div>
+                <div class="kpi-value text-info">@Model.CastingMetrics.TotalEnginesPossible</div>
+                <div class="kpi-sublabel">Engines Possible</div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Material Issued:</span>
+                    <span class="kpi-value-sm text-warning">@Model.CastingMetrics.TotalIssuedQty</span>
+                </div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Available:</span>
+                    <span class="kpi-value-sm text-success">@Model.CastingMetrics.TotalAvailableQty</span>
+                </div>
+
+                <div class="kpi-highlight-compact">
+                    @Model.CastingMetrics.TotalParts Parts Tracked
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.CastingMetrics.BottleneckPart))
+                {
+                    <div class="kpi-sublabel mt-1" style="color: #dc3545; font-weight: 600;">
+                        <i class="uil uil-exclamation-triangle"></i> Bottleneck: @Model.CastingMetrics.BottleneckPart
+                    </div>
+                }
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Forging -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="dashboard-kpi-card border-warning clickable h-100"
+             data-bs-toggle="modal"
+             data-bs-target="#forgingModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <!-- Background Icon (Faded) -->
+            <i class="uil uil-constructor kpi-bg-icon" style="color: #ffc107;"></i>
+
+            <!-- Content -->
+            <div class="kpi-content">
+                <div class="kpi-label">FORGING</div>
+                <div class="kpi-value text-warning">@Model.ForgingMetrics.TotalEnginesPossible</div>
+                <div class="kpi-sublabel">Engines Possible</div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Material Issued:</span>
+                    <span class="kpi-value-sm text-warning">@Model.ForgingMetrics.TotalIssuedQty</span>
+                </div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Available:</span>
+                    <span class="kpi-value-sm text-success">@Model.ForgingMetrics.TotalAvailableQty</span>
+                </div>
+
+                <div class="kpi-highlight-compact">
+                    @Model.ForgingMetrics.TotalParts Parts Tracked
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.ForgingMetrics.BottleneckPart))
+                {
+                    <div class="kpi-sublabel mt-1" style="color: #dc3545; font-weight: 600;">
+                        <i class="uil uil-exclamation-triangle"></i> Bottleneck: @Model.ForgingMetrics.BottleneckPart
+                    </div>
+                }
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Pyro -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="dashboard-kpi-card border-danger clickable h-100"
+             data-bs-toggle="modal"
+             data-bs-target="#pyroModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <!-- Background Icon (Faded) -->
+            <i class="uil uil-fire kpi-bg-icon" style="color: #dc3545;"></i>
+
+            <!-- Content -->
+            <div class="kpi-content">
+                <div class="kpi-label">PYRO</div>
+                <div class="kpi-value text-danger">@Model.PyroMetrics.TotalEnginesPossible</div>
+                <div class="kpi-sublabel">Engines Possible</div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Material Issued:</span>
+                    <span class="kpi-value-sm text-warning">@Model.PyroMetrics.TotalIssuedQty</span>
+                </div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Available:</span>
+                    <span class="kpi-value-sm text-success">@Model.PyroMetrics.TotalAvailableQty</span>
+                </div>
+
+                <div class="kpi-highlight-compact">
+                    @Model.PyroMetrics.TotalParts Parts Tracked
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.PyroMetrics.BottleneckPart))
+                {
+                    <div class="kpi-sublabel mt-1" style="color: #dc3545; font-weight: 600;">
+                        <i class="uil uil-exclamation-triangle"></i> Bottleneck: @Model.PyroMetrics.BottleneckPart
+                    </div>
+                }
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- DETAIL MODALS FOR KPI CARDS -->
+<!-- ============================================ -->
+<!-- Modal 1: Urgent Actions Detail - PROFESSIONAL DESIGN -->
+<div class="modal fade" id="urgentActionsModal" tabindex="-1" aria-labelledby="urgentActionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="modal-title" id="urgentActionsModalLabel">
+                    <i class="uil uil-exclamation-triangle"></i> Urgent Actions - Detailed Breakdown
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background-color: #f8f9fa;">
+                <!-- Summary Cards - PROFESSIONAL STYLE -->
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4">
+                        <div class="dashboard-summary-card compact" style="border-left: 4px solid #ffc107;">
+                            <div class="summary-label mb-1">
+                                <i class="uil uil-calendar-alt text-warning me-1"></i> DUE THIS WEEK
+                            </div>
+
+                            <div class="d-flex align-items-baseline gap-2">
+                                <div class="summary-value">@Model.UrgentActions.DemandsDueIn7Days</div>
+                                <div class="summary-subtext mb-0">Demands </div>
+                            </div>
+
+                            <div class="summary-footer mt-1">
+                                <small class="text-muted">₹@((Model.UrgentActions.ValueDueIn7Days / 10000000).ToString("N2")) Cr</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="dashboard-summary-card compact" style="border-left: 4px solid #dc3545;">
+                            <div class="summary-label mb-1">
+                                <i class="uil uil-exclamation-octagon text-danger me-1"></i> ALREADY OVERDUE
+                            </div>
+
+                            <div class="d-flex align-items-baseline gap-2">
+                                <div class="summary-value text-danger">@Model.UrgentActions.DemandsOverdue</div>
+                                <div class="summary-subtext mb-0">Demands</div>
+                            </div>
+
+                            <div class="summary-footer mt-1">
+                                <small class="text-muted">₹@((Model.UrgentActions.ValueOverdue / 10000000).ToString("N2")) Cr</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="dashboard-summary-card compact" style="border-left: 4px solid #6c757d;">
+                            <div class="summary-label mb-1">
+                                <i class="uil uil-analytics text-secondary me-1"></i> TOTAL EXPOSURE
+                            </div>
+
+                            <div class="d-flex align-items-baseline gap-2">
+                                <div class="summary-value">@Model.UrgentActions.TotalUrgentDemands</div>
+                                <div class="summary-subtext mb-0">Total Demands</div>
+                            </div>
+
+                            <div class="summary-footer mt-1">
+                                <small class="text-muted">₹@((Model.UrgentActions.TotalValueAtRisk / 10000000).ToString("N2")) Cr</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                @* <div class="alert alert-light border" style="background-color: white;">
+                    <i class="uil uil-info-circle text-primary"></i>
+                    <strong>Note:</strong> Each demand may have multiple milestone deliveries. Counts above show unique demands requiring action.
+                </div> *@
+
+                <!-- Tab Navigation - PROFESSIONAL STYLE -->
+                <ul class="nav nav-tabs nav-tabs-custom mb-3" id="urgentActionsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="dueThisWeek-tab" data-bs-toggle="tab" data-bs-target="#dueThisWeek" type="button" role="tab">
+                            <i class="uil uil-calendar-alt"></i> Due This Week 
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="overdue-tab" data-bs-toggle="tab" data-bs-target="#overdue" type="button" role="tab">
+                            <i class="uil uil-exclamation-triangle"></i> Already Overdue (@Model.UrgentActions.DemandsOverdue)
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="urgentActionsTabContent">
+                    <!-- Due This Week Tab -->
+                    <div class="tab-pane fade show active" id="dueThisWeek" role="tabpanel">
+                        @if (Model.ImmediateAttention != null && Model.ImmediateAttention.Any(x => x.DaysUntilDue > 0))
+                        {
+                            <div class="table-card">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover table-bordered mb-0">
+                                        <thead style="background-color: #495057; color: white;">
+                                            <tr>
+                                                <th>MMG File No</th>
+                                                <th>Milestone</th>
+                                                <th>Due Date</th>
+                                                <th>Days Until</th>
+                                                @* <th class="text-end">Qty Required</th>
+                                                <th class="text-end">Received</th>
+                                                <th class="text-end">Progress</th> *@
+                                                <th>Vendor</th>
+                                                @* <th class="text-end">Value</th> *@
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in Model.ImmediateAttention.Where(x => x.DaysUntilDue > 0).OrderBy(x => x.DaysUntilDue))
+                                            {
+                                                var progressPct = item.QtyRequired > 0 ? (item.QtyReceived / item.QtyRequired * 100) : 0;
+                                                var rowClass = item.DaysUntilDue <= 3 ? "table-row-urgent" : "";
+
+                                                // NULL-SAFE status class determination
+                                                var badgeClass = "badge-warning-soft"; // default
+                                                if (!string.IsNullOrEmpty(item.Status))
+                                                {
+                                                    if (item.Status.Contains(">30")) badgeClass = "badge-urgent";
+                                                    else if (item.Status.Contains("15-30")) badgeClass = "badge-urgent";
+                                                    else if (item.Status.Contains("<15")) badgeClass = "badge-warning-soft";
+                                                }
+
+                                                <tr class="@rowClass">
+                                                    <td><strong>@item.MMG_File_No</strong></td>
+                                                    <td>@item.MilestoneName</td>
+                                                    <td>@(item.DueDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                                    <td>
+                                                        <span class="badge @(item.DaysUntilDue <= 3 ? "badge-urgent" : "badge-warning-soft")">
+                                                            @item.DaysUntilDue days
+                                                        </span>
+                                                    </td>
+                                                    @* <td class="text-end">@item.QtyRequired.ToString("N1")</td>
+                                                    <td class="text-end">@item.QtyReceived.ToString("N1")</td>
+                                                    <td class="text-end">
+                                                        <div class="progress" style="height: 20px; background-color: #e9ecef;">
+                                                            <div class="progress-bar @(progressPct < 50 ? "bg-danger" : progressPct < 80 ? "bg-warning" : "bg-success")"
+                                                                 role="progressbar"
+                                                                 style="width: @progressPct.ToString("N0")%"
+                                                                 aria-valuenow="@progressPct" aria-valuemin="0" aria-valuemax="100">
+                                                                <small class="fw-bold">@progressPct.ToString("N0")%</small>
+                                                            </div>
+                                                        </div>
+                                                    </td> *@
+                                                    <td><small>@(item.Vendor_Name ?? "-")</small></td>
+                                                    @* <td class="text-end"><small>₹@((item.EstimatedCost / 10000000).ToString("N2")) Cr</small></td> *@
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-success border"
+                                 style="background-color: #d1e7dd; color: #0f5132;">
+                                No milestones due in the next 7 days.
+                            </div>
+
+                        }
+                    </div>
+
+                    <!-- Overdue Tab -->
+                    <div class="tab-pane fade" id="overdue" role="tabpanel">
+                        @if (Model.ImmediateAttention != null && Model.ImmediateAttention.Any(x => x.DaysUntilDue < 0))
+                        {
+                            <div class="table-card">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover table-bordered mb-0">
+                                        <thead style="background-color: #dc3545; color: white;">
+                                            <tr>
+                                                <th>MMG File No</th>
+                                                <th>Milestone</th>
+                                                <th>Was Due On</th>
+                                                <th>Days Overdue</th>
+                                                @* <th class="text-end">Qty Required</th>
+                                                <th class="text-end">Received</th>
+                                                <th class="text-end">Progress</th> *@
+                                                <th>Vendor</th>
+                                                @* <th class="text-end">Value</th> *@
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in Model.ImmediateAttention.Where(x => x.DaysUntilDue < 0).OrderBy(x => x.DaysUntilDue))
+                                            {
+                                                var progressPct = item.QtyRequired > 0 ? (item.QtyReceived / item.QtyRequired * 100) : 0;
+                                                var severityClass = Math.Abs(item.DaysUntilDue) > 30 ? "table-danger" :
+                                                 Math.Abs(item.DaysUntilDue) > 15 ? "table-warning" : "";
+
+                                                <tr class="@severityClass">
+                                                    <td>
+                                                        <strong style="cursor: pointer;"
+                                                            onclick="window.open('/DemandManagement/DemandTree?id=@item.DemandDbkey', '_blank')"
+                                                                title="Click to view demand details">
+                                                                @item.MMG_File_No
+                                                        </strong>
+                                                    </td>
+                                                  
+                                                    <td>@item.MilestoneName</td>
+                                                    <td>@(item.DueDate?.ToString("dd-MMM-yyyy"))</td>
+                                                    <td>
+                                                        <span class="badge badge-danger-soft">
+                                                            @Math.Abs(item.DaysUntilDue) days
+                                                        </span>
+                                                    </td>
+                                                    @* <td class="text-end">@item.QtyRequired.ToString("N1")</td>
+                                                    <td class="text-end">@item.QtyReceived.ToString("N1")</td>
+                                                    <td class="text-end">
+                                                        <div class="progress" style="height: 20px; background-color: #e9ecef;">
+                                                            <div class="progress-bar bg-danger"
+                                                                 role="progressbar"
+                                                                 style="width: @progressPct.ToString("N0")%"
+                                                                 aria-valuenow="@progressPct" aria-valuemin="0" aria-valuemax="100">
+                                                                <small class="fw-bold text-white">@progressPct.ToString("N0")%</small>
+                                                            </div>
+                                                        </div>
+                                                    </td> *@
+                                                    <td><small>@item.Vendor_Name</small></td>
+                                                    @* <td class="text-end"><small>₹@((item.EstimatedCost / 10000000).ToString("N2")) Cr</small></td> *@
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-success border" style="background-color: #d1e7dd; color: #0f5132;">
+                                <i class="uil uil-check-circle"></i> No overdue milestones. Excellent!
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            @* <div class="modal-footer" style="background-color: #f8f9fa;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">
+                    <i class="uil uil-file-download-alt"></i> Export to Excel
+                </button>
+            </div> *@
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Vendor Accountability Detail - PROFESSIONAL -->
+<div class="modal fade" id="vendorAccountabilityModal" tabindex="-1" aria-labelledby="vendorAccountabilityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                <h5 class="modal-title" id="vendorAccountabilityModalLabel">
+                    <i class="uil uil-user-times"></i> Vendor Accountability - Performance Analysis
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background-color: #f8f9fa;">
+                <!-- Summary Cards -->
+                <div class="row mb-4 g-3">
+                    <div class="col-md-4">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #ffc107;">
+                            <div class="summary-label">
+                                <i class="uil uil-users-alt text-warning"></i> VENDORS BEHIND SCHEDULE
+                            </div>
+                            <div class="summary-value text-warning">@Model.VendorAccountability.VendorsBehindSchedule</div>
+                              @* <div class="summary-subtext">Out of @Model.VendorPerformanceScorecard.Count total vendors</div> *@
+                            @* <div class="summary-footer">
+                                <small class="text-muted">@((Model.VendorAccountability.VendorsBehindSchedule * 100.0 / Model.VendorPerformanceScorecard.Count).ToString("N1"))% of vendors</small>
+                            </div> *@
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #dc3545;">
+                            <div class="summary-label">
+                                <i class="uil uil-exclamation-triangle text-danger"></i> OVERDUE MILESTONES
+                            </div>
+                            <div class="summary-value text-danger">@Model.VendorAccountability.TotalOverdueMilestones</div>
+                            @* <div class="summary-subtext">Across all vendors</div> *@
+                        @*     <div class="summary-footer">
+                                <small class="text-muted">Immediate action required</small>
+                            </div>*@
+                        </div> 
+                    </div> 
+                </div>
+                 
+
+                <!-- Vendor Performance Table -->
+                <div class="table-card"> 
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover table-bordered mb-0" id="vendorPerformanceTable">
+                            <thead style="background-color: #495057; color: white;">
+                                <tr>
+                                    <th>Vendor Name</th>
+                                    <th class="text-center">Total<br />Milestones</th>
+                                    <th class="text-center">Completed<br />On-Time</th>
+                                    <th class="text-center">Currently<br />Overdue</th>
+                                    <th class="text-end">Completion<br />Rate</th>
+                                    <th class="text-end p-2">Avg Delay<br />(days)</th> 
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var vendor in Model.VendorPerformanceScorecard)
+                                {
+                                   
+                                    var completionColor = vendor.CompletionRate >= 90 ? "text-success" :
+                                    vendor.CompletionRate >= 75 ? "text-info" :
+                                    vendor.CompletionRate >= 60 ? "text-warning" : "text-danger";
+
+                                    var delayColor = vendor.AvgDelayDays <= 15 ? "text-success" :
+                                    vendor.AvgDelayDays <= 30 ? "text-warning" : "text-danger";
+
+                                    <tr class="">
+                                        <td><strong>@vendor.Vendor_Name</strong></td>
+                                        <td class="text-center">@vendor.TotalMilestones</td>
+                                        <td class="text-center text-success fw-bold">@vendor.CompletedOnTime</td>
+                                        <td class="text-center">
+                                            @if (vendor.OverdueCount > 0)
+                                            {
+                                                <span class="text-danger fw-bold">@vendor.OverdueCount</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">0</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="@completionColor fw-bold">@vendor.CompletionRate.ToString("N1")%</span>
+                                        </td>
+                                        <td class="text-end">
+                                            @if (vendor.AvgDelayDays > 0)
+                                            {
+                                                <span class="@delayColor fw-bold">@vendor.AvgDelayDays.ToString("N0")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td> 
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+              
+            </div>
+          
+        </div>
+    </div>
+</div>
+
+  
+<!-- ============================================ -->
+<!-- Modal: Untracked Demands Detail -->
+<!-- ============================================ -->
+<div class="modal fade" id="untrackedDemandsModal" tabindex="-1" aria-labelledby="untrackedDemandsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white;">
+                <h5 class="modal-title" id="untrackedDemandsModalLabel">
+                    <i class="uil uil-eye-slash"></i> Untracked Demands (Without Milestones)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background-color: #f8f9fa;">
+
+                <!-- Summary Cards -->
+                <div class="row mb-4 g-3">
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #dc3545;">
+                            <div class="summary-label">
+                                <i class="uil uil-exclamation-triangle text-danger"></i> OVERDUE & INCOMPLETE
+                            </div>
+                            <div class="summary-value text-danger">@Model.UntrackedDemands.OverdueIncomplete</div>
+                            <div class="summary-subtext">Demands past planned date</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #ffc107;">
+                            <div class="summary-label">
+                                <i class="uil uil-clock text-warning"></i> DUE SOON
+                            </div>
+                            <div class="summary-value text-warning">@Model.UntrackedDemands.DueSoon</div>
+                            <div class="summary-subtext">Due within 7 days</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #28a745;">
+                            <div class="summary-label">
+                                <i class="uil uil-check-circle text-success"></i> COMPLETED
+                            </div>
+                            <div class="summary-value text-success">@Model.UntrackedDemands.CompletedUntracked</div>
+                            <div class="summary-subtext">Finished, untracked</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #17a2b8;">
+                            <div class="summary-label">
+                                <i class="uil uil-rupee-sign text-info"></i> TOTAL VALUE
+                            </div>
+                            <div class="summary-value text-info">₹@((Model.UntrackedDemands.TotalUntrackedValue / 10000000).ToString("N2")) Cr</div>
+                            <div class="summary-subtext">Untracked value</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-light border">
+                    <i class="uil uil-info-circle text-primary"></i>
+                    <strong>Note:</strong> These demands do not have milestone tracking. Monitor planned dates and receipt status manually.
+                </div>
+
+                <!-- Data Table -->
+                @if (Model.UntrackedDemandsList != null && Model.UntrackedDemandsList.Any())
+                {
+                    <div class="table-card">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover table-bordered mb-0">
+                                <thead style="background-color: #495057; color: white;">
+                                    <tr>
+                                        <th>MMG File No</th>
+                                        <th>Description</th>
+                                        <th>Planned Date</th>
+                                        <th>Days</th>
+                                        <th class="text-end">Ordered</th>
+                                        <th class="text-end">Received</th>
+                                        <th class="text-end">Balance</th>
+                                        <th class="text-end">Progress</th>
+                                        <th>Vendor</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.UntrackedDemandsList)
+                                    {
+                                        var statusClass = item.TrackingStatus == "Overdue" ? "table-danger" :
+                                        item.TrackingStatus == "Due Soon" ? "table-warning" :
+                                        item.TrackingStatus == "Complete" ? "table-success" : "";
+
+                                        var statusBadge = item.TrackingStatus == "Overdue" ? "bg-danger" :
+                                        item.TrackingStatus == "Due Soon" ? "bg-warning" :
+                                        item.TrackingStatus == "Complete" ? "bg-success" : "bg-info";
+
+                                        <tr class="@statusClass">
+                                            <td><strong>@item.MMG_File_No</strong></td>
+                                            <td>@item.Item_Description</td>
+                                            <td>@(item.Planned_Date_of_receipt?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                            <td>
+                                                @if (item.TrackingStatus == "Overdue")
+                                                {
+                                                    <span class="badge bg-danger">@item.DaysFromPlanned days overdue</span>
+                                                }
+                                                else if (item.TrackingStatus == "Due Soon")
+                                                {
+                                                    <span class="badge bg-warning">@item.DaysFromPlanned days left</span>
+                                                }
+                                                else if (item.TrackingStatus == "Complete")
+                                                {
+                                                    <span class="text-muted">Completed</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>@item.DaysFromPlanned days</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">@item.TotalOrdered.ToString("N1")</td>
+                                            <td class="text-end">@item.TotalReceived.ToString("N1")</td>
+                                            <td class="text-end">@item.TotalBalance.ToString("N1")</td>
+                                            <td class="text-end">
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar @(item.FulfillmentPercentage >= 100 ? "bg-success" : item.FulfillmentPercentage >= 75 ? "bg-info" : "bg-warning")"
+                                                         role="progressbar"
+                                                         style="width: @item.FulfillmentPercentage.ToString("N0")%">
+                                                        <small class="fw-bold">@item.FulfillmentPercentage.ToString("N0")%</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td><small>@item.Vendor_Name</small></td>
+                                            <td><span class="badge @statusBadge">@item.TrackingStatus</span></td>
+                                            <td class="text-end"><small>₹@((item.EstimatedCost / 10000000).ToString("N2")) Cr</small></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-success">
+                        <i class="uil uil-check-circle"></i> All demands have milestone tracking!
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL: CASTING DETAILS -->
+<!-- ============================================ -->
+<div class="modal fade" id="castingModal" tabindex="-1" aria-labelledby="castingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white;">
+                <h5 class="modal-title" id="castingModalLabel">
+                    <i class="uil uil-wrench"></i> Casting - Detailed Part Breakdown
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background-color: #f8f9fa;">
+                <!-- Summary Cards -->
+                <div class="row g-2 mb-3">
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #17a2b8;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">ENGINES POSSIBLE</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #17a2b8;">@Model.CastingMetrics.TotalEnginesPossible</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #28a745;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">ACCEPTED QTY</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #28a745;">@Model.CastingMetrics.TotalAcceptedQty</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #ffc107;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">ISSUED QTY</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #ffc107;">@Model.CastingMetrics.TotalIssuedQty</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #007bff;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">AVAILABLE QTY</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #007bff;">@Model.CastingMetrics.TotalAvailableQty</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parts Table -->
+                @if (Model.CastingDetails != null && Model.CastingDetails.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm" style="background: white;">
+                            <thead style="background: #17a2b8; color: white;">
+                                <tr>
+                                    <th>Part Number</th>
+                                    <th>Description</th>
+                                    <th class="text-center">Qty/Engine</th>
+                                    <th class="text-end">Accepted</th>
+                                    <th class="text-end">Issued</th>
+                                    <th class="text-end">Available</th>
+                                    <th class="text-center">Engines Possible</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var part in Model.CastingDetails)
+                                {
+                                    var rowClass = part.IsBottleneck == 1 ? "table-danger" : "";
+                                    var statusBadge = part.StockStatus == "Negative" ? "badge bg-danger" :
+                                    part.StockStatus == "Zero Stock" ? "badge bg-warning text-dark" :
+                                    part.StockStatus == "Low Stock" ? "badge bg-info" : "badge bg-success";
+
+                                    <tr class="@rowClass">
+                                        <td>
+                                            @part.Draw_part_no
+                                            @if (part.IsBottleneck == 1)
+                                            {
+                                                <i class="uil uil-exclamation-triangle text-danger" title="Bottleneck Part"></i>
+                                            }
+                                        </td>
+                                        <td>@part.Description</td>
+                                        <td class="text-center">@part.QuantityPerEngine</td>
+                                        <td class="text-end">@part.AcceptedQty</td>
+                                        <td class="text-end">@part.IssuedQty</td>
+                                        <td class="text-end">@part.AvailableQty</td>
+                                        <td class="text-center"><strong>@part.EnginesPossibleForThisPart</strong></td>
+                                        <td class="text-center"><span class="@statusBadge">@part.StockStatus</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="uil uil-info-circle"></i> No casting parts data available.
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL: FORGING DETAILS -->
+<!-- ============================================ -->
+<div class="modal fade" id="forgingModal" tabindex="-1" aria-labelledby="forgingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); color: white;">
+                <h5 class="modal-title" id="forgingModalLabel">
+                    <i class="uil uil-constructor"></i> Forging - Detailed Part Breakdown
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background-color: #f8f9fa;">
+                <!-- Summary Cards -->
+                <div class="row g-2 mb-3">
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #ffc107;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">ENGINES POSSIBLE</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #ffc107;">@Model.ForgingMetrics.TotalEnginesPossible</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #28a745;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">ACCEPTED QTY</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #28a745;">@Model.ForgingMetrics.TotalAcceptedQty</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #dc3545;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">ISSUED QTY</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #dc3545;">@Model.ForgingMetrics.TotalIssuedQty</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #007bff;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">AVAILABLE QTY</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #007bff;">@Model.ForgingMetrics.TotalAvailableQty</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parts Table -->
+                @if (Model.ForgingDetails != null && Model.ForgingDetails.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm" style="background: white;">
+                            <thead style="background: #ffc107; color: white;">
+                                <tr>
+                                    <th>Part Number</th>
+                                    <th>Description</th>
+                                    <th class="text-center">Qty/Engine</th>
+                                    <th class="text-end">Accepted</th>
+                                    <th class="text-end">Issued</th>
+                                    <th class="text-end">Available</th>
+                                    <th class="text-center">Engines Possible</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var part in Model.ForgingDetails)
+                                {
+                                    var rowClass = part.IsBottleneck == 1 ? "table-danger" : "";
+                                    var statusBadge = part.StockStatus == "Negative" ? "badge bg-danger" :
+                                    part.StockStatus == "Zero Stock" ? "badge bg-warning text-dark" :
+                                    part.StockStatus == "Low Stock" ? "badge bg-info" : "badge bg-success";
+
+                                    <tr class="@rowClass">
+                                        <td>
+                                            @part.Draw_part_no
+                                            @if (part.IsBottleneck == 1)
+                                            {
+                                                <i class="uil uil-exclamation-triangle text-danger" title="Bottleneck Part"></i>
+                                            }
+                                        </td>
+                                        <td>@part.Description</td>
+                                        <td class="text-center">@part.QuantityPerEngine</td>
+                                        <td class="text-end">@part.AcceptedQty</td>
+                                        <td class="text-end">@part.IssuedQty</td>
+                                        <td class="text-end">@part.AvailableQty</td>
+                                        <td class="text-center"><strong>@part.EnginesPossibleForThisPart</strong></td>
+                                        <td class="text-center"><span class="@statusBadge">@part.StockStatus</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="uil uil-info-circle"></i> No forging parts data available.
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL: PYRO DETAILS -->
+<!-- ============================================ -->
+<div class="modal fade" id="pyroModal" tabindex="-1" aria-labelledby="pyroModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white;">
+                <h5 class="modal-title" id="pyroModalLabel">
+                    <i class="uil uil-fire"></i> Pyro - Detailed Part Breakdown
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background-color: #f8f9fa;">
+                <!-- Summary Cards -->
+                <div class="row g-2 mb-3">
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #dc3545;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">ENGINES POSSIBLE</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #dc3545;">@Model.PyroMetrics.TotalEnginesPossible</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #28a745;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">ACCEPTED QTY</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #28a745;">@Model.PyroMetrics.TotalAcceptedQty</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #ffc107;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">ISSUED QTY</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #ffc107;">@Model.PyroMetrics.TotalIssuedQty</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-summary-card" style="border-left: 4px solid #007bff;">
+                            <div style="font-size: 0.75rem; color: #6c757d; font-weight: 600;">AVAILABLE QTY</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #007bff;">@Model.PyroMetrics.TotalAvailableQty</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parts Table -->
+                @if (Model.PyroDetails != null && Model.PyroDetails.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm" style="background: white;">
+                            <thead style="background: #dc3545; color: white;">
+                                <tr>
+                                    <th>Part Number</th>
+                                    <th>Description</th>
+                                    <th class="text-center">Qty/Engine</th>
+                                    <th class="text-end">Accepted</th>
+                                    <th class="text-end">Issued</th>
+                                    <th class="text-end">Available</th>
+                                    <th class="text-center">Engines Possible</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var part in Model.PyroDetails)
+                                {
+                                    var rowClass = part.IsBottleneck == 1 ? "table-danger" : "";
+                                    var statusBadge = part.StockStatus == "Negative" ? "badge bg-danger" :
+                                    part.StockStatus == "Zero Stock" ? "badge bg-warning text-dark" :
+                                    part.StockStatus == "Low Stock" ? "badge bg-info" : "badge bg-success";
+
+                                    <tr class="@rowClass">
+                                        <td>
+                                            @part.Draw_part_no
+                                            @if (part.IsBottleneck == 1)
+                                            {
+                                                <i class="uil uil-exclamation-triangle text-danger" title="Bottleneck Part"></i>
+                                            }
+                                        </td>
+                                        <td>@part.Description</td>
+                                        <td class="text-center">@part.QuantityPerEngine</td>
+                                        <td class="text-end">@part.AcceptedQty</td>
+                                        <td class="text-end">@part.IssuedQty</td>
+                                        <td class="text-end">@part.AvailableQty</td>
+                                        <td class="text-center"><strong>@part.EnginesPossibleForThisPart</strong></td>
+                                        <td class="text-center"><span class="@statusBadge">@part.StockStatus</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="uil uil-info-circle"></i> No pyro parts data available.
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================ -->
+<!-- JAVASCRIPT FOR CHARTS AND INTERACTIONS -->
+<!-- ============================================ -->
+<script>
+    // Initialize Procurement Status Chart
+    $(document).ready(function() {
+        // Fix: Move procurement modals to body so they're not inside transformed container (Firefox fix)
+        $('#procurement-section .modal').each(function () {
+            $(this).appendTo('body');
+        });
+        // Prepare data from C# model
+        var procurementStatusData = @Html.Raw(Json.Serialize(Model.ProcurementByStatus));
+
+        // Check if data exists
+        if (procurementStatusData && procurementStatusData.length > 0) {
+            // Call the function from dashboard.js
+            initProcurementStatusChart('procurementStatusChart', procurementStatusData);
+        } else {
+            console.warn('No procurement status data available for chart');
+            // Optionally show a message in the chart area
+            $('#procurementStatusChart').parent().html(
+                '<div class="alert alert-info m-3">' +
+                '<i class="uil uil-info-circle"></i> No status data available' +
+                '</div>'
+            );
+        }
+
+         var topVendorsData = @Html.Raw(Json.Serialize(Model.TopVendors));
+         console.log(topVendorsData);
+
+        if (topVendorsData && topVendorsData.length > 0) {
+            initTopVendorsChart('topVendorsChart', topVendorsData);
+        } else {
+            console.warn('No top vendors data available');
+            $('#topVendorsChart').parent().html(
+                '<div class="alert alert-info m-3">' +
+                '<i class="uil uil-info-circle"></i> No vendor data available' +
+                '</div>'
+            );
+        }
+    });
+</script>

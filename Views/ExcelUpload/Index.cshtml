@@ -1,0 +1,23 @@
+﻿ 
+<div class="col-md-12 col-sm-12 col-lg-12">
+    <div class="col-md-12">
+        <b>Upload Instruction</b>
+        <ul class="list-group">
+            @*<li>Please download sample Excel sheet from below link.</li>
+            <li>The field which have mandatory is must and should.</li>
+            <li>Data format should be correct as per respected column.</li>
+            <li>Don't add any extra column to the sample Excel sheet.</li>*@
+            <li>Please delete the first two rows from your Excel-sheet</li>
+            <li>Kindly unhide all colums before upload</li>
+            <li>Please delete all unwanted colums if its not a mandatory</li>
+        </ul>
+        <br />
+        @*<a href="/Excel_Uploads/Excel_Upload/DownloadSample?sample=MasterPartList">Download Sample Excel Sheet >></a>*@
+    </div>
+    <div class="col-md-12">
+        <input type="hidden" value="@ViewBag.Basetable" id="Source_table" />
+        <input type="file" class="form-control" id="MfgExcelFile" accept=".xls,.xlsx" />
+        <br />
+        <button class="btn btn-success" onclick="PostUploadMfgStatusExcel()">Upload</button>
+    </div> 
+</div>

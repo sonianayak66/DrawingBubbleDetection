@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual env
+.venv/
+venv/
+
+# Editor / tooling state
+.vscode/
+.claude/
+
+# Local secrets / config
+.env
+
+# Bundled offline-install wheels (rebuildable from requirements.txt)
+wheels/
+
+# Batch / probe outputs
+_batch_out/
+debug/
+_pipeline_v2_debug/
+
+# Sample drawing images and probe output annotations — too large
+# and not needed for the service to run. Track ONNX model artifacts.
+*.png
+*.jpg
+*.jpeg
+Images/
+DrawingBubble/*.png
+DrawingBubble/*.jpg
+DrawingBubble/*.jpeg
+!models/*.onnx
+
+# Generated runtime/showcase outputs
+output/
+tmp/
+*.zip

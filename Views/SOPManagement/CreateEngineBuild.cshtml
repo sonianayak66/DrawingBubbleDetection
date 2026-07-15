@@ -1,0 +1,90 @@
+﻿@using MPCRS.Utilities
+@model MPCRS.ViewModels.EngineBuildsVM
+@{
+    ViewData["Title"] = "CreateEngineBuild";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<div class="col-md-12">
+   
+        @{
+            if (Model.Id == 0)
+            {
+                <h3>Create Build - @ViewBag.Etitle  </h3>
+            }else{
+                <h3>Edit Build -@Model.BuildName - @ViewBag.Etitle  </h3>
+            }
+        }
+      
+   
+</div>
+<div class="col-md-12">
+    <form method="post" asp-action="CreateEngineBuild" class="needs-validation" novalidate="novalidate">
+
+        <input class="form-control" asp-for="Id" type="hidden" value="@Model.Id" />
+        <input class="form-control" asp-for="BaseLineEngineDbkey" type="hidden">
+        <input class="form-control" asp-for="CreatedOn" type="hidden">
+        <input class="form-control" asp-for="UpdatedOn" type="hidden">
+        <input class="form-control" asp-for="BuildGuid" type="hidden">
+        <input class="form-control" asp-for="ClonedFrom" type="hidden">
+        <input class="form-control" asp-for="ClonedFromKey" type="hidden">
+        <div class="col-12 col-sm-6 col-md-4">
+            <div class="form-floating mb-3">
+                <input class="form-control" asp-for="BuildName" type="text">
+                <label asp-for="BuildName"></label>
+            </div>
+            <div class="form-floating mb-3">
+
+                <input class="form-control" asp-for="BuildDate" type="date">
+                <label asp-for="BuildDate"></label>
+            </div>
+            <div class="form-floating mb-3">
+
+                <input class="form-control" asp-for="Description" type="text" placeholder="Description">
+                <label asp-for="Description"></label>
+            </div>
+            <div class="form-floating mb-3">
+
+                <input class="form-control" asp-for="ReferenceNumber" type="text" placeholder="Reference Number">
+                <label asp-for="ReferenceNumber"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <select class="form-select" asp-for="Status" asp-items="@Masters.GetMaster_General_SameValueAsText("SOP_ENGINE_BUILD_STATUS")">
+                </select>
+                <label asp-for="Status"></label>
+            </div>
+            @*<div class="form-floating mb-3">
+
+            <input class="form-control" asp-for="UpdatedBy" type="text" placeholder="UpdatedBy">
+            <label asp-for="UpdatedBy"></label>
+            </div>
+            <div class="form-floating mb-3">
+
+            <input class="form-control" asp-for="CreatedBy" type="text" placeholder="CreatedBy">
+            <label asp-for="CreatedBy"></label>
+            </div>*@
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a class="btn btn-secondary" href="/SOPManagement/Builds">Back</a>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            
+        });
+
+    </script>
+}
+
+
+

@@ -1,0 +1,162 @@
+@model MPCRS.ViewModels.BulkRoleAssignmentVM
+@using MPCRS.Utilities;
+@using MPCRS.ViewModels;
+@{
+    Layout = null;
+    var roles = Model.Roles;
+    var userRoleMappings = Model.UserRoleMappings;
+    var departments = Model.Departments;
+    var personTypes = Model.PersonTypes;
+}
+
+<div class="card shadow-none border border-300 my-4" data-component-card="data-component-card">
+    <div class="card-header p-4 border-bottom border-300 bg-soft">
+        <div class="row g-3 justify-content-between align-items-center">
+            <h4 class="text-900 mb-0 col-12 col-sm-3" data-anchor="data-anchor">Bulk Role Assignment</h4>
+            <div class="col-12 col-sm-9 d-flex justify-content-end gap-2 flex-wrap align-items-center">
+                <select id="bulkRoleApply" class="form-select form-select-sm" style="width:300px;">
+                    <option value="">-- Select Role to bulk assign or remove --</option>
+                    @foreach (var role in roles)
+                    {
+                        <option value="@role.Id">@role.Name</option>
+                    }
+                </select>
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="ApplyRoleToSelected()">
+                    <span class="fas fa-plus pe-1 fs--2"></span>Add selected role to all checked users
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="RemoveRoleFromSelected()">
+                    <span class="fas fa-minus pe-1 fs--2"></span>Remove selected role from all checked users
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="SaveBulkRoleAssignment()">
+                    <span class="fas fa-save pe-1 fs--2"></span>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+    @* Added *@
+    <div class="row g-2 align-items-center px-4 pt-2 pb-2">
+        <div class="col-auto">
+            <label class="form-label fs--2 fw-semibold text-700 mb-1">Department</label>
+            <select id="filterDepartment" class="form-select form-select-sm" style="min-width:220px;" onchange="ApplyBulkFilters()">
+                <option value="">-- All Departments --</option>
+                @if (Model.Departments != null && Model.Departments.Any())
+                {
+                    foreach (var dept in Model.Departments)
+                    {
+                        <option value="@dept.DisplayText">@dept.DisplayText</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-auto ms-3">
+            <label class="form-label fs--2 fw-semibold text-700 mb-1">Employee Type</label>
+            <div class="d-flex gap-3 align-items-center mt-1">
+                @if (Model.PersonTypes != null && Model.PersonTypes.Any())
+                {
+                    var orderedPersonTypes = Model.PersonTypes
+                    .OrderBy(x => x.DisplayText != null && x.DisplayText.ToLower().Contains("internal") ? 0 : 1)
+                    .ThenBy(x => x.DisplayText);
+
+                    foreach (var pt in orderedPersonTypes)
+                    {
+                        <div class="form-check mb-0">
+                            <input class="form-check-input person-type-filter"
+                                   type="checkbox"
+                                   id="chkType_@pt.MasterGUID"
+                                   value="@pt.UseValue"
+                                   onchange="ApplyBulkFilters()" />
+                            <label class="form-check-label fs--1" for="chkType_@pt.MasterGUID">
+                                @pt.DisplayText
+                            </label>
+                        </div>
+                    }
+                }
+
+                <button type="button" class="btn btn-link btn-sm p-0 fs--2 text-muted ms-2" onclick="ClearBulkFilters()">
+                    Clear Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @* end *@
+
+    <div class="card-body p-0">
+        <div class="p-4">
+            <table class="table table-sm fs--1 mb-2" id="bulkRoleTable" cellspacing="0" style="width:100%;">
+                <thead>
+                    <tr>
+                        <th style="width:30px;">
+                            <input type="checkbox" id="selectAllUsers" onchange="SelectAllBulkCheckboxes(this)" />
+                        </th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Employee Type</th>
+                        <th>Current Roles</th>
+                        <th style="min-width:280px;">Assign Roles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Users != null)
+                    {
+                        foreach (var item in Model.Users)
+                        {
+                            if (item.isactive != true || item.allowLogin != true) { continue; }
+
+                            var currentRoles = new List<UserRoleInfo>();
+                            if (userRoleMappings != null && item.PersonGUID != null && userRoleMappings.ContainsKey(item.PersonGUID))
+                            {
+                                currentRoles = userRoleMappings[item.PersonGUID];
+                            }
+
+                            //<tr data-personguid="@item.PersonGUID">
+                            <tr data-personguid="@item.PersonGUID"
+                                data-department="@((item.departmentName ?? "").Trim().ToLower())"
+                                data-persontype="@((item.persontype ?? "").Trim().ToLower())">
+                                <td>
+                                    <input type="checkbox" class="bulk-user-checkbox" data-personguid="@item.PersonGUID" />
+                                </td>
+                                <td>@item.name</td>
+                                <td>@item.email_address</td>
+                                <td>@item.departmentName</td>
+                                <td>@item.persontype</td>
+                                <td class="current-roles-cell">
+                                    @if (currentRoles.Any())
+                                    {
+                                        foreach (var role in currentRoles)
+                                        {
+                                            <span class="badge badge-phoenix badge-phoenix-info me-1">@role.RoleName</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fs--2">No roles assigned</span>
+                                    }
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm role-multiselect" multiple
+                                            data-personguid="@item.PersonGUID">
+                                        @foreach (var role in roles)
+                                        {
+                                            var isSelected = currentRoles.Any(cr => cr.RoleId == role.Id);
+                                            if (isSelected)
+                                            {
+                                                <option value="@role.Id" selected>@role.Name</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@role.Id">@role.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

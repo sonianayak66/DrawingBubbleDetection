@@ -1,0 +1,73 @@
+﻿@model List<MPCRS.ViewModels.CastingOrderSummaryVM>
+@{
+    Layout = null;
+}
+<style>
+    td{
+        padding-top:8px!important;
+        padding-bottom:8px!important;
+    }
+    .partcol{
+        width: 40%!important;
+        padding-left:10px!important;
+    }
+
+    .qtyCols{
+        width: 12% !important;
+        text-align: right;
+        padding-right: 15px!important;
+    }
+
+</style>
+
+<table id="summaryTable" class="table  table-bordered table-hover table-condensed">
+    <thead>
+        <tr>
+            <th class="partcol" style="min-width:250px!important"> Part </th>
+            <th class="qtyCols"> Qty per Engine </th>
+            <th class="qtyCols"> Qty Ordered </th>
+            <th class="qtyCols"> Qty Received </th>
+            <th class="qtyCols"> Qty Accepted </th>
+            <th class="qtyCols"> Qty Rejected </th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @{
+            foreach (var item in Model.OrderByDescending(x=>x.OrderQty).ThenBy(x=>x.Draw_part_no))
+            {
+                <tr>
+                    <td class="partcol" style="min-width:250px!important" >
+                        <b>@item.Draw_part_no</b> - @item.Description
+                        @{
+                            if(item.OrderQty > 0)
+                            {
+                                <a style="cursor:pointer" id="icon-Open-@item.Engine_Part_Dbkey" class="float-end" onclick="GetPartOrderData(@item.Engine_Part_Dbkey, 'Open')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-down" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M1.646 6.646a.5.5 0 0 1 .708 0L8 12.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708" />
+                                        <path fill-rule="evenodd" d="M1.646 2.646a.5.5 0 0 1 .708 0L8 8.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708" />
+                                    </svg>
+                                </a>
+                                <a style="cursor:pointer; display:none" id="icon-Close-@item.Engine_Part_Dbkey" class="float-end" onclick="GetPartOrderData(@item.Engine_Part_Dbkey, 'Close')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-up" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M7.646 2.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 3.707 2.354 9.354a.5.5 0 1 1-.708-.708z" />
+                                        <path fill-rule="evenodd" d="M7.646 6.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 7.707l-5.646 5.647a.5.5 0 0 1-.708-.708z" />
+                                    </svg>
+                                </a>
+                            }
+                        }
+                     
+                    </td>
+                    <td class="qtyCols" style="padding-right:15px; text-align:right;"> @item.QuantityPerEngine </td>
+                    <td class="qtyCols" style="padding-right:15px; text-align:right;" > @item.OrderQty </td>
+                    <td class="qtyCols" style="padding-right:15px; text-align:right;cursor:pointer" onclick="OrderReceiptSplitDetail(@item.Engine_Part_Dbkey)"> <span style="text-decoration:underline; color:darkblue">@item.TotalRecievedQty</span></td>
+                    <td class="qtyCols" style="padding-right:15px; text-align:right">@item.AcceptedQty</td>
+                    <td class="qtyCols"  style="padding-right:15px; text-align:right">@item.RejectedQty</td>
+                </tr>
+                <tr style="display:none; padding:0px!important" id="Part_@item.Engine_Part_Dbkey" >
+                    <td style="padding:0px!important" colspan="6"></td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

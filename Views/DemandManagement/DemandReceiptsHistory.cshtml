@@ -1,0 +1,443 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@{
+	ViewBag.Title = "DemandReceiptsHistory";
+
+	var demandSelectList = Masters.GetDemandSelectList();
+}
+<style>
+	table.dataTable tr.group td {
+		font-weight: bold;
+		background-color: #e0e0e0
+	}
+</style>
+
+ <div class="page-header row">
+	<div class="col-3">
+		<h3>Demand Receipt Details</h3>
+	</div>
+	<div class="col-1 d-flex align-items-start justify-content-end">
+		<b>Demand</b>
+	</div>
+	<div class="col-6 ">
+		<select class="form-select" id="Demands" onchange="getTable(this),getPartsTable(),getBOITable(),getLRUTable()" asp-items="@demandSelectList"></select>
+		<input type="hidden" value="@ViewBag.DemandID" id="DemandID" />
+	</div>
+	<div class="col-2">
+		<a class="btn btn-secondary btn-sm" href="/DemandManagement/DemandTree">Back</a>
+	</div>
+ 
+</div>
+
+<div class="col">
+	<ul class="nav nav-tabs" id="myTab">
+		<li class="nav-item" role="presentation"><a class="nav-link active" onclick="dataTable.draw()" data-bs-toggle="tab" href="#tab-RM-div" role="tab" aria-controls="tab-RM-div" aria-selected="true">Raw Material</a></li>
+		<li class="nav-item" role="presentation"><a class="nav-link" onclick="partsDataTable.draw()" id="Parts-tab" data-bs-toggle="tab" href="#tab-Parts-div" role="tab" aria-controls="tab-Parts-div" aria-selected="false">Parts</a></li>
+		<li class="nav-item" role="presentation"><a class="nav-link" onclick="BoiDataTbl.draw()" id="DemandDocument-tab" data-bs-toggle="tab" href="#tab-BOI-div" role="tab" aria-controls="tab-BOI-div" aria-selected="false">BOI</a></li>
+		<li class="nav-item" role="presentation"><a class="nav-link" onclick="lruDataTbl.draw()" id="Demand-Receipt-Document-tab" data-bs-toggle="tab" href="#tab-LRU-div" role="tab" aria-controls="tab-LRU-div" aria-selected="false">LRU</a></li>
+	</ul>
+</div>
+
+
+<div class="tab-content mt-0" id="myTabContent">
+	<div class="tab-pane fade show active" id="tab-RM-div" role="tabpanel" aria-labelledby="DemandDetail-list-tab"></div>
+	<div class="tab-pane fade" id="tab-Parts-div" role="tabpanel" aria-labelledby="profile-tab"></div>
+	<div class="tab-pane fade" id="tab-BOI-div" role="tabpanel" aria-labelledby="Receipts-tab"> </div>
+	<div class="tab-pane fade" id="tab-LRU-div" role="tabpanel" aria-labelledby="Receipts-tab"> </div>
+</div>
+
+
+
+
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+	<script src="~/js/jstree.min.js" asp-append-version="true"></script>
+	<script src="~/mpi/Demand.js" asp-append-version="true"></script>
+	<script src="~/js/select2.min.js"></script>
+	<script>
+
+		$(function () {
+			$('#Demands').select2();
+			var id = document.getElementById("DemandID").value;
+			var urlinput = "/DemandManagement/RMData/";
+			$.get(urlinput).done(function (response) {
+				//console.log(response);
+				getTable();
+				document.getElementById("tab-RM-div").innerHTML = response;
+
+			});
+			var type = "Parts";
+			var urlPartinput = "/DemandManagement/PartsDataView/";
+			$.get(urlPartinput).done(function (response) {
+				//console.log(response);
+				getPartsTable();
+				document.getElementById("tab-Parts-div").innerHTML = response;
+			});
+			var boi = "BOI";
+			var urlBOIinput = "/DemandManagement/BOIDataView/";
+			$.get(urlBOIinput).done(function (response) {
+				//console.log(response);
+				getBOITable();
+				document.getElementById("tab-BOI-div").innerHTML = response;
+			});
+			var urlBOIinput = "/DemandManagement/LRUDataView/";
+			$.get(urlBOIinput).done(function (response) {
+				//console.log(response);
+				getLRUTable();
+				document.getElementById("tab-LRU-div").innerHTML = response;
+			});
+		});
+
+
+
+
+		
+		var dataTable;
+
+		//--------------RM------------------
+		function getTable() {
+			var demandDbkey = $("#Demands").val();
+
+			$.ajax({
+				url: '/DemandManagement/GetDemandReceiptsHistoryJResult/?id=' + demandDbkey,
+				type: 'GET',
+				success: function (data) {
+					//console.log(data);
+					tableData = data;
+					applyDatatable(tableData);
+				}
+			});
+	
+		}
+
+		function applyDatatable(tableData) {
+			
+			try {
+				dataTable.destroy();
+			} catch (e) {
+				//console.log(e);
+			}
+
+			dataTable = $("#DemandHistory").DataTable({
+				ajax: function (dataSent, callback, settings) {
+					callback({ data: tableData });
+				},
+				responsive: true,
+				paging: false,
+				scrollY: 510,
+				dom: 'Bfrtip',
+				order: [
+					[0, 'asc'],
+					[3, 'desc']
+
+				],
+				"columns": [
+					// { "data": "demand_No" },
+					{ "data": "mmG_File_No" },
+					{ "data": "receipt_No" },
+					{
+						"data": null,
+						render: function (data) {
+							return '<span>' + moment(data.receipt_Date).format('DD-MMM-YY') + '</span> '
+						}
+					},
+					{ "data": "raw_material_Name" },
+					{
+						"data": null,
+						render: function (data) {
+							return '<span class="float-end" style="margin-right:8px" >' + data.orderQty.toLocaleString('en') + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<span class="float-end" style="margin-right:8px"> ' + data.receiptQty.toLocaleString('en') + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<input type="button" class="btn btn-default btn-small" style="cursor:pointer; color:blue" value="More Info" onclick="getSplitInfoDisplayDialog(' + data.receipt_dbkey + ')" /> '
+						}
+					}
+				],
+				buttons: [
+					'excel'
+				]
+			});
+			dataTable.draw();
+
+		}
+
+		//=-------------Parts-----------
+		var partsDataTable;
+		var partsType = "Parts";
+		function getPartsTable() {
+			var demandDbkey = $("#Demands").val();
+			//console.log(demandDbkey);
+			$.ajax({
+				url: '/DemandManagement/GetPartsData?id=' + demandDbkey + '&partsType=' + partsType,
+				type: 'GET',
+				success: function (data) {
+				//console.log(data);
+					tableData = data;
+					applyPartsDatatable(tableData);
+				}
+			});
+		}
+
+		function applyPartsDatatable(tableData) {
+
+			try {
+				partsDataTable.destroy();
+			} catch (e) {
+				//console.log(e);
+			}
+
+			partsDataTable = $("#partsTbl").DataTable({
+				ajax: function (dataSent, callback, settings) {
+					callback({ data: tableData });
+				},
+				responsive: true,
+				paging: false,
+				scrollY: 510,
+				dom: 'Bfrtip',
+				order: [
+					[0, 'asc'],
+					[3, 'desc']
+
+				],
+				"columns": [
+					// { "data": "demand_No" },
+					{ "data": "mmG_File_No" },
+					{ "data": "receipt_No" },
+					{
+						"data": null,
+						render: function (data) {
+							return '<span>' + moment(data.receipt_Date).format('DD-MMM-YY') + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<span class="float-end" style="margin-right:8px" >' + data.description + '-' + data.item_Code + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<span class="float-end" style="margin-right:8px" >' + data.orderedQty.toLocaleString('en') + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<span class="float-end" style="margin-right:8px"> ' + data.receiptQty.toLocaleString('en') + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<input type="button" class="btn btn-default btn-small" style="cursor:pointer; color:blue" value="More Info" onclick="getSplitInfoDisplayDialog(' + data.receipt_dbkey + ')" /> '
+						}
+					}
+				],
+				buttons: [
+					'excel'
+				]
+			});
+			partsDataTable.draw();
+
+		}
+
+		//--------------BOI------------------
+		var BoiDataTbl;
+		var boi = "BOI";
+		function getBOITable() {
+			var demandDbkey = $("#Demands").val();
+			//console.log(demandDbkey);
+			$.ajax({
+				url: '/DemandManagement/GetPartsData?id=' + demandDbkey + '&partsType=' + boi,
+				type: 'GET',
+				success: function (data) {
+					//console.log(data);
+					tableData = data;
+					applyBOIDatatable(tableData);
+				}
+			});
+		}
+
+		function applyBOIDatatable(tableData) {
+
+			try {
+				BoiDataTbl.destroy();
+			} catch (e) {
+				//console.log(e);
+			}
+
+			BoiDataTbl = $("#BOItbl").DataTable({
+				ajax: function (dataSent, callback, settings) {
+					callback({ data: tableData });
+				},
+				responsive: true,
+				paging: false,
+				scrollY: 510,
+				dom: 'Bfrtip',
+				order: [
+					[0, 'asc'],
+					[3, 'desc']
+
+				],
+				"columns": [
+					// { "data": "demand_No" },
+					{ "data": "mmG_File_No" },
+					{ "data": "receipt_No" },
+					{
+						"data": null,
+						render: function (data) {
+							return '<span>' + moment(data.receipt_Date).format('DD-MMM-YY') + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<span class="float-end" style="margin-right:8px" >' + data.description + '-' + data.item_Code + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<span class="float-end" style="margin-right:8px" >' + data.orderedQty.toLocaleString('en') + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<span class="float-end" style="margin-right:8px"> ' + data.receiptQty.toLocaleString('en') + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<input type="button" class="btn btn-default btn-small" style="cursor:pointer; color:blue" value="More Info" onclick="getSplitInfoDisplayDialog(' + data.receipt_dbkey + ')" /> '
+						}
+					}
+				],
+				buttons: [
+					'excel'
+				]
+			});
+			BoiDataTbl.draw();
+		}
+
+		//----------LRU---------------
+		var lruDataTbl;
+		var lru = "LRU";
+		function getLRUTable() {
+			var demandDbkey = $("#Demands").val();
+			//console.log(demandDbkey);
+			$.ajax({
+				url: '/DemandManagement/GetPartsData?id=' + demandDbkey + '&partsType=' + lru,
+				type: 'GET',
+				success: function (data) {
+					//console.log(data);
+					tableData = data;
+					applyLRUDatatable(tableData);
+				}
+			});
+		}
+
+		function applyLRUDatatable(tableData) {
+
+			try {
+				lruDataTbl.destroy();
+			} catch (e) {
+				//console.log(e);
+			}
+
+			lruDataTbl = $("#LRUtbl").DataTable({
+				ajax: function (dataSent, callback, settings) {
+					callback({ data: tableData });
+				},
+				responsive: true,
+				paging: false,
+				scrollY: 510,
+				dom: 'Bfrtip',
+				order: [
+					[0, 'asc'],
+					[3, 'desc']
+
+				],
+				"columns": [
+					// { "data": "demand_No" },
+					{ "data": "mmG_File_No" },
+					{ "data": "receipt_No" },
+					{
+						"data": null,
+						render: function (data) {
+							return '<span>' + moment(data.receipt_Date).format('DD-MMM-YY') + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<span class="float-end" style="margin-right:8px" >' + data.description + '-' + data.item_Code + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<span class="float-end" style="margin-right:8px" >' + data.orderedQty.toLocaleString('en') + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<span class="float-end" style="margin-right:8px"> ' + data.receiptQty.toLocaleString('en') + '</span> '
+						}
+					},
+					{
+						"data": null,
+						render: function (data) {
+							return '<input type="button" class="btn btn-default btn-small" style="cursor:pointer; color:blue" value="More Info" onclick="getSplitInfoDisplayDialog(' + data.receipt_dbkey + ')" /> '
+						}
+					}
+				],
+				buttons: [
+					'excel'
+				]
+			});
+			lruDataTbl.draw();
+
+		}
+
+
+		function getSplitInfoDisplayDialog(receipt_dbkey) {
+
+			var urlinput = "/DemandManagement/ReceiptItemSplits?Id=" + receipt_dbkey;
+			$.get(urlinput).done(function (response) {
+				bootbox.dialog({
+					title: "Split Info",
+					message: response,
+					size: 'extra-large',
+					closeButton: true,
+					className: 'custom-modal',
+				});
+				//new Choices('.ItemDbKey', {
+				//    searchEnabled: true,
+				//});
+
+			});
+
+		}
+
+	
+	</script>
+
+}
+
+
+
+

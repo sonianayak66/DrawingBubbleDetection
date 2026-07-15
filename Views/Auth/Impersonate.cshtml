@@ -1,0 +1,23 @@
+﻿@model MPCRS.ViewModels.AuthenticateByEmailViewModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Impersonate</title>
+</head>
+<body>
+
+    @{
+        if (Model.IsAuthenticated != true)
+        {
+            <h2>Sorry ! You are not authorized</h2>
+        }
+    }
+
+</body>
+</html>

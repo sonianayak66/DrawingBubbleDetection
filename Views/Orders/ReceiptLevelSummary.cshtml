@@ -1,0 +1,40 @@
+﻿@model List<MPCRS.ViewModels.CastingReceiptLevelSummaryVM>
+@using MPCRS.Utilities;
+@{
+    Layout = null;
+} 
+
+<div class="col-12" style="margin-left:5px!important">
+    <table class="table table-hover table-bordered table-sm" style="width:100%" id="castingReceiptSummary">
+        <thead>
+            <tr>
+                <th class="datecol">Order No</th>              
+                <th class="datecol">Receipt No</th>
+                <th>Part & Vendor </th>
+                <th class="text-end">Order Qty</th>
+                <th >Qty Received </th>  
+            </tr>
+        </thead>
+        <tbody>
+            @{ 
+                foreach (var item in Model.OrderByDescending(x=>x.ReceiptDate))
+                {
+                    <tr>
+                        <td>@item.OrderNumber <p>@MPGlobals.GetFormattedDate(@item.OrderDate)</p> </td>
+                        <td>@item.ReceiptNumber <p>@MPGlobals.GetFormattedDate(@item.ReceiptDate)</p> </td>
+                        <td><b>@item.Draw_part_no : @item.Description</b> <p>@item.Vendor_Name</p>  </td>
+                        <td class="text-end">@item.OrderQty</td>
+                        <td>  <partial name="../Casting/CastingQtySplit.cshtml" model="@item.SplitItemKeys.ToString()">
+                                @{
+                                    if (string.IsNullOrEmpty(item.Remarks) == false)
+                                    {
+                                        <p class="m-0 p-0"><b>Remarks:</b> @item.Remarks </p>
+                                    }
+                                }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

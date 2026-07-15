@@ -1,0 +1,84 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@model MPCRS.ViewModels.ApproverMailConfigVM
+@using MPCRS.Utilities
+
+<hr />
+
+
+<div>
+
+    <dl class="dl-horizontal">
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Mail_Subject)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Mail_Subject)
+        </dd>
+        <br />
+        <dt>
+            @Html.DisplayNameFor(model => model.Mail_Body)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Mail_Body)
+        </dd>
+        <br />
+        <dt>
+            @Html.DisplayNameFor(model => model.Recipients)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Recipients)
+        </dd>
+        <br />
+        <dt>
+            @Html.DisplayNameFor(model => model.CopyTo)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.CopyTo)
+        </dd>
+        <br />
+        <dt>
+            @Html.DisplayNameFor(model => model.BlindCopy)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.BlindCopy)
+        </dd>
+        <br />
+
+        @{
+            if (Model.Source_table_name == "Procurement_Demand_MileStone")
+            {
+                     <dt>
+            @Html.DisplayNameFor(model => model.EmailTriggerDays)
+        </dt>
+
+        <dd>
+                    @Html.DisplayFor(model => model.EmailTriggerDays)
+        </dd>
+            }
+        }
+        <dt>
+
+        </dt>
+
+        <dd>
+            @{
+               
+                    <button class="btn btn-info" onclick="Get_Config('/Configuration/ApproverMailConfig?template=@Model.Source_table_name')">Edit</button>
+              
+            }
+        </dd>
+    </dl>
+</div>
+
+
+

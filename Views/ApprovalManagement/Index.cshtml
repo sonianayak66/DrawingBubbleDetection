@@ -1,0 +1,395 @@
+﻿@using MPCRS.Utilities;
+@{
+    var Approve_Management_Read_Permisson = UserData.IsAuthorized(User, Constants.UserPermissions.Approval_Management_Read_Requests);
+    var Approve_Management_Approve_Permisson = UserData.IsAuthorized(User, Constants.UserPermissions.Approval_Management_Approve_Requests);
+    var DownloadWoWaterMark = UserData.IsAuthorized(User, Constants.UserPermissions.Download_WO_waterMark);
+}
+
+
+<div class="row page-header">
+   
+    <div class="col-md-4">
+            <h2>Approval Management</h2>
+    </div>
+        <div class="col-md-3">
+           <select class=form-control id="approval_status">
+               <option value="0">All</option>
+                 <option value="12">Approval Requested</option>
+                <option value="8">Approval pending</option>
+                 <option value="9">Approved</option>
+                  <option value="10">Approval Denied</option>
+                 
+           </select>
+        
+    </div>
+     <div class="col-md-2">
+              <button class="btn btn-sm btn-primary" onclick="GetApprovals()">Filter</button>
+    </div>
+
+</div>
+
+<div class="col-md-12 col-sm-12 col-lg-12">
+    <table id="Approval" class="table table-bordered table-condensed text-left" cellspacing="0" style="width:100%">
+        <thead>
+            <tr>
+                <th>Event</th>
+                <th>Event Description</th>
+                <th>Remarks</th>
+                <th>User</th>
+                <th>Time Stamp</th>
+                <th></th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+
+        var logDbKey = 0;
+
+        $(document).ready(function () {
+            GetApprovals();
+        });
+        var hasDownloadWoWaterMark = @DownloadWoWaterMark.ToString().ToLower();
+
+        var dataTable;
+        function GetApprovals() {
+
+            try {
+                dataTable.destroy();
+            } catch (e) {
+            }
+
+            var approval_status = document.getElementById("approval_status").value;
+
+            dataTable = $("#Approval").DataTable({
+                "ajax": {
+                    "url": "/ApprovalManagement/GetAuditLogsforApprovals/" + approval_status,
+                    "type": "GET",
+                    "dataSrc": "",
+                    "datatype": "json"
+                },
+                "fixedHeader": {
+                    "headerOffset": getNavBarHeight()
+                },
+                responsive: true,
+                paging: false,
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem(
+                        'DataTables_' + settings.sInstance,
+                        JSON.stringify(data)
+                    );
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                },
+                "order": [[4, 'desc']],
+
+                "columns": [
+                    {
+                        "data": "Activity_Name"
+                    },
+                    {
+                        "data": "Event_Description"
+                    },
+                    {
+                        "data": "Remarks", render: function (a, b, data, d) {
+                            if (data.Approval_Status == 8) {
+                                btn = "<a style='cursor:pointer;color:red' onclick='GetViewInDetail(" + data.Log_Db_Key + ")'>" + data.Remarks + "</a>"
+                            } else {
+                                btn = "<a style='cursor:pointer;color:green' onclick='GetViewInDetail(" + data.Log_Db_Key + ")'>" + data.Remarks + "</a>"
+                            }
+                            return btn;
+                        }
+                    },
+                    { "data": "UserName" },
+                    {
+                        "data": "Updated_On",
+                        render: function (data, type, row) {
+                            if (type === 'display' || type === 'filter') {
+                                return (moment(data).format("DD/MM/YYYY h:mm:ss A"));
+                            }
+                            return data;
+                        }
+                    },
+                    { "data": null },
+
+                ],
+
+                columnDefs: [{
+                    targets: [-1], render: function (a, b, data, d) {
+                        var btn;
+                        btn = " <a style='cursor:pointer' onclick='GetViewInDetail(" + data.Log_Db_Key + ")' class='btn btn-success btn-small'>View Detail</a>"
+                        return btn;
+
+                        //"<div class='btn-group'> <button type='button' class='btn btn-sm btn-success btn-outline dropdown-toggle writeaccess' data-toggle='dropdown'>Actions</button>"
+                        //    + "<ul class='dropdown-menu dropdown-menu-right'>"
+                        //     + "<li><a style='cursor:pointer' onclick='EditEngine(" + data.BL_Engine_Dbkey + ")'>Edit</a></li>"
+                        //    + "<li><a style='cursor:pointer' onclick='Assignparts(" + data.BL_Engine_Dbkey + ")'>Assign Engine Parts</a></li>"
+                        //+ "</ul ></div"
+                    },
+                    "orderable": false,
+                    "paging": false,
+                    "ordering": false,
+
+                },
+                ]
+            });
+
+            $('.DT-search .form-control').attr('placeholder', 'Search...');
+            $('.DT-search .form-control').attr('class', 'DT-search form-control');
+            $('.DT-lf-right').attr('class', 'pull-left');
+            $('.dataTables_length').attr('class', 'dataTables_length DT-lf-right');
+
+        }
+
+
+        function GetViewInDetail(ID) {
+            var url = '/ApprovalManagement/CompareAuditChanges?Log_Db_Key=' + ID;
+            $.get(url).done(function (response) {
+                bootbox.alert({
+                    message: response,
+                    title: "Change log",
+                    size: 'large',
+                    buttons: {
+                        ok: {
+                            className: 'd-none'
+                        }
+                    }
+                });
+                logDbKey = ID;
+                getChangeLogs(ID);
+            });
+        }
+
+
+        let color;
+        function getChangeLogs(Log_Db_Key) {
+
+            var table = document.getElementById("ChangeLogBody");
+            table.innerHTML = "";
+            var j = 0;
+            var EditTable = new Array();
+            $.ajax({
+                url: '/ApprovalManagement/GetComparisionData?Log_Db_Key=' + Log_Db_Key,
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+
+                    $.each(data, function () {
+                        var h = 0;
+                        $.each(this, function (k, v) {
+                            if (j == 0) {
+                                var EditItems = new Array();
+                                EditItems.col0 = k;
+                                EditItems.col1 = v;
+                                EditTable.push(EditItems);
+                            }
+
+                            if (j != 0) {
+
+                                EditTable[h].col2 = v;
+                            }
+                            //if (j == 2)
+                            //{
+                            //          EditTable[h].col3 = v;
+                            //}
+                            //if (j == 3)
+                            //{
+                            //          EditTable[h].col4 = v;
+                            //}
+                            h = h + 1;
+                        });
+
+                        j = j + 1;
+                    });
+
+                    for (var i = 0; i < EditTable.length; i++) {
+                        var row = table.insertRow();
+                        var cell1 = row.insertCell(0);
+                        var cell2 = row.insertCell(1);
+                        var cell3 = row.insertCell(2);
+
+                        cell1.innerHTML = EditTable[i].col0;
+
+                        if (EditTable[i].col0 == "Updated_On" || EditTable[i].col0 == "UpdatedOn") {
+                            cell2.innerHTML = moment(EditTable[i].col1).format('lll');
+                            if (EditTable[0].col2 != null) {
+                                cell3.innerHTML = moment(EditTable[i].col2).format('lll');
+                            }
+
+
+                            if (EditTable[i].col1 != EditTable[i].col2) {
+                                cell2.classList.add('clsred');
+                                cell3.classList.add('clsred');
+                            }
+
+                        } else {
+
+                            cell2.innerHTML = EditTable[i].col1;
+                            cell3.innerHTML = EditTable[i].col2 == null ? "" : EditTable[i].col2;
+                            if (EditTable[i].col1 !== EditTable[i].col2) {
+                                cell2.classList.add('clsred');
+                                cell3.classList.add('clsred');
+                            }
+                        }
+
+
+
+                       
+                        if (EditTable[i].col0 == "Drawing_File_ID" || EditTable[i].col0 == "Drawing_File_2Dmodel_ID" || EditTable[i].col0 == "Drawing_File_3Dmodel_ID" || EditTable[i].col0 == "Drawing_File_ACSN_ID" || EditTable[i].col0 == "Drawing_File_Casting_Forging_ID") {
+                           
+                            if (EditTable[i].col1 != EditTable[i].col2) 
+                            {
+                                color = 'red';
+                            }
+                            else{
+                                color = 'black';
+                            }
+                               
+                           
+                                if (hasDownloadWoWaterMark) {
+                                    if (EditTable[i].col1 != null) {
+                                        cell2.innerHTML = generateDropdownHTML(EditTable[i].col1, false);
+                                    }
+                                    if (EditTable[i].col2 != null) {
+                                        cell3.innerHTML = generateDropdownHTML(EditTable[i].col2, true);
+                                    }
+                                } else {
+                                    if (EditTable[i].col1 != null) {
+                                        cell2.innerHTML = generateDownloadLinkHTML(EditTable[i].col1);
+                                    }
+                                    if (EditTable[i].col2 != null) {
+                                        cell3.innerHTML = generateDownloadLinkHTML(EditTable[i].col2);
+                                    }
+                                 }
+                            // } else {
+                               
+                            //     if (hasDownloadWoWaterMark) {
+                            //         if (EditTable[i].col1 != null) {
+                            //             cell2.innerHTML = generateDropdownHTML(EditTable[i].col1, false);
+                            //         }
+                            //         if (EditTable[i].col2 != null) {
+                            //             cell3.innerHTML = generateDropdownHTML(EditTable[i].col2, true);
+                            //         }
+                            //     } else {
+                            //         if (EditTable[i].col1 != null) {
+                            //             cell2.innerHTML = generateDownloadLinkHTML(EditTable[i].col1);
+                            //         }
+                            //         if (EditTable[i].col2 != null) {
+                            //             cell3.innerHTML = generateDownloadLinkHTML(EditTable[i].col2);
+                            //         }
+                            //     }
+                            // }
+                        }
+
+                      
+
+
+                    }
+                    ALtertableDisplay();
+                }
+            });
+
+        }
+
+        function generateDropdownHTML(colValue, withoutWatermark) {
+            return '<div class="dropdown font-sans-serif">' +
+                '<a style="color:' + color +'" class="btn btn -default dropdown - toggle" id="dropdownMenuLink" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Download_File_' + colValue + '</a>' +
+                '<div class="dropdown-menu dropdown-menu-end py-0" aria-labelledby="dropdownMenuLink">' +
+                '<a class="dropdown-item" href="/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=false&fileKey=' + colValue + '">Download</a>' +
+                '<a class="dropdown-item" href="/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=true&fileKey=' + colValue + '">Download w/o watermark</a>' +
+                '</div>' +
+                '</div>';
+        }
+
+        function generateDownloadLinkHTML(colValue) {
+            return '<a style="color:' + color + '" href="/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=false&fileKey=' + colValue + '">Download_File_' + colValue + '</a>';
+        }
+
+
+        function ALtertableDisplay() {
+            $.ajax({
+                url: '/ApprovalManagement/AuditLogDisplayManager?SourceTable=Engine_Parts_Master',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+
+                    var ArrayDisplayFormate = new Array();
+                    ArrayDisplayFormate = data;
+
+                    var table = document.getElementById("ChangeLogBody");
+                    var rows = table.getElementsByTagName("tr");
+
+                    for (var i = 0; i < rows.length; i++) {
+
+
+                        for (j = 0; j < ArrayDisplayFormate.length; j++) {
+
+                            if (ArrayDisplayFormate[j]["ColumnName"] == table.rows[i].cells[0].innerHTML) {
+                                table.rows[i].cells[0].innerHTML = ArrayDisplayFormate[j]["Display_ColumnName"];
+                                if (ArrayDisplayFormate[j]["DisplayData"] == false) {
+                                    if (table.rows[i].cells[1].innerHTML == table.rows[i].cells[2].innerHTML) {
+                                        table.deleteRow(i);
+                                    }
+                                    else if (ArrayDisplayFormate[j]["Force_Display_Data"] == true) {
+                                        table.deleteRow(i);
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                }
+            });
+        }
+
+        function UpdateStatus(newStatus) {
+
+
+            var StatusKey = newStatus == "Approve" ? 9 : 10;
+
+            // bootbox.confirm('Are you sure you wish to ' + newStatus + ' ?',
+            //     function (result) {
+            //         $.ajax({
+            //             url: '/ApprovalManagement/SaveApprovalRequest?Log_Db_Key=' + logDbKey + '&status=' + StatusKey,
+            //             dataType: 'json',
+            //             type: 'GET',
+            //             success: function (data) {
+            //                 bootbox.alert(data.msg,
+            //                     function () {
+            //                         window.location.reload();
+            //                     });
+            //             }
+            //         });
+            //     });
+
+            bootbox.confirm('Are you sure you wish to ' + newStatus + ' ?', function (result) {
+                if (result) { // Only proceed if the user confirms
+                    $.ajax({
+                        url: '/ApprovalManagement/SaveApprovalRequest?Log_Db_Key=' + logDbKey + '&status=' + StatusKey,
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            bootbox.alert(data.msg, function () {
+                                window.location.reload();
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            bootbox.alert('An error occurred: ' + error);
+                        }
+                    });
+                }
+            });
+
+
+
+
+        }
+
+
+    </script>
+}
+

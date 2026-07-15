@@ -1,0 +1,89 @@
+﻿@model MPCRS.ViewModels.CloseNCRViewModel
+@using MPCRS.Utilities;
+@{
+    Layout = null;
+    SelectList ncrStatus = Masters.GetMaster_General_Text("NCR_Status");
+    SelectList ncrReportStatus = Masters.GetMaster_General_SameValueAsText("NCR_Report_Status");
+}
+
+<div> 
+    @* Serial Number Status Table *@
+    <table class="table table-bordered table-sm">
+        <thead class="table-light">
+            <tr>
+                <th>Serial Number</th>
+                @* <th>Workflow Status</th> *@
+                <th>Status <span class="text-danger">*</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var group in Model.Items.GroupBy(x => x.SerialNumber)
+                .Select(g => new
+                {
+                    SerialNumber = g.Key,
+                    NCRItemKey = g.First().NCRItemKey,
+                  //  CurrentWorkflowStatus = g.First().CurrentWorkflowStatus,
+                    ExistingStatus = g.First().Status
+                }))
+            {
+                <tr>
+                    <td>
+                        <input type="hidden" value="@group.NCRItemKey" class="ncrItemKey" />
+                        <input type="hidden" value="@group.SerialNumber" class="SerialNumber" />
+                        @group.SerialNumber
+                    </td>
+                  @*   <td>
+                        <small class="text-muted">@group.CurrentWorkflowStatus</small>
+                    </td> *@
+                    <td>
+                        <select asp-items="ncrStatus" class="form-control form-control-sm ncrStatus" id="ncrStatus" onchange="updateReportStatusPreview()">
+                            @if (!string.IsNullOrEmpty(group.ExistingStatus))
+                            {
+                                <option selected>@group.ExistingStatus</option>
+                            }
+                        </select>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @* ECM Fields Section *@
+    <div class="mb-3">
+        <input type="hidden" id="closeNcr_NCRGuid" value="@Model.Header.NCRGuid" />
+        <input type="hidden" id="closeNcr_HasRework" value="@Model.Header.HasReworkOrTrialAssembly" />
+
+        @if (Model.Header.HasReworkOrTrialAssembly == 1)
+        {
+            <div class="mb-2">
+                <label class="form-label fw-bold">
+                    ECM TR No. <span class="text-danger">*</span>
+                    <small class="text-muted fw-normal">(Required - Rework/Trial Assembly exists)</small>
+                </label>
+                <input type="text" id="closeNcr_ECM_TR_NO" class="form-control"
+                       value="@Model.Header.ECM_TR_NO"
+                       placeholder="Enter ECM TR Number" />
+            </div>
+        }
+
+        <div class="mb-2">
+            <label class="form-label fw-bold">
+                ECM No. <span class="text-danger">*</span>
+                <span class="text-muted fw-normal">(Required for closing NCR)</span>
+            </label>
+            <input type="text" id="closeNcr_ECM_No" class="form-control"
+                   value="@Model.Header.ECM_No"
+                   placeholder="Enter ECM Number" />
+        </div>
+    </div>
+
+    @* Report Status *@ 
+    <div class="mb-2">
+        <label class="form-label fw-bold">
+            Report Status <span class="text-danger">*</span>
+        </label>
+        <select id="closeNcr_ReportStatus" class="form-control" asp-items="ncrReportStatus" asp-for="@Model.Header.ReportStatus">
+        </select>
+    </div>
+
+</div>

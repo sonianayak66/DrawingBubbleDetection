@@ -1,0 +1,116 @@
+﻿@model List<MPCRS.Models.NonConformanceReport>
+@using System.Data
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "NCR";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Write);
+    var Permission_read = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Read);
+    var Permission_delete = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Delete);
+}
+
+<style>
+    table {
+    width: 100%;
+    /* table-layout: fixed; */
+    }
+
+    table td {
+    word-wrap: break-word;
+    max-width: 400px;
+    }
+
+    #NCRtable td {
+    white-space: inherit;
+    }
+    /* Center-align the buttons */
+    .dataTables_wrapper .dataTables_filter {
+    float: left;
+    }
+
+    .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate {
+    float: right;
+    }
+
+    /* Add margin between search box and buttons */
+    .dataTables_wrapper .dataTables_filter {
+    margin-right: 20px;
+    }
+
+</style>
+<input type="hidden" id="Permission_Delete" value="@Permission_delete" />
+
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+
+            <div class="col-md-10">
+                    <partial name="NCRSummary.cshtml">
+            </div>
+
+            <div class="col-sm-2 pull-right">
+                <a href="/NCR/NCR" class="btn btn-primary float-end ">Create</a>
+                <a class="btn btn-info" style="margin-right:4px" href="/ncr/NCR_PartEngine_Report"> Report </a>
+                <a class="btn btn-secondary"  href="/NCR/NCRlog" style="margin-right:4px">Logs</a>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-12 col-sm-12 col-lg-12 divc table-responsive">
+
+    <table class="table table-bordered table-sm fs--1 mb-2 " id="NCRtable">
+        <thead>
+            <tr>
+                <th data-sortable="true" scope="col" style="width:20px;">Received Date & Ref No.</th>
+                @* <th data-sortable="true" scope="col">Received Date & Ref</th>  *@
+                <th data-sortable="true" scope="col" style="width:30px;">Received From</th>
+                <th data-sortable="true" scope="col" style="width:25px;">Committee Referred</th>
+                <th data-sortable="true" scope="col" style="width:30px;">Part No</th>
+                @*     <th data-sortable="true" scope="col">Description</th> *@
+                <th data-sortable="true" scope="col" style="width:30px;">Vendor</th>
+                <th data-sortable="true" scope="col">Serial Number</th>
+                <th data-sortable="true" scope="col" style="width:30px;">Rev</th>
+                <th data-sortable="true" scope="col" style="width:30px;">Qty</th>
+                <th data-sortable="true" scope="col" style="width:40px;">Status</th>
+                <th data-sortable="true" scope="col">Remarks</th>
+                <th data-sortable="true" scope="col" style="width:30px;">Module</th>
+                <th data-sortable="true" scope="col" style="width:30px;">Updated On</th>
+                <th style="width:30px;"> Action </th>
+                @if (Permission_delete)
+                {
+                    <th style="width:30px;"> Delete </th>
+                }
+                else
+                {
+                    <th></th>
+                }
+
+            </tr>
+        </thead>
+    </table>
+</div>
+
+
+<div id="attachmentDisplay" style="display:none"></div>
+
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // This becomes a real JS boolean: true / false
+        window.canDeleteNcr = @Permission_delete.ToString().ToLower()
+    </script>
+	<script src="~/mpi/ncr.js" asp-append-version="true"></script>
+    <script src="~/mpi/ncrworkflow.js" asp-append-version="true"></script>
+
+    <script>
+        $(document).ready(function () {
+            getNCRData();
+            UpdateNavHeading("NCR");
+        });
+    </script>
+
+}

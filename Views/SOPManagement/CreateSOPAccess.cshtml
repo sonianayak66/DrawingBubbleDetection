@@ -1,0 +1,26 @@
+﻿@model MPCRS.ViewModels.SOPCustomAccessLink
+@using MPCRS.Utilities;
+@using MPCRS.ViewModels;
+
+<form asp-action="CreateSOPAccess" id="formSOPAccess" asp-controller="SOPManagement" method="post">
+    <input type="hidden" asp-for="LinkGuid" />
+    <input type="hidden" asp-for="AccessBuildGuid" />
+    <input type="hidden" asp-for="modules" />
+
+    <h4>@(Model.LinkGuid == null ? "Create " : "Edit ") SOP Custom Access</h4>
+    <div class="form-floating mb-2">
+        <input asp-for="LinkTitle" class="form-control" />
+        <label asp-for="LinkTitle">Title </label>
+    </div>
+    <div class="form-floating mb-2">
+        <input asp-for="Remarks" class="form-control" />
+        <label asp-for="LinkTitle">Remarks</label>
+    </div>
+    <div class="form-floating mb-2">
+        <input asp-for="access_validity" type="datetime-local" class="form-control" />
+        <label asp-for="LinkTitle">Access Validity</label>
+    </div>
+    <div class="mt-3">
+        <button class="btn btn-primary" type="button" id="btnCompSubmit" onclick="SubmitSOPAccess(this)">Submit</button>
+    </div>
+</form>

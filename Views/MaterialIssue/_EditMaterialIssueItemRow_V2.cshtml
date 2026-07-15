@@ -1,0 +1,311 @@
+﻿@model MPCRS.ViewModels.Material_Issue_Items_VM
+@{
+    var item = Model;
+    Layout = null;
+}
+
+<style>
+    .view-mode{
+        margin-left: 3px;
+    }
+    /* Uniform badge word-break for small screens */
+    .selected-items,
+    .current-selection,
+    .parts-badges,
+    .rm-badges,
+    .vendor-badges,
+    .smart-badges {
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+    .selected-items .badge,
+    .current-selection .badge,
+    .parts-badges .badge,
+    .rm-badges .badge,
+    .vendor-badges .badge,
+    .smart-badges .badge {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+        display: inline-block;
+        text-align: left;
+    }
+</style>
+
+<tr data-item-dbkey="@item.Issue_Item_Dbkey" data-issue-dbkey="@item.Issue_Dbkey" data-mode="readonly">
+    <td style="display:none">
+        <input hidden value="@item.Issue_Item_Dbkey" class="form-control form-control1 Issue_Item_Dbkey" />
+    </td>
+
+    @* ---- PARTS ---- *@
+    <td style="width:14%;max-width:180px;word-break:break-word;overflow:hidden;" class="cell-parts">
+        <input type="hidden" class="hdnPartNumberKey" value="@(item.PartKeys ?? "")" />
+        <input type="hidden" class="hdnPartNames" value="@(item.Drawing_no ?? "")" />
+        <div class="view-mode">
+            <div class="parts-badges">
+                @if (!string.IsNullOrEmpty(item.Drawing_no))
+                {
+                    @foreach (var part in item.Drawing_no.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <span class="badge mb-1 " style="font-size:0.75rem;background-color:#e9ecef;color:#495057;border:1px solid #ced4da;">@part.Trim()</span>
+                    }
+                }
+                else
+                {
+                    <span class="text-muted" style="font-size:0.75rem;">-</span>
+                }
+            </div>
+        </div>
+        <div class="edit-mode" style="display:none;">
+            <div class="smart-display">
+                <div class="smart-badges edit-parts-badges"></div>
+                <a class="btn-edit-cell" onclick="openInlineSearch(this, 'parts')" title="Search Parts">
+                    <i class="fa fa-search" style="color:royalblue;cursor:pointer;font-size:0.8rem;"></i>
+                </a>
+            </div>
+            <div class="inline-search" style="display:none;">
+                <div class="selected-items mb-1"></div>
+                <input type="text" class="form-control form-control-sm search-input" placeholder="Search Parts..." />
+                <div class="search-results" style="max-height:150px;overflow-y:auto;border:1px solid #ddd;display:none;position:absolute;z-index:100;background:#fff;width:auto;"></div>
+            </div>
+        </div>
+    </td>
+
+    @* ---- PART QTY ---- *@
+    <td style="width:4%;max-width:60px;margin-left:5px;" class="cell-qty">
+        <input type="hidden" class="PartQty_EngineWise" value="@(item.PartQty_EngineWise)" />
+        <div class="view-mode">
+            <span class="display-text">@item.Qty</span>
+            @if (item.PartQty_EngineWise > 0)
+            {
+                <br />
+                <small><i>@item.PartQty_EngineWise Engine</i></small>
+            }
+            <div class="engine-wise-display" style="display:none;font-size:0.6rem;color:#6c757d;"></div>
+        </div>
+        <div class="edit-mode" style="display:none;">
+            <input type="text" class="form-control form-control-sm decimal Qty" value="@item.Qty" />
+            <a class="engine-toggle" onclick="toggleEngineQty(this)" style="font-size:0.6rem;color:royalblue;cursor:pointer;display:none;">By Engine</a>
+            <div class="engine-qty-section" style="display:none;margin-top:2px;">
+                <input type="text" class="form-control form-control-sm EngineCount" placeholder="Engine Qty" style="font-size:0.7rem;padding:1px 4px;margin-bottom:1px;" value="@(item.PartQty_EngineWise > 0 ? item.PartQty_EngineWise.ToString() : "")" />
+                <span class="qty-per-engine-hint" style="font-size:0.6rem;color:#6c757d;"></span>
+            </div>
+        </div>
+    </td>
+
+    @* ---- RAW MATERIAL ---- *@
+    <td style="width:13%;max-width:170px;word-break:break-word;overflow:hidden" class="cell-rawmaterial p-2">
+        <input type="hidden" class="hdnRawMaterialKey" value="@item.Raw_material_Dbkey" />
+        <div class="view-mode">
+            <div class="rm-badges">
+                @if (!string.IsNullOrEmpty(item.Raw_material_Name))
+                {
+                    <span class="badge mb-1" style="font-size:0.75rem;background-color:#e9ecef;color:#495057;border:1px solid #ced4da;">@item.Raw_material_Name</span>
+                }
+                else
+                {
+                    <span class="text-muted" style="font-size:0.75rem;">-</span>
+                }
+            </div>
+        </div>
+        <div class="edit-mode" style="display:none;">
+            <div class="smart-display">
+                <div class="smart-badges edit-rm-badges"></div>
+                <a class="btn-edit-cell" onclick="openInlineSearch(this, 'rawmaterial')" title="Search Raw Material">
+                    <i class="fa fa-search" style="color:royalblue;cursor:pointer;font-size:0.8rem;"></i>
+                </a>
+            </div>
+            <div class="inline-search" style="display:none;">
+                <input type="text" class="form-control form-control-sm search-input" placeholder="Search Raw material..." />
+                <div class="search-results" style="max-height:150px;overflow-y:auto;border:1px solid #ddd;display:none;position:absolute;z-index:100;background:#fff;width:auto;"></div>
+            </div>
+        </div>
+    </td>
+
+    @* ---- VENDOR ---- *@
+    <td style="width:10%;max-width:140px;word-break:break-word;overflow:hidden;" class="cell-vendor">
+        <input type="hidden" class="hdnVendorKey" value="@item.Vendor_Dbkey" />
+        <div class="view-mode">
+            <div class="vendor-badges">
+                @if (!string.IsNullOrEmpty(item.Vendor_Name))
+                {
+                    <span class="badge mb-1" style="font-size:0.75rem;background-color:#e9ecef;color:#495057;border:1px solid #ced4da;">@item.Vendor_Name</span>
+                }
+                else
+                {
+                    <span class="text-muted" style="font-size:0.75rem;">-</span>
+                }
+            </div>
+        </div>
+        <div class="edit-mode" style="display:none;">
+            <div class="smart-display">
+                <div class="smart-badges edit-vendor-badges"></div>
+                <a class="btn-edit-cell" onclick="openInlineSearch(this, 'vendor')" title="Search Vendor">
+                    <i class="fa fa-search" style="color:royalblue;cursor:pointer;font-size:0.8rem;"></i>
+                </a>
+            </div>
+            <div class="inline-search" style="display:none;">
+                <input type="text" class="form-control form-control-sm search-input" placeholder="Search Vendor..." />
+                <div class="search-results" style="max-height:150px;overflow-y:auto;border:1px solid #ddd;display:none;position:absolute;z-index:100;background:#fff;width:auto;"></div>
+            </div>
+        </div>
+    </td>
+
+    @* ---- SERIAL NO ---- *@
+    <td style="width:12%;max-width:180px;" class="cell-serialno">
+        <div class="view-mode"><span class="display-text" style="font-size:0.75rem;word-break:break-word;">@(item.SerialNo ?? "-")</span></div>
+        <div class="edit-mode" style="display:none;">
+            <textarea class="form-control form-control-sm SerialNo" rows="1">@item.SerialNo</textarea>
+        </div>
+    </td>
+
+    @* ---- SIZE ---- *@
+    <td style="width:5%;max-width:60px;" class="cell-size">
+        <div class="view-mode"><span class="display-text">@(item.Size ?? "-")</span></div>
+        <div class="edit-mode" style="display:none;">
+            <input type="text" class="form-control form-control-sm Size" value="@item.Size" />
+        </div>
+    </td>
+
+    @* ---- QTY ISSUE ---- *@
+    <td style="width:5%;max-width:60px;" class="cell-qtyissue">
+        <div class="view-mode"><span class="display-text">@item.Qty_Issue</span></div>
+        <div class="edit-mode" style="display:none;">
+            <input type="text" class="form-control form-control-sm decimal Qty_Issue" value="@item.Qty_Issue" />
+        </div>
+    </td>
+
+    @* ---- HEAT NO / BATCH NO ---- *@
+    <td style="width:7%;max-width:100px;" class="cell-heatno">
+        <div class="view-mode"><span class="display-text" style="font-size:0.75rem;word-break:break-word;">@(item.Heat_No ?? "-")</span></div>
+        <div class="edit-mode" style="display:none;">
+            <input type="text" class="form-control form-control-sm Heat_No" value="@item.Heat_No" autocomplete="off" />
+        </div>
+    </td>
+
+    @* ---- Engine Level ---- *@
+    @* <td style="width:10%;max-width:160px;" class="cell-enginelevel">
+        <input type="hidden" class="EngineLevel" value="@Model.EngineLevel" />
+        <div class="view-mode">
+            <span class="display-text">@(!string.IsNullOrWhiteSpace(Model.EngineLevel) ? Model.EngineLevel : "-")</span>
+        </div>
+        <div class="edit-mode" style="display:none;">
+            <select class="form-select form-select-sm engine-select" data-placeholder="Select">
+                <option value="">Select</option>
+                @if (ViewBag.EngineOptions != null)
+                {
+                    @foreach (var engine in ViewBag.EngineOptions as IEnumerable<SelectListItem>)
+                    {
+                        <option value="@engine.Value" selected="@(string.Equals(Model.EngineLevel, engine.Value, StringComparison.OrdinalIgnoreCase))">
+                            @engine.Text
+                        </option>
+                    }
+                }
+            </select>
+        </div>
+    </td> *@
+    @* ---- Engine Level ---- *@
+    <td style="width:10%;max-width:160px;" class="cell-enginelevel">
+        <input type="hidden" class="EngineLevel" value="@Model.EngineLevel" />
+
+        <div class="view-mode">
+            <span class="display-text">
+                @(!string.IsNullOrWhiteSpace(Model.EngineLevel) ? Model.EngineLevel : "-")
+            </span>
+        </div>
+
+        <div class="edit-mode" style="display:none;">
+            @{
+                var selectedEngines = (Model.EngineLevel ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            }
+
+            <select class="form-select form-select-sm engine-select" multiple="multiple" data-placeholder="Select engine(s)">
+                @if (ViewBag.EngineOptions != null)
+                {
+                    @foreach (var engine in ViewBag.EngineOptions as IEnumerable<SelectListItem>)
+                    {
+                        if (selectedEngines.Contains(engine.Value))
+                        {
+                            <option value="@engine.Value" selected>@engine.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@engine.Value">@engine.Text</option>
+                        }
+                    }
+                }
+            </select>
+        </div>
+    </td>
+
+
+    @* ---- WEIGHT ---- *@
+    <td style="width:6%;max-width:70px;" class="cell-weight">
+        <div class="view-mode"><span class="display-text">@item.Weight_Kg</span></div>
+        <div class="edit-mode" style="display:none;">
+            <input type="text" class="form-control form-control-sm decimal Weight_Kg" value="@item.Weight_Kg" />
+        </div>
+    </td>
+
+    @* ---- COST (hidden) ---- *@
+    <td style="width:8%;display:none" class="cell-amount">
+        <div class="view-mode"><span class="display-text">@item.Amount</span></div>
+        <div class="edit-mode" style="display:none;">
+            <input type="text" class="form-control form-control-sm decimal Amount" value="@item.Amount" />
+        </div>
+    </td>
+
+    @* ---- JOB CARD NO ---- *@
+    <td style="width:7%;max-width:80px;" class="cell-jobcard">
+        <div class="view-mode"><span class="display-text">@(item.JobCardNumber ?? "-")</span></div>
+        <div class="edit-mode" style="display:none;">
+            <input type="text" class="form-control form-control-sm JobCardNumber" value="@item.JobCardNumber" />
+        </div>
+    </td>
+
+    @* ---- JOB CARD UPLOAD ---- *@
+    <td style="width:3%;" class="text-center cell-jcupload">
+        <input type="file" onchange="UpdateJCUploadCtrlColour(this)" class="itemFiles" style="display:none" />
+        <input class="JCFileLocation" type="hidden" value="@(item.JCFileLocation ?? "-")" />
+        <input class="JCFileName" type="hidden" value="@(item.JCFileName ?? "-")" />
+        <div class="view-mode">
+            @if (!string.IsNullOrEmpty(item.JCFileName) && item.JCFileName != "-")
+            {
+                <a target="_blank" href="@item.JCFileLocation" title="@item.JCFileName">
+                    <i class="fa fa-file" style="color:green;"></i>
+                </a>
+            }
+            else
+            {
+                <span class="text-muted">-</span>
+            }
+        </div>
+        <div class="edit-mode" style="display:none;">
+            @if (!string.IsNullOrEmpty(item.JCFileName) && item.JCFileName != "-")
+            {
+                <div class="existing-file mb-1" style="font-size:0.7rem;">
+                    <a target="_blank" href="@item.JCFileLocation" title="View @item.JCFileName" style="color:green;text-decoration:none;">
+                        <i class="fa fa-file"></i> <span class="existing-file-name">@item.JCFileName</span>
+                    </a>
+                </div>
+            }
+            <a class="fa fa-upload" style="color:royalblue;cursor:pointer;" onclick="OpenFileDialog(this)" title="Upload new file"></a>
+        </div>
+    </td>
+
+    @* ---- ACTIONS ---- *@
+    <td style="width:5%;white-space:nowrap;" class="text-center cell-actions">
+        <div class="view-mode">
+            <a class="fa fa-pencil" style="color:royalblue;cursor:pointer;margin-right:5px;" onclick="editRow(this)" title="Edit"></a>
+            <a class="fa fa-trash" style="color:red;cursor:pointer;" onclick="deleteRow(this)" title="Delete"></a>
+        </div>
+        <div class="edit-mode" style="display:none;">
+            <a class="fa fa-check" style="color:green;cursor:pointer;margin-right:5px;font-size:1.1rem;" onclick="saveRow(this)" title="Save"></a>
+            <a class="fa fa-times" style="color:#888;cursor:pointer;font-size:1.1rem;" onclick="cancelEditRow(this)" title="Cancel"></a>
+        </div>
+    </td>
+</tr>

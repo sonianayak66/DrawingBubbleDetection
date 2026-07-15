@@ -1,0 +1,84 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@{
+	ViewData["Title"] = "Milestone Summary";
+
+	var DemandingOfficersList = Masters.GetDemandingOfficersList("DemandDashBoard");
+	var projects = MPGlobals.GetDataForDatalist("dbo.ProjectList_SP");
+	var demandSelectList = Masters.GetDemandSelectList();
+
+	List<SelectListItem> StatusList = new List<SelectListItem>();
+	StatusList.Add(new SelectListItem() { Text = "All", Value = "All" });
+	StatusList.Add(new SelectListItem() { Text = "Completed", Value = "Completed" });
+	//StatusList.Add(new SelectListItem() { Text = "Pending", Value = "Pending" });
+	StatusList.Add(new SelectListItem() { Text = "Under Progress", Value = "Under Progress" });
+	StatusList.Add(new SelectListItem() { Text = "Extention under Progress", Value = "Extention under Progress" });
+	StatusList.Add(new SelectListItem() { Text = "Overdue", Value = "Overdue" });
+
+	List<SelectListItem> DueDate = new List<SelectListItem>();
+	DueDate.Add(new SelectListItem() { Text = "All", Value = "All" });
+	DueDate.Add(new SelectListItem() { Text = "Due in 7 days", Value = "7" });
+	DueDate.Add(new SelectListItem() { Text = "Due in 30 days", Value = "30", Selected = true });
+	DueDate.Add(new SelectListItem() { Text = "Due in 60 days", Value = "60" });
+	DueDate.Add(new SelectListItem() { Text = "Past due", Value = "<0" });
+
+	List<SelectListItem> ProjectList = new List<SelectListItem>();
+	ProjectList.Add(new SelectListItem() { Text = "All", Value = "0" });
+
+	foreach (DataRow row in projects.Rows)
+	{
+		ProjectList.Add(new SelectListItem()
+		{
+			Text = row["Display_title"].ToString(),
+			Value = row["Project_Dbkey"].ToString()
+		});
+	}
+}
+
+<div class="row">
+	<div class="col-2">
+		<b>Project</b>
+		<select class="form-select form-select-square" id="Project-select" onchange="filterMilstoneSummary()" asp-items="@ProjectList"></select>
+	</div>
+
+	<div class="col-2">
+		<b>Demanding officer</b>
+		<select class="form-select form-select-square" id="Demand-officer-select" onchange="filterMilstoneSummary()" asp-items="@DemandingOfficersList"></select>
+	</div>
+
+	<div class="col-3">
+		<b>Demands</b>
+		<select class="form-select form-select-square" id="Milestone-Demand-select" onchange="filterMilstoneSummary()" asp-items="@demandSelectList"></select>
+	</div>
+
+	<div class="col-2">
+		<b>Status</b>
+		<select class="form-select form-select-square" id="Milestone-status-select" onchange="filterMilstoneSummary()" asp-items="@StatusList"></select>
+	</div>
+
+	<div class="col-2">
+		<b>Due Date</b>
+		<select class="form-select form-select-square" id="Milestone-due-select" onchange="filterMilstoneSummary()" asp-items="@DueDate"></select>
+	</div>
+
+	<div class="col-1">
+		<a class="btn btn-secondary float-end" href="/DemandManagement/DemandTree">Back</a>
+	</div>
+</div>
+
+<hr />
+
+<div class="col-12" id="milestone-report-area">
+</div>
+
+@section Scripts {
+	<script src="~/mpi/demand.js" asp-append-version="true"></script>
+
+	<script>
+		$(document).ready(function () {
+			UpdateNavHeading("Milestone Status Summary");
+			filterMilstoneSummary();
+			$("#Milestone-Demand-select").select2();
+		});
+	</script>
+}

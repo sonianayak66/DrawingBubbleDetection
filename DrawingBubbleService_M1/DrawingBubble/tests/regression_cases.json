@@ -1,0 +1,44 @@
+{
+  "cases": [
+    {
+      "name": "edb_reference",
+      "image_path": "ref1.png",
+      "exact_bubbles": true
+    },
+    {
+      "name": "ref2_cylinder_profile",
+      "image_path": "ref2.png",
+      "exact_bubbles": false
+    },
+    {
+      "name": "ref3_machined_part",
+      "image_path": "ref3.png",
+      "exact_bubbles": false
+    },
+    {
+      "name": "ref4_taper_profile",
+      "image_path": "ref4.png",
+      "exact_bubbles": false
+    },
+    {
+      "name": "ref5_dimensions",
+      "image_path": "ref5.png",
+      "exact_bubbles": false
+    },
+    {
+      "name": "ref6_machined_housing",
+      "image_path": "ref6.jpeg",
+      "exact_bubbles": false
+    },
+    {
+      "name": "ref7_detail_ribs",
+      "image_path": "ref7.jpeg",
+      "exact_bubbles": false
+    },
+    {
+      "name": "ref8_circular_part",
+      "image_path": "tests/ref5.png",
+      "exact_bubbles": false
+    }
+  ]
+}

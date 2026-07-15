@@ -1,0 +1,239 @@
+﻿@model IEnumerable<MPCRS.ViewModels.EngineBuildComponents>
+@using MPCRS.Utilities;
+@using MPCRS.ViewModels
+
+@{
+
+    // try
+    // {
+
+        var itemsmodel = Model.Where(x => x.IsParent != "yes" && x.ReportGroupIdentifier != null && x.ReportGroupIdentifier != "_0").Select(x => x.ReportGroupIdentifier).Distinct().OrderBy(x => x);
+
+        List<EngineBuildComponents> groups = new List<EngineBuildComponents>();
+
+        foreach (var group in itemsmodel)
+        {
+            EngineBuildComponents orderitem = new EngineBuildComponents();
+            orderitem.ReportGroupIdentifier = group;
+            orderitem.ReportDisplayOrder = 0;
+            if (group.Contains("Direct") == false)
+            {
+                int thisParent = int.Parse(group.Split('_')[group.Split('_').Length - 1]);
+                orderitem.ReportDisplayOrder = Model.Where(x => x.Engine_Part_Dbkey == thisParent).Select(x => x.ReportDisplayOrder).FirstOrDefault();
+            }
+            groups.Add(orderitem);
+        }
+
+
+        foreach (var item1 in groups.OrderBy(x => x.ReportDisplayOrder))
+        {
+            int reducer = 0;
+            int MaXlevel = Model.Where(x => x.ReportGroupIdentifier == item1.ReportGroupIdentifier).Select(x => x.Level).Max();
+            string PreviousGroup = "";
+            string PageHeading = "PW00000 - DIRECT PARTS";
+
+            string filterParents = "Yes";
+            string headingMainAssembly = "PW00000";
+            bool filterDirctParts = true;
+            string additionalClasses = Model.Where(x => x.Draw_part_no == "PW00000").Select(x => (x.Collaborators)).FirstOrDefault();
+            if (!string.IsNullOrEmpty(additionalClasses))
+            {
+                additionalClasses = additionalClasses.Trim();
+                additionalClasses = additionalClasses.Replace(',', ' ');
+            }
+
+            if (item1.ReportGroupIdentifier.Contains("Direct") == false)
+            {
+                filterDirctParts = false;
+                MaXlevel = MaXlevel - 1;
+                reducer = 1;
+                filterParents = "No";
+                int AssemblyParentID = int.Parse(item1.ReportGroupIdentifier.Split('_')[item1.ReportGroupIdentifier.Split('_').Length - 1]);
+                PageHeading = Model.Where(x => x.Engine_Part_Dbkey == AssemblyParentID).Select(x => (x.Draw_part_no + " - " + x.Description)).FirstOrDefault();
+                headingMainAssembly = Model.Where(x => x.Engine_Part_Dbkey == AssemblyParentID).Select(x => (x.Draw_part_no)).FirstOrDefault();
+
+                string collaborators = Model.Where(x => x.Engine_Part_Dbkey == AssemblyParentID).Select(x => (x.Collaborators)).FirstOrDefault();
+                additionalClasses = collaborators == null ? string.Empty : collaborators;
+                if (!string.IsNullOrEmpty(additionalClasses))
+                {
+                    additionalClasses = additionalClasses.Trim();
+                    additionalClasses = additionalClasses.Replace(',', ' ');
+                }
+
+            }else{
+                MaXlevel = MaXlevel ;
+            }
+            additionalClasses = additionalClasses + " Collabs ";
+
+
+            <table class="table table-condensed table-sm @additionalClasses @item1.ReportGroupIdentifier.Trim().Replace(' ', '_')" id="@headingMainAssembly" style="width:100%;font-size:12px!important;border:none">
+                <thead>
+                    <tr style="border:none">
+
+                        <th style="border:none" class="text-center text-capitalize" colspan="@(MaXlevel + 9)">
+                            <h3>@PageHeading</h3>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th colspan="@MaXlevel" class="text-center">Drawing No</th>
+                        <th>Description</th>
+                        <th>Part/Assy</th>
+                        <th>Rev</th>
+                        <th>Qty</th>
+                        <th>Material</th>
+                        <th>Job Card/Contract No</th>
+                        <th>Part/Assy SL.No</th>
+                        <th>Module Resp</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        string parentID = String.Empty;
+                        if (item1.ReportGroupIdentifier.Contains("Direct"))
+                        {
+                            parentID = Model.Where(x => x.Draw_part_no == "PW00000").Select(x => x.Engine_Part_Dbkey).FirstOrDefault().ToString();
+                        }
+                        else
+                        {
+                            parentID = item1.ReportGroupIdentifier.Split('_')[item1.ReportGroupIdentifier.Split('_').Length - 1];
+                        }
+
+                        int parentPartID = int.Parse(parentID.Trim());
+                        EngineBuildComponents mainParent = Model.Where(x => x.Engine_Part_Dbkey == parentPartID).FirstOrDefault();
+                        mainParent.MaxLevel = MaXlevel;
+                        mainParent.MainAssesmblyHeading = headingMainAssembly;
+                        mainParent.reducer = reducer;
+                        @Html.Partial("_PartRowItem", mainParent)
+
+                        List<EngineBuildComponents> childLevel1 = new List<EngineBuildComponents>();
+
+                        if (filterDirctParts)
+                        {
+                            childLevel1 = MPGlobals.GetDirectParts(Model.Where(x => x.ReportGroupIdentifier == item1.ReportGroupIdentifier).ToList(), parentPartID);
+                        }
+                        else
+                        {
+                            //  childLevel1 = MPGlobals.GetAllChildren(Model.Where(x => x.ReportGroupIdentifier == item1).ToList(),parentPartID);
+                            childLevel1 = MPGlobals.GetAllChildren(Model.ToList(), parentPartID);
+                        }
+
+                    }
+
+                    @foreach (var item in childLevel1.OrderBy(x => x.Reporting_Parent).ThenBy(x => x.ReportDisplayOrder).ThenBy(x => x.Draw_part_no))
+                    {
+                        item.MaxLevel = MaXlevel;
+                        item.MainAssesmblyHeading = headingMainAssembly;
+                        item.reducer = reducer;
+                        @Html.Partial("_PartRowItem", item)
+                        ;
+                        if (item.IsParent == "Yes")
+                        {
+                            List<EngineBuildComponents> childLevel2 = MPGlobals.GetAllChildren(Model.ToList(), item.Engine_Part_Dbkey);
+                            foreach (var child2 in childLevel2.OrderBy(x => x.Reporting_Parent).ThenBy(x => x.ReportDisplayOrder))
+                            {
+                                child2.MaxLevel = MaXlevel;
+                                child2.MainAssesmblyHeading = headingMainAssembly;
+                                child2.reducer = reducer;
+                                @Html.Partial("_PartRowItem", child2)
+                                ;
+
+                                if (child2.IsParent == "Yes")
+                                {
+                                    List<EngineBuildComponents> childLevel3 = MPGlobals.GetAllChildren(Model.ToList(), child2.Engine_Part_Dbkey);
+                                    foreach (var child3 in childLevel3.OrderBy(x => x.Reporting_Parent).ThenBy(x => x.ReportDisplayOrder))
+                                    {
+                                        child3.MaxLevel = MaXlevel;
+                                        child3.MainAssesmblyHeading = headingMainAssembly;
+                                        child3.reducer = reducer;
+                                        @Html.Partial("_PartRowItem", child3)
+                                        ;
+                                        if (child3.IsParent == "Yes")
+                                        {
+                                            List<EngineBuildComponents> childLevel4 = MPGlobals.GetAllChildren(Model.ToList(), child3.Engine_Part_Dbkey);
+                                            foreach (var child4 in childLevel4.OrderBy(x => x.Reporting_Parent).ThenBy(x => x.ReportDisplayOrder))
+                                            {
+                                                child4.MaxLevel = MaXlevel;
+                                                child4.MainAssesmblyHeading = headingMainAssembly;
+                                                child4.reducer = reducer;
+                                                @Html.Partial("_PartRowItem", child4)
+                                                ;
+                                                if (child4.IsParent == "Yes")
+                                                {
+                                                    List<EngineBuildComponents> childLevel5 = MPGlobals.GetAllChildren(Model.ToList(), child4.Engine_Part_Dbkey);
+                                                    foreach (var child5 in childLevel5.OrderBy(x => x.Reporting_Parent).ThenBy(x => x.ReportDisplayOrder))
+                                                    {
+                                                        child5.MaxLevel = MaXlevel;
+                                                        child5.MainAssesmblyHeading = headingMainAssembly;
+                                                        child5.reducer = reducer;
+                                                        @Html.Partial("_PartRowItem", child5)
+                                                        ;
+                                                        if (child5.IsParent == "Yes")
+                                                        {
+                                                            List<EngineBuildComponents> childLevel6 = MPGlobals.GetAllChildren(Model.ToList(), child5.Engine_Part_Dbkey);
+                                                            foreach (var child6 in childLevel6.OrderBy(x => x.Reporting_Parent).ThenBy(x => x.ReportDisplayOrder))
+                                                            {
+                                                                child6.MaxLevel = MaXlevel;
+                                                                child6.MainAssesmblyHeading = headingMainAssembly;
+                                                                child6.reducer = reducer;
+                                                                @Html.Partial("_PartRowItem", child6)
+                                                                ;
+                                                                if (child6.IsParent == "Yes")
+                                                                {
+                                                                    List<EngineBuildComponents> childLevel7 = MPGlobals.GetAllChildren(Model.ToList(), child6.Engine_Part_Dbkey);
+                                                                    foreach (var child7 in childLevel7.OrderBy(x => x.Reporting_Parent).ThenBy(x => x.ReportDisplayOrder))
+                                                                    {
+                                                                        child7.MaxLevel = MaXlevel;
+                                                                        child7.MainAssesmblyHeading = headingMainAssembly;
+                                                                        child7.reducer = reducer;
+                                                                        @Html.Partial("_PartRowItem", child7)
+                                                                        ;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                </tbody>
+                <tfoot style="align-items: baseline !important;border:none" id="">
+                    <tr style="min-height:15px!important; align-items:baseline!important;border:none">
+                        <td colspan="@(MaXlevel+7)" style="border:none;">
+                            <div style="min-height: 15px !important; align-items: baseline !important;" class="d-flex justify-content-between">
+                                <div id="" style="font-size:small" class="pull-left align-baseline">
+                                    <span>Color Legend:  </span>
+                                    <span style="color:#0eb438;font-style:italic; margin-right:15px">Updated  </span>
+                                    <span style="color:#e67c29;font-style:italic;margin-right:15px">Newly Added  </span>
+                                    <span style="color:#800080;font-style:italic">Replaced  </span>
+
+                                </div>
+                                <div>
+                                    <span>@ViewBag.BuildName</span>
+                                </div>
+                            </div>
+                        </td>
+
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="pagebreak Collabs @item1.ReportGroupIdentifier.Trim().Replace(' ', '_') @mainParent.Collaborators.Trim().Replace(',', ' ')">
+
+            </div>
+        }
+    // }
+    // catch (Exception ex)
+    // {
+    //     ErrorHandler.LogException(ex);
+    //     <span>@ex.Message</span>
+    //     <span>@ex.StackTrace</span>
+    // }
+
+
+}

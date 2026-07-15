@@ -1,0 +1,1030 @@
+﻿@using MPCRS.Utilities;
+@{
+	//ViewData["Title"] = "Document Browser";
+	string browserType = ViewData["BrowserType"] as string;
+	var hasWritePermission = UserData.IsAuthorized(User, Constants.UserPermissions.DOC_Write);
+	var hasDndPermission = UserData.IsAuthorized(User, Constants.UserPermissions.DOC_Dnd);
+}
+
+<link href="~/css/style.min.css" rel="stylesheet" />
+<style>
+	.ex1 {
+		  overflow: auto;  
+		height: calc(80vh - 120px);
+	}
+
+	.ex2 {
+		overflow: auto;
+		height: calc(80vh - 80px);
+		/* overflow: scroll;
+		height: 590px; */
+	}
+
+
+	input[placeholder], [placeholder], *[placeholder] {
+		color: red !important;
+	}
+
+</style>
+
+
+<style>
+	.Notupdated {
+		color: black;
+		font-weight: bold;
+	}
+
+	.accesscheckbox {
+		width: 16px !important;
+		height: 16px !important;
+	}
+
+	/*  .jstree-default .jstree-anchor {
+				line-height: 27px;
+				height: 27px;
+			}*/
+
+	/*  #jstree .jstree-themeicon {
+				font-size: 9px;
+			}*/
+
+	.jstree-default .jstree-icon {
+		width: 16px;
+		height: 16px;
+		color: burlywood;
+		border-color: black;
+		/* line-height: 12px;*/
+	}
+
+	.jstree-search {
+		background-color: yellow !important;
+		color: black !important;
+		font-weight: bold;
+		padding: 0 2px;
+	}
+
+
+	/*    .jstree-table-wrapper {
+					border: 1px solid #ccc;
+				}*/
+</style>
+
+<style>
+	.search-highlight {
+		background-color: yellow;
+		font-weight: bold;
+		padding: 0 2px;
+	}
+</style>
+
+@if (ViewBag.isValidBrowser)
+{
+	<div class="row">
+		<div class="col-md-5">
+			<h3><i class="uil uil-document-layout-left"></i> Document Browser</h3>
+		</div>
+		<div class="col-md-5">
+			<div class="input-group" id="SearchTagMainDiv">
+				<input type="hidden" id="activenodeid" />
+				<input type="text" class="form-control tagsMain" id="SearchTagsMain" placeholder="Search for all folders...">
+				<span class="input-group-btn">
+					<button type="button" class="btn btn-phoenix-primary" onclick="LoadFilesByFilter()">Go!</button>
+				</span>
+			</div>
+		</div>
+		<div class="col-md-2">
+			<button onclick="GetDocSummary()" type="button" class="btn btn-primary  pull-right">Summary</button>
+		</div>
+	</div>
+	<hr />
+	<div class="row">
+		<div class="col-md-3">
+			<div class="card">
+				@* <div class="card-heading "> *@
+					@* <input class="search-input form-control form-group-sm" id="" placeholder="Search......." /> *@
+				@* </div> *@
+
+				<div class="card-heading">
+					<div class="row g-2">
+						<div class="col-md-4">
+							<select id="searchType" class="form-control form-group-sm">
+								<option value="contains">Contains</option>
+								<option value="startswith">Starts With</option>
+								<option value="endswith">Ends With</option>
+							</select>
+						</div>
+						<div class="col-md-8">
+							<input class="search-input form-control form-group-sm" placeholder="Search......." />
+						</div>
+					</div>
+				</div>
+
+				<div class="card-body ex1">
+					<div id="jstree">
+					</div>
+				</div>
+			</div>
+
+		</div>
+		<div class="col-md-9">
+			<div class="card">
+				<div class="card-body ex2">
+					<div class="card-heading ">
+						<b class="panel-title">Files</b>
+
+					</div>
+					<div id="Div_Load_Files">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+else
+{
+	<h3>Document Browser cannot be accessed through this browser..</h3>
+	<br />
+	<h3>Please use Chrome or Microsoft Edge browser..</h3>
+}
+@section scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+	<script src="~/js/jstree.min.js" asp-append-version="true"></script>
+	<script src="~/js/jstreetable.js" asp-append-version="true"></script>
+	<script>
+		// ===== Reusable Tag/Pill Input =====
+		// Parses a comma-separated string into pills, syncs back to a hidden input.
+		function initTagInput(containerId, inputId, hiddenId, existingValue) {
+			var container = document.getElementById(containerId);
+			var input = document.getElementById(inputId);
+			var hidden = document.getElementById(hiddenId);
+			if (!container || !input || !hidden) return;
+
+			// Parse existing comma-separated tags
+			var tags = (existingValue || '').split(',').map(function (t) { return t.trim(); }).filter(function (t) { return t.length > 0; });
+
+			function syncHidden() {
+				hidden.value = tags.join(', ');
+			}
+
+			function createPill(text) {
+				var pill = document.createElement('span');
+				pill.className = 'tag-pill';
+				pill.innerHTML = '<span class="tag-text">' + escapeHtml(text) + '</span><span class="tag-remove" title="Remove">&times;</span>';
+				pill.querySelector('.tag-remove').addEventListener('click', function (e) {
+					e.stopPropagation();
+					var idx = tags.indexOf(text);
+					if (idx > -1) tags.splice(idx, 1);
+					pill.remove();
+					syncHidden();
+				});
+				// Insert before the input
+				container.insertBefore(pill, input);
+			}
+
+			function escapeHtml(str) {
+				var div = document.createElement('div');
+				div.textContent = str;
+				return div.innerHTML;
+			}
+
+			function addTag(text) {
+				text = text.trim();
+				if (text.length === 0) return;
+				// Avoid duplicates (case-insensitive)
+				for (var i = 0; i < tags.length; i++) {
+					if (tags[i].toLowerCase() === text.toLowerCase()) return;
+				}
+				tags.push(text);
+				createPill(text);
+				syncHidden();
+			}
+
+			// Render existing tags as pills
+			for (var i = 0; i < tags.length; i++) {
+				createPill(tags[i]);
+			}
+
+			// Handle key events: Enter, comma, Tab to add; Backspace to remove last
+			input.addEventListener('keydown', function (e) {
+				if (e.key === 'Enter' || e.key === ',') {
+					e.preventDefault();
+					addTag(input.value.replace(/,/g, ''));
+					input.value = '';
+				} else if (e.key === 'Backspace' && input.value === '' && tags.length > 0) {
+					// Remove last tag
+					var lastTag = tags.pop();
+					var pills = container.querySelectorAll('.tag-pill');
+					if (pills.length > 0) pills[pills.length - 1].remove();
+					syncHidden();
+				}
+			});
+
+			// Also handle paste — split by commas
+			input.addEventListener('paste', function (e) {
+				e.preventDefault();
+				var pasted = (e.clipboardData || window.clipboardData).getData('text');
+				var parts = pasted.split(',');
+				for (var i = 0; i < parts.length; i++) {
+					addTag(parts[i]);
+				}
+			});
+
+			// Handle blur — add any remaining text as a tag
+			input.addEventListener('blur', function () {
+				if (input.value.trim().length > 0) {
+					addTag(input.value);
+					input.value = '';
+				}
+			});
+		}
+
+		$(function () {
+			$(".search-input").keyup(function () {
+				var searchString = $(this).val();
+				$('#jstree').jstree('search', searchString);
+			});
+			$("#searchType").change(function () {
+				var searchString = $(".search-input").val();
+				$('#jstree').jstree(true).search(searchString);
+			});
+
+			document.addEventListener('contextmenu', function (event) {
+				event.preventDefault();
+			});
+			LoadJstree();
+
+		});
+
+
+		var jsondata;
+		function LoadJstree() {
+			var dataUrl = "/DocManager/GetFolders/";
+			var select_node_id = localStorage['select_node'] || 'defaultValue';
+			try {
+				$.ajax({
+					type: "Get",
+					url: dataUrl,
+					success: function (data) {
+						var dataStrng = JSON.stringify(data);
+						var Modified_data = dataStrng.replace(/Class/g, "class");
+						jsondata = JSON.parse(Modified_data);
+
+						// Mark all folder nodes as expandable so they show expand arrow
+						// This allows folders with only files (no subfolders) to be expanded
+								// Mark all folder nodes as expandable by adding a dummy loading node
+						function markFoldersAsExpandable(nodes) {
+							if (nodes && nodes.length > 0) {
+								for (var i = 0; i < nodes.length; i++) {
+									// If a folder has no children array, or empty children
+									if (!nodes[i].children || nodes[i].children.length === 0) {
+										// Add a temporary loading placeholder
+										nodes[i].children = [{
+											id: nodes[i].id + '_loading',
+											text: 'Loading...',
+											icon: 'fa fa-spinner fa-spin',
+											state: { disabled: true }
+										}];
+									} else if (Array.isArray(nodes[i].children)) {
+										// Recursively process subfolders
+										markFoldersAsExpandable(nodes[i].children);
+									}
+								}
+							}
+						}
+						markFoldersAsExpandable(jsondata);
+
+						var nodelog = $('#jstree').jstree(
+							{
+								'core': {
+									'data': jsondata,
+									'check_callback': function (operation, node, parent, position, more) {
+										// Check permission for drag-drop operations
+										if (operation === 'move_node') {
+											// Check if user has DOC_Dnd permission
+											var hasDndPermission = @Json.Serialize(hasDndPermission);
+											if (!hasDndPermission) {
+												console.log('User does not have drag-drop permission');
+												return false; // Prevent move
+											}
+                    
+											// Prevent files from being dropped into files (only into folders)
+											if (node.icon && node.icon.indexOf('fa-file') !== -1) {
+												return parent.icon && parent.icon.indexOf('fa-folder') !== -1;
+											}
+										}
+										return true;
+									},
+								},
+								"search": {
+									"case_sensitive": false,
+									"show_only_matches": true,
+									"show_only_matches_children": true,
+									"search_callback": function (searchText, node) {
+										var text = (node.text || "").toLowerCase().trim();
+										searchText = (searchText || "").toLowerCase().trim();
+										var searchType = ($("#searchType").val() || "contains").toLowerCase();
+
+										if (searchType === "startswith") {
+											return text.startsWith(searchText);
+										}
+										else if (searchType === "endswith") {
+											return text.endsWith(searchText);
+										}
+										else {
+											return text.indexOf(searchText) !== -1;
+										}
+									}
+								},
+								//"plugins": ["html_data", "contextmenu", "dnd", "search", "types"],
+								  "plugins": @Json.Serialize(hasDndPermission ? 
+									new[] { "html_data", "contextmenu", "dnd", "search", "types" } : 
+									new[] { "html_data", "contextmenu", "search", "types" }),
+								"contextmenu": {
+									"items": function ($node) {
+										console.log('np',$node);
+										var textdata = $node.text;
+										var isFile = $node.icon && $node.icon.indexOf('fa-file') !== -1;
+
+										// Different context menu for files vs folders
+										if (isFile) {
+											// return {
+											// 	"ViewFile": {
+											// 		"label": "View File",
+											// 		"action": function (obj) {
+											// 			if ($node.original.data && $node.original.data.document_Dbkey) {
+											// 				ViewDocument($node.original.data.document_Dbkey);
+											// 			}
+											// 		}
+											// 	},
+											// 	"RenameFile": {
+											// 		"label": "Rename File",
+											// 		"action": function (obj) {
+											// 			if ($node.original.data && $node.original.data.document_Dbkey) {
+											// 				RenameDoc($node.original.data.document_Dbkey);
+											// 			}
+											// 		}
+											// 	},
+											// 	"DeleteFile": {
+											// 		"label": "Delete File",
+											// 		"action": function (obj) {
+											// 			DeleteFolder($node.id, "File");
+											// 		}
+											// 	}
+											// };
+											  return {}; 
+										} else {
+											// Existing folder context menu
+											return {
+												"UploadFile": {
+													"label": "Upload File",
+													"action": function (obj) {
+														GetCreatepopUp_Doc($node.id, 0, "UploadFile");
+													}
+												},
+												"CreateFloder": {
+													"label": "Create Folder",
+													"action": function (obj) {
+														GetCreatepopUp_Doc($node.id, 0, "CreateFolder");
+													}
+												},
+												"UpdateFolder": {
+													"label": "Update Folder",
+													"action": function (obj) {
+														GetCreatepopUp_Doc($node.id, 1, "UpdateFolder");
+													}
+												},
+												"Delete": {
+													"label": "Delete Folder",
+													"action": function (obj) {
+														DeleteFolder($node.id, "Folder");
+													}
+												},
+												"Access": {
+													"label": "Access Config",
+													"action": function (obj) {
+														GetAccessConfigFolderWise($node.id);
+													}
+												},
+											};
+										}
+									}
+								}
+							}).bind("move_node.jstree", function (e, data) {
+								var noden = $('#jstree').jstree(true).get_node(data.node.parent);
+								SaveJsonform(data.node.id, data.node.parent, data.node.text, noden.text);
+								}).bind("open_node.jstree", function (e, data) {
+							// Lazy load files when a folder is expanded
+							var node = data.node;
+								 // Skip loading files for Root node (ID = -1)
+							if (node.id === '-1') {
+								console.log('Root node expanded - folders only, no files at root level');
+								return;
+							}
+
+							console.log('Folder opened:', node.id, node.text);
+
+							// Check if this folder already has file children loaded
+							var hasFileChildren = false;
+							var hasLoadingPlaceholder = false;
+
+							if (node.children && node.children.length > 0) {
+								for (var i = 0; i < node.children.length; i++) {
+									var childNode = $('#jstree').jstree(true).get_node(node.children[i]);
+									// Check if it's a loading placeholder
+									if (node.children[i].indexOf('_loading') !== -1) {
+										hasLoadingPlaceholder = true;
+									}
+									// Check if any child is a file (files have the file icon classes)
+									else if (childNode.icon && childNode.icon.indexOf('fa-file') !== -1) {
+										hasFileChildren = true;
+										break;
+									}
+								}
+							}
+
+							// Load files if not already loaded
+							if (!hasFileChildren) {
+								console.log('Loading files for folder:', node.id);
+								$.ajax({
+									url: '/DocManager/GetFolderChildren?folderId=' + node.id,
+									type: 'GET',
+									dataType: 'json',
+									success: function (fileNodes) {
+										console.log('Files loaded:', fileNodes.length, 'files');
+										var tree = $('#jstree').jstree(true);
+
+										// Remove loading placeholder if it exists
+										if (node.children && node.children.length > 0) {
+											for (var i = 0; i < node.children.length; i++) {
+												var childId = node.children[i];
+												if (childId.indexOf('_loading') !== -1) {
+													tree.delete_node(childId);
+													console.log('Removed loading placeholder');
+													break;
+												}
+											}
+										}
+
+										// Add files to the tree
+										if (fileNodes && fileNodes.length > 0) {
+											$.each(fileNodes, function (index, fileNode) {
+												tree.create_node(node, fileNode, 'last');
+											});
+											console.log('Files added to tree');
+										} else {
+											console.log('No files in this folder');
+										}
+									},
+									error: function (xhr, status, error) {
+										console.error('Error loading files:', error);
+									}
+								});
+							} else {
+								console.log('Files already loaded for this folder');
+							}
+							}).bind("select_node.jstree", function (e, data) {
+
+										   // Check if node is a file or folder
+								var isFile = false;
+
+								// Method 1: Check icon (files have different icons)
+								if (data.node.icon && (
+									data.node.icon.includes('fa-file') ||
+									data.node.icon.includes('file-pdf') ||
+									data.node.icon.includes('file-excel') ||
+									data.node.icon.includes('file-word') ||
+									data.node.icon.includes('file-powerpoint')
+								)) {
+									isFile = true;
+								}
+
+								// Method 2: Check node data if available
+								if (data.node.data && data.node.data.Item_type === 'File') {
+									isFile = true;
+								}
+
+								// Only load files if it's a FOLDER
+								if (!isFile) {
+									localStorage['select_node'] = data.selected[0] + "#" + data.node.text;
+									LoadFiles(data.selected[0], data.node.text);
+								} 
+							 
+							}).on('loaded.jstree', function (e, data) {
+								$('#jstree').jstree('select_node', select_node_id.split("#")[0]);
+								LoadFiles(select_node_id.split("#")[0], select_node_id.split("#")[1]);
+							});
+					}
+				});
+			} catch (e) {
+				console.log("Begin catch")
+				console.log(e.message);
+			}
+		}
+
+		// function SaveJsonform(id, parent, fromnode, tonode) {
+		// 	bootbox.confirm('Move <b>' + fromnode + '</b> to  <b>' + tonode + '</b> ?',
+		// 		function (result) {
+		// 			if (result) {
+		// 				$.ajax({
+		// 					type: "POST",
+		// 					url: '/DocManager/DndDocFolder?id=' + id + '&parent=' + parent,
+		// 					dataType: 'json',
+		// 					cache: false,
+		// 					success: function (data) {
+		// 						if (data.success) {
+		// 							bootbox.alert('Updated Successfully');
+		// 						} else {
+		// 							bootbox.alert('Failed!');
+		// 						}
+		// 					}
+		// 				});
+		// 			} else {
+		// 				window.location.reload();
+		// 			}
+		// 		});
+		// };
+
+		function SaveJsonform(id, parent, fromnode, tonode) {
+    bootbox.confirm('Move <b>' + fromnode + '</b> to <b>' + tonode + '</b>?',
+        function (result) {
+            if (result) {
+                $.ajax({
+                    type: "POST",
+                    url: '/DocManager/DndDocFolder?id=' + id + '&parent=' + parent,
+                    dataType: 'json',
+                    cache: false,
+                    success: function (data) {
+                        if (data.success) {
+                            // Build success message
+                            var itemTypeText = data.itemType === 'File' ? 'file' : 'folder';
+                            var successMsg = 'Successfully moved ' + itemTypeText + ' <b>"' + data.itemName + '"</b> from <b>"' + data.sourceFolder + '"</b> to <b>"' + data.destinationFolder + '"</b>';
+                            
+                            bootbox.alert(successMsg); 
+                           
+                            // Load files for the destination folder to show updated contents
+                            LoadFiles(parent, tonode);
+                            
+                            // Update localStorage to track the new parent as selected node
+                            localStorage['select_node'] = parent + "#" + tonode;
+                            
+                        } else {
+                            // ❌ MOVE FAILED - Refresh tree to restore original position
+                            bootbox.alert({
+                                message: 'Move failed: ' + data.msg,
+                                callback: function () {
+                                    // Refresh only the tree, not entire page
+                                    $('#jstree').jstree(true).refresh();
+                                }
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // ❌ ERROR - Refresh tree to restore original position
+                        bootbox.alert({
+                            message: 'Error moving item: ' + error,
+                            callback: function () {
+                                $('#jstree').jstree(true).refresh();
+                            }
+                        });
+                    }
+                });
+            } else {
+                // ❌ USER CANCELLED - Refresh tree to restore original position
+                $('#jstree').jstree(true).refresh();
+            }
+        });
+}
+
+
+		function LoadFiles(folderid, foldername) {
+			document.getElementById("SearchTagsMain").placeholder = "Search " + foldername + " folder";
+			document.getElementById("activenodeid").value = folderid;
+			$('#Div_Load_Files').html('');
+			$.ajax({
+				url: '/DocManager/GetFilesList?folderid=' + folderid,
+				dataType: 'html',
+				success: function (data) {
+					$('#Div_Load_Files').html(data);
+					var Windowheight = window.innerHeight;
+					var x = $("#tbl_files").position();
+					var tableHeight = (Windowheight - x.top) * 0.75;
+
+					// Initialize DataTable with pagination
+					$('#tbl_files').DataTable({
+						"dom": "lifrtp",
+						// paging: false,           
+						// pageLength: 50,         
+					 // 	scrollY: tableHeight + 'px',
+						// scrollCollapse: true,   
+						// lengthMenu: [[25, 50, 100, -1], [25, 50, 100, "All"]],  
+					});
+				}
+			});
+		}
+
+		function LoadFilesByFilter() {
+			var searchtag = document.getElementById("SearchTagsMain").value;
+			var parentid = document.getElementById("activenodeid").value;
+			if (searchtag.length >= 1) {
+				$('#Div_Load_Files').html('');
+				$.ajax({
+					url: '/DocManager/GetFilesList?searchtags=' + searchtag + '&parentid=' + parentid,
+					dataType: 'html',
+					success: function (data) {
+						$('#Div_Load_Files').html(data);
+						var Windowheight = window.innerHeight;
+						var x = $("#tbl_files").position();
+						var tableHeight = (Windowheight - x.top) * 0.75;
+
+						if ($.fn.DataTable.isDataTable('#tbl_files')) {
+							$('#tbl_files').DataTable().destroy();
+						}
+
+						// Initialize DataTable with pagination
+						$('#tbl_files').DataTable({
+							"dom": "lifrtp",
+							paging: true,           // ✅ Enable paging
+							pageLength: 50,         // ✅ Show 50 rows per page
+							scrollY: tableHeight + 'px',
+							scrollCollapse: true,
+							lengthMenu: [[25, 50, 100, -1], [25, 50, 100, "All"]],
+							drawCallback: function () {
+								highlightSearchText(searchtag);
+							}
+						});
+
+						setTimeout(function () {
+							highlightSearchText(searchtag);
+						}, 100);
+					}
+				});
+			} else {
+				alert("Please search with 3 or more character");
+			}
+		}
+		function escapeRegExp(string) {
+			return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		}
+
+				function removeHighlight() {
+			$('#tbl_files tbody .search-highlight').each(function () {
+				$(this).replaceWith($(this).text());
+			});
+		}
+
+		function highlightSearchText(searchText) {
+			if (!searchText || searchText.trim() === '') return;
+
+			removeHighlight();
+
+			var regex = new RegExp('(' + escapeRegExp(searchText) + ')', 'gi');
+
+			$('#tbl_files tbody tr').each(function () {
+				// File Name column = first td
+				var fileCell = $(this).find('td').eq(0);
+
+				// Find anchor/text inside first column
+				fileCell.find('a, span, div').each(function () {
+					var html = $(this).html();
+					if (html) {
+						$(this).html(html.replace(regex, '<span class="search-highlight">$1</span>'));
+					}
+				});
+			});
+		}
+
+		// function escapeRegExp(string) {
+		// 	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		// }
+
+
+		function ViewDocument(docid) {
+			$.ajax({
+				url: '/DownloadFiles/ViewDocument?docid=' + docid + '&sourceTable=Documentation&download=false',
+				dataType: 'html',
+				success: function (data) {
+					var dialog = bootbox.dialog({
+						message: data,
+						size: 'large',
+						closeButton: true,
+						className: 'custom-modal',
+						onShown: function () {
+							var embedTags = document.querySelectorAll('embed');
+							//  console.log(embedTags);
+							embedTags.forEach(function (embedTag) {
+								embedTag.addEventListener('contextmenu', function (event) {
+									event.preventDefault();
+
+								});
+							});
+						}
+					});
+				}
+			});
+		}
+
+		function GetAccessConfigFolderWise(key) {
+			$.ajax({
+				url: '/DocManager/AccessDetail?docdbkey=' + key,
+				type: 'GET',
+				success: function (data) {
+					bootbox.dialog({
+						message: data,
+						title: 'Access Info',
+						size: 'large',
+					});
+				},
+				error: function (request, error) {
+					if (request.status == 403) {
+						bootbox.alert({
+							message: "Access Forbidden!",
+						});
+					} else {
+						alert("Request: " + JSON.stringify(request));
+					}
+				}
+			});
+		}
+
+		function GetCreatepopUp_Doc(key, action, actioname) {
+			$.ajax({
+				url: '/DocManager/Folder?docdbkey=' + key + '&actionon=' + actioname,
+				type: 'GET',
+				success: function (data) {
+					var titletxt = actioname == "CreateFolder" ? "Create Folder" : "Update Folder";
+					titletxt = actioname == "UploadFile" ? "Upload File" : titletxt;
+					bootbox.dialog({
+						message: data,
+						title: titletxt,
+						size: 'meduim',
+					});
+				},
+				error: function (request, error) {
+					if (request.status == 403) {
+						bootbox.alert({
+							message: "Access Forbidden!",
+						});
+					} else {
+						alert("Request: " + JSON.stringify(request));
+					}
+				}
+			});
+		}
+
+		function UpdateDocumentFolderinfo() {
+			$.validator.unobtrusive.parse("form");
+			if ($('#DocMainForm').valid()) {
+
+				var fileData = new FormData();
+
+				var filesinput = document.getElementById("DocSFile").files;
+
+				for (var i = 0; i < filesinput.length; i++) {
+					fileData.append('Files', filesinput[i]);
+				}
+
+
+				fileData.append('Refrence_Title', document.getElementById("Refrence_Title").value);
+				fileData.append('Description', document.getElementById("Description").value);
+				fileData.append('Parent_id', document.getElementById("Parent_id").value);
+				fileData.append('Document_Dbkey', document.getElementById("Document_Dbkey").value);
+				fileData.append('Item_type', document.getElementById("Item_type").value);
+				fileData.append('is_required_approve', document.getElementById("is_required_approve").checked);
+				fileData.append('Inherit_Parent_Access', document.getElementById("Inherit_Parent_Access").checked);
+				fileData.append('SearchTags', document.getElementById("SearchTags").value);
+				//fileData.append('Note', note);
+
+
+
+				if (document.getElementById("Item_type").value == 'File') {
+					if (filesinput.length == 0) {
+						alert("Input File is Required");
+						return false;
+					}
+				}
+				console.log(fileData);
+				document.getElementById("lnksave").disabled = true;
+
+				$.ajax({
+					type: "POST",
+					url: '/DocManager/SaveDocumentDetail',
+					data: fileData,
+					dataType: "json",
+					cache: false,
+					contentType: false,
+					processData: false,
+					success: function (data) {
+						//console.log(data);
+						bootbox.alert({
+							message: data.msg,
+							callback: function () {
+								var btn = document.getElementsByClassName("bootbox-close-button");
+								btn[0].click();
+								window.location.href = '/DocManager/Index#key=' + data.docdbkey;
+								window.location.reload(true);
+							}
+						});
+					}
+				});
+			}
+			return false;
+
+		}
+
+		function RenameDoc(Document_Dbkey) {
+			$.ajax({
+				url: '/DocManager/Rename?Document_Dbkey=' + Document_Dbkey,
+				type: 'GET',
+				success: function (data) {
+					bootbox.alert({
+						message: data,
+						title: "Edit Doc Detail",
+						size: 'Small',
+						buttons: {
+							ok: {
+								className: 'd-none'
+							}
+						}
+					});
+				}
+			});
+		}
+
+		function SaveDocDetail() {
+			var responseMsg = "Saved Successfully.";
+			var Document_Dbkey = $('#Document_Dbkey').val();
+			var Refrence_Title = $('#Refrence_Title').val();
+			var Description = $('#Description').val();
+			var SearchTags = $('#SearchTags').val();
+			var details = { Document_Dbkey: Document_Dbkey, Refrence_Title: Refrence_Title, Description: Description, SearchTags: SearchTags };
+			$.ajax({
+				type: 'POST',
+				url: '/DocManager/Rename/',
+				// contentType: 'application/json',
+				data: details,
+				success: function (data) {
+					responseMsg = data.msg;
+					if (data.success) {
+						bootbox.alert(responseMsg
+							, function () {
+								window.location.reload();
+							});
+					}
+					else {
+						bootbox.alert(responseMsg
+							, function () {
+								window.location.reload();
+							});
+					}
+				}
+			});
+
+		}
+
+		function DocDeletion(id) {
+			var responseMsg = "Deleted Successfully.";
+			return bootbox.confirm('Are you sure, you want to delete the file?', function (result) {
+				if (result) {
+					$.ajax({
+						url: '/DocManager/DocDelete',
+						type: 'POST',
+						data: { Document_Dbkey: id },
+						success: function (data) {
+							responseMsg = data.msg;
+							if (data.success) {
+								bootbox.alert(responseMsg
+									, function () {
+
+									});
+							}
+							else {
+								bootbox.alert(responseMsg
+									, function () {
+
+									});
+							}
+						}
+					});
+				}
+			});
+		}
+
+		function Approval(id) {
+			var responseMsg = "Deleted Successfully.";
+			return bootbox.confirm('Are you sure, you want to approve?', function (result) {
+				if (result) {
+					$.ajax({
+						url: "/DocManager/Approve",
+						type: 'POST',
+						datatype: JSON,
+						data: { Document_Dbkey: id },
+						success: function (data) {
+							responseMsg = data.msg;
+							if (data.success) {
+								bootbox.alert(responseMsg
+									, function () {
+										window.location.reload();
+									});
+							}
+							else {
+								bootbox.alert(responseMsg
+									, function () {
+										window.location.reload();
+									});
+							}
+
+						}
+					});
+				}
+			});
+		}
+
+		function Rejection(id) {
+			var responseMsg = "Deleted Successfully.";
+			return bootbox.confirm('Please confirm rejection', function (result) {
+				if (result) {
+					$.ajax({
+						url: '/DocManager/Reject',
+						type: 'POST',
+						data: { Document_Dbkey: id },
+						success: function (data) {
+							responseMsg = data.msg;
+							if (data.success) {
+								bootbox.alert(responseMsg
+									, function () {
+										window.location.reload();
+									});
+							}
+							else {
+								bootbox.alert(responseMsg
+									, function () {
+										window.location.reload();
+									});
+							}
+						}
+					});
+				}
+			});
+		}
+
+		function GetDocSummary() {
+			$.ajax({
+				url: '/DocManager/DocsSummary',
+				dataType: 'html',
+				success: function (data) {
+					bootbox.alert({
+						message: data,
+						size: 'extra-large'
+					});
+				}
+			});
+		}
+
+		function DeleteFolder(id) {
+			var responseMsg = "Deleted Successfully.";
+			return bootbox.confirm('Are you sure, you want to delete the folder?', function (result) {
+				if (result) {
+					$.ajax({
+						url: '/DocManager/FolderDelete',
+						type: 'POST',
+						data: { Document_Dbkey: id },
+						success: function (data) {
+							responseMsg = data.msg;
+							if (data.success) {
+								bootbox.alert(responseMsg
+									, function () {
+										window.location.reload();
+									});
+							}
+							else {
+								bootbox.alert(responseMsg
+									, function () {
+
+									});
+							}
+						},
+						statusCode: {
+							403: function () {
+								bootbox.alert("Unauthorized access"
+									, function () {
+
+									});
+								// Unauthorized access
+								// Handle unauthorized response here, e.g., redirect to a login page
+							},
+							404: function () {
+								// Handle 404 Not Found error
+							},
+							// Add more custom error handlers for other status codes if needed
+						}
+					});
+				}
+			});
+		}
+
+	</script>
+
+
+}

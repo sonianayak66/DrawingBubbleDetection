@@ -1,0 +1,51 @@
+﻿@model List<Demand_Verification>
+
+<div class="row">
+	<h2 class="col-10">Demand Verification</h2>
+	<a class="btn btn-primary col-1" onclick="DemandVerification()">Create</a>
+</div>
+<br />
+<table class="table table-bordered">
+	<thead>
+		<tr>
+			<th hidden>id</th>
+			<th>Demand No.</th>
+			<th>Demand Description</th>
+			<th>Demanding Officer</th>
+			<th>Project</th>
+			<th>Items</th>
+			<th>Receipt</th>
+			<th>Receipt Documents</th>
+			<th>Remarks</th>
+			<th>Verified</th>
+			<th></th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		@{
+			foreach (var item in Model)
+			{
+				<tr>
+					<td hidden>@item.Verification_Id</td>
+					<td>@item.Demand_No</td>
+					<td>@item.Demand_Desc</td>
+					<td>@item.Demanding_Officer</td>
+					<td>@item.Project</td>
+					<td>@item.Items</td>
+					<td>@item.Receipt</td>
+					<td>@item.Receipt_Docs</td>
+					<td>@item.Remarks</td>
+					<td>@item.Verified</td>
+					<td><i class="text-primary uil uil-edit fs-2" style="cursor:pointer" onclick="editDemandVerifyDetail(@item.Verification_Id)"></i></td>
+					<td>  <p><i class="text-warning uil uil-trash fs-1" style="cursor:pointer" onclick="DeleteDemandVerifyRow(this,@item.Verification_Id)"></i></p></td>
+					</tr>
+					}
+
+					}
+
+			</tbody>
+		</table>
+
+
+		<script src="~/mpi/DemandVerification.js" asp-append-version="true"></script>

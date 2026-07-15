@@ -1,0 +1,85 @@
+﻿@model List<MPCRS.ViewModels.DeletionManagementVM>
+@{
+}
+
+<div class="col-12 row">
+    <h3>Record Deletion Requests</h3>
+</div>
+
+<div class="col-12 row">
+    <table id="RecordApprovalRequests" class="table table-bordered table-condensed">
+        <thead>
+            <tr>
+                <th>Record Type</th>
+                <th>Ref no</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>User actions</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                foreach (var item in Model.OrderByDescending(x => x.InitiatedOn).ToList())
+                {
+                    <tr>
+                        <td data-field="SourceDisplayName" class="p-2">@item.SourceDisplayName</td>
+                        <td data-field="RefNo">@item.RefNo</td>
+                        <td>@item.ReasonForDeletion</td>
+                        <td><p class="badge badge-phoenix fs--2 badge-phoenix-@(item.ApprovalStatus == "Approved" ? "success" : "danger") m-0">@item.ApprovalStatus</p> </td>
+                        <td>
+                            <p class="badge badge-phoenix fs--2 badge-phoenix-warning m-0">Initiated on  @item.InitiatedOn.Value.ToString("dd-MMM-yy hh:MM tt") by @item.InitiatedUserName</p>
+                            @{
+                                if (item.ApprovedOn != null)
+                                {
+                                    <br />
+                                    <p class="badge badge-phoenix fs--2 badge-phoenix-@(item.ApprovalStatus == "Approved" ? "success" : "danger") m-0">@item.ApprovalStatus on  @item.ApprovedOn.Value.ToString("dd-MMM-yy hh:MM tt")  by @item.ApprovedByUserName</p>
+                                }
+                            }
+                        </td>
+                        <td>
+                            @{
+                                if (item.ApprovedOn == null)
+                                {
+                                    <a class="btn btn-success btn-small" onclick="ConfirmDeletionRequest(this, @item.DeletionKey)">Approve</a>
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+
+        </tbody>
+    </table>
+</div>
+
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+
+    <script>
+        $(document).ready(function () {
+            var Windowheight = window.innerHeight;
+            var x = $("#RecordApprovalRequests").position();
+            var tableHeight = (Windowheight - x.top) * 0.75;
+            $('#RecordApprovalRequests').DataTable({
+                "paging": false,
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem(
+                        'DataTables_' + settings.sInstance,
+                        JSON.stringify(data)
+                    );
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                },
+                order: [],
+                scrollY: tableHeight + 'px'
+            });
+
+        }); 
+    </script>
+}

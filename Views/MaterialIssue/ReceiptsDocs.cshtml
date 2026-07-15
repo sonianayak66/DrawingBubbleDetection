@@ -1,0 +1,120 @@
+﻿@using System.Data
+@using MPCRS.Utilities
+
+
+@{
+
+    DataTable doctypes = MPGlobals.GetDataForDatalist("SELECT [Master_Dbkey],[Master_Name] FROM [dbo].[Master_General] where [Master_Type] = 'Procurement_Doument_Type'");
+    DataTable dataTable = MPGlobals.GetDataForDatalist("[dbo].[Get_Forging_Receipts] @forging_item_dbkey = " + @ViewBag.forging_item_dbkey + "");
+    DataTable docs = MPGlobals.GetDataForDatalist(@"SELECT * FROM [dbo].[Attachments] where [Source_table] = 'Forging_Receipt_Items' and [Source_table_key] = " + @ViewBag.forging_item_dbkey + "");
+
+    var DemandReceiptWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write_Receipts);
+    var DemandDocDelete = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Delete);
+}
+<style>
+
+    .table-sm td,tr {
+        padding: 0 !important;
+        white-space: nowrap;
+    }
+
+    .table-sm tbody{
+        padding: 6px !important;
+    }
+
+        .table-sm input,
+        .table-sm select {
+            border-radius: 0;
+            border: none;
+        }
+</style>
+<div class="row">
+
+    <div class="col-md-3">
+        <h4>Receipt No : @dataTable.Rows[0]["Receipt_Number"].ToString()</h4>
+    </div>
+    <div class="col-md-6">
+        <h4>Part Name : @dataTable.Rows[0]["Draw_part_no"].ToString()</h4>
+    </div>
+ 
+</div>
+ 
+<div class="col-md-12">
+
+    <table class="table table-sm fs--1 mb-2" style="width:100%">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Ref No.</th>
+                <th>File</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="recptDocs_tblbody">
+            @foreach (DataRow dr in docs.Rows)
+            {
+                <tr>
+                    <td>
+                        <select class="form-control form-control-sm" disabled>
+                            <option value="0">Select</option>
+                            @foreach (DataRow drtype in doctypes.Rows)
+                            {
+                                if (@drtype["Master_Dbkey"].ToString() == @dr["File_DVD_Num"].ToString())
+                                {
+                                    <option value="@drtype["Master_Dbkey"]" selected>@drtype["Master_Name"]</option>
+                                }
+                                else
+                                {
+                                    <option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+                                }
+
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" value="@dr["File_Revision"]" readonly />
+                    </td>
+
+                    <td>
+                        <input type="file" class="form-control form-control-sm" style="display:none" />
+                        <a target="_blank" href="@(dr["Attachment_location"].ToString() + dr["Attachment_FileName"].ToString())">@dr["Orginal_File_Name"].ToString()</a>
+                    </td>
+                    <td>
+                        <i type="button" class="uil uil-trash-alt fs-1" style="color:red;text-align:center;cursor:pointer" onclick="DeleteForgingRcpDocs(@dr["Attachment_Db_Key"],this)"></i>
+                    </td>
+                </tr>
+            }
+
+            <tr style="padding:6px !important">
+                <td>
+                    <select class="form-control form-control-sm File_DVD_Num">
+                        <option value="0">Select</option>
+                        @foreach (DataRow drtype in doctypes.Rows)
+                        {
+                            <option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm File_Revision" />
+                </td>
+                <td>
+                    <input type="file" class="form-control form-control-sm fileName" />
+                </td>
+                <td>
+                    @{
+                        if (DemandReceiptWriteAccess)
+                        {
+                            <a class="btn btn-default"  style="padding:0px!important">
+                                <i class="uil uil-cloud-upload fs-2" aria-hidden="true" onclick="UploadForginghReceiptDos(@ViewBag.forging_item_dbkey)"></i>
+                            </a>
+                        }
+                    }
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+ 

@@ -1,0 +1,80 @@
+﻿@model string
+@using MPCRS.Utilities;
+@using System.Data
+@{
+    Layout = null;
+    DataTable dataTable = MPGlobals.GetDataForDatalist($"[dbo].[MasterSearch_NCR] @PartNumber = '{Model}'");
+}
+
+<label> NCR Details </label>
+
+@{
+    if (dataTable.Rows.Count > 0)
+    {
+        <table class="table table-sm fs--1 mb-2" id="TblNcrList" cellspacing="0" style="width:100%;">
+            <thead>
+                >
+                <tr style="font-size:small">
+                    <th>Ref Number</th>
+
+                    <th>Received From</th>
+                    <th>Committee Referred</th>
+                    <th>Status</th>
+                    <th>Serial Number</th>
+                    <th>Revision</th>
+                    <th>Qty</th>
+                    <th>Module</th>
+                    <th>Stress</th>
+                    <th>Chair</th>
+                    <th>TAS</th>
+                    <th>Drawing No</th>
+                    <th>Description</th>
+                    <th>Vendor</th>
+                    <th>Module Responsibility</th>
+                    <th>Remarks</th>
+                    <th>Attachments</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (DataRow item in dataTable.Rows)
+                {
+                    <tr>
+                        <td>@item["ReferenceNumber"]</td>
+                        <td>@item["ReceivedFrom"]</td>
+                        <td>@item["ComitteeReferred"]</td>
+                        <td>@Html.Raw(item["ReportStatus"])</td>
+                        <td>@item["SerialNumber"]</td>
+                        <td>@item["Revision"]</td>
+                        <td>@item["Qty"]</td>
+                        <td>@item["Module"]</td>
+                        <td>@item["Stress"]</td>
+                        <td>@item["Chair"]</td>
+                        <td>@item["Tas"]</td>
+                        <td>@item["Draw_part_no"]</td>
+                        <td>@item["PartDes"]</td>
+                        <td>@item["Vendor_Name"]</td>
+                        <td>@item["Module_Responsibilty"]</td>
+                        <td>@item["Remarks"]</td>
+                        <td>
+                            @if (item["AttachmentFiles"] != DBNull.Value && !string.IsNullOrEmpty(item["AttachmentFiles"].ToString()))
+                            {
+                                @Html.Raw(item["AttachmentFiles"])
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No records found.</p>
+    }
+}
+
+
+ 

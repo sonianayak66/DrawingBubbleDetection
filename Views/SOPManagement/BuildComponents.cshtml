@@ -1,0 +1,156 @@
+﻿@model MPCRS.ViewModels.BuildViewModel
+@using MPCRS.Utilities;
+@{
+	ViewData["Title"] = "";
+	var Permission_Buid_Write = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Write);
+}
+<link href="~/css/style.min.css" rel="stylesheet" />
+<style>
+	.jstree-node {
+		font-size: 10pt;
+	}
+
+	.Isupdated {
+		color: #0eb438
+	}
+
+	.IsInactivated {
+		color: #e22111
+	}
+
+	.Notupdated {
+		color: black;
+	}
+
+	.soppartonly {
+		color: #e67c29;
+	}
+
+	.IsReplaced {
+		color: #800080;
+	}
+</style>
+
+<div class="row">
+	<div class="col-md-8">
+		@{
+			try
+			{
+				<partial name="_BuildInfoBanner.cshtml" model="Model.engineBuildViewModel.BuildGuid"></partial>
+
+			}
+			catch (Exception)
+			{
+				<h4>SOP Components for @Model.engineBuildViewModel.BuildName</h4>
+			}
+		}
+
+	</div>
+	<div class="col-md-4 d-flex">
+		<div class="">
+			@{
+				if (ViewBag.customAccess == "false")
+				{
+					if (Permission_Buid_Write)
+					{
+						<div class="btn-group btn-sm mb-1 me-1">
+							<input class="btn btn-secondary btn-sm" type="button" id="CustomAccessbtn" onclick="EnableCheckBoxBuildTree(this)" value="Custom Access" />
+
+							<button class="btn dropdown-toggle dropdown-toggle-split btn-secondary" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="sr-only">Toggle Dropdown</span></button>
+							<div class="dropdown-menu">
+
+								<a class="dropdown-item" href="#" onclick="EnableCheckBoxBuildTree(this)">New Link</a>
+								<a class="dropdown-item" href="#" onclick="GetListOfSopAccessLinks(this)">History</a>
+							</div>
+						</div>
+						<br />
+						<a href="#" style="margin-top:50px!important" onclick="LoadJstree('[Removed in previous builds]','All');">Parts Removed in previous build</a>
+					}
+				}
+
+
+			}
+
+		</div>
+		<div class="mr-1">
+			@{
+				if (ViewBag.customAccess == "false")
+				{
+					if (Permission_Buid_Write)
+					{
+						<div class="mb-1 me-1">
+							<input class="btn btn-secondary btn-sm"
+								   type="button"
+								   id="refreshBATLData"
+								   onclick="refreshBATLData('@Model.engineBuildViewModel.BuildGuid')"
+								   value="Refresh BATL data" />
+
+						</div>
+					}
+				}
+
+
+			}
+		</div>
+		<div class="ml-1">
+			@{
+				if (ViewBag.customAccess == "false")
+				{
+					<a class="btn btn-secondary btn-sm" style="margin-bottom:7px!important" href="/SOPManagement/Builds">Back</a>
+
+					<div style="padding-top:15px!!important">
+						<a target="_blank" href="/SOPReport/Report?buildguid=@Model.engineBuildViewModel.BuildGuid">View Report</a>
+					</div>
+				}
+			}
+		</div>
+	</div>
+	
+</div>
+
+<hr />
+
+
+<input type="hidden" id="BuildGuid" value="@Model.engineBuildViewModel.BuildGuid" />
+<input type="hidden" id="CustomAccessData" value="@ViewBag.customLinkData" />
+<input type="hidden" id="isCustomAccess" value="@ViewBag.customAccess" />
+
+<div class="row">
+	<div class="col-md-6">
+		<div class="row">
+			<div class="col-6">
+				@{
+					var count = Model.enginePartsViewModel.Count(x => x.IsRemoved == false);
+				}
+				Total Count : @count
+			</div>
+			<div class="col-6">
+			</div>
+		</div>
+		<div>
+			<span class="text-danger" id="CustomAccesstip"></span>
+			<input class="search-input form-control" placeholder="Search......." />
+		</div>
+		<div id="noResultsMessage" class="alert alert-info mt-2" style="display:none;">
+			<i class="uil uil-info-circle"></i> No results found for your search.
+		</div>
+		<div style="max-height:600px!important;overflow-y:scroll">
+			<div id="jstree">
+			</div>
+		</div>
+
+	</div>
+	<div class="col-md-4 offset-1" id="Div_ComponentDetail">
+	</div>
+</div>
+
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+	<script src="~/js/jstree.min.js" asp-append-version="true"></script>
+	<script src="~/mpi/SopManager.js" asp-append-version="true"></script>
+
+
+
+}

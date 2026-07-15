@@ -1,0 +1,42 @@
+﻿@model MPCRS.ViewModels.DocumentsViewModel
+<style>
+	@@media print {
+		iframe {
+			display: none;
+		}
+	}
+</style>
+@{
+	if (Model != null)
+	{
+		if (Model.System_File_Name != "" && Model.File_type == ".pdf")
+		{
+			//<embed src="@Model.File_Location@Model.System_File_Name#toolbar=0" width="1000" height="700">
+			<embed src="/Attachments/Downloads/@Model.System_File_Name#toolbar=0" id="embedTag" oncontextmenu="return false;" width="100%" height="700">
+		}
+		else if (Model.TiffToPngConvertedLocation.Count != 0 && (Model.File_type == ".tiff") || (Model.File_type == ".tif"))
+		{
+
+			@foreach (var png in Model.TiffToPngConvertedLocation)
+			{
+				<img class="imgTag" src="/Attachments/Downloads/@png.Item1" width="@png.Item2" height="@png.Item3" oncontextmenu="return false;" style="margin-right: 10px;" />
+				<br>
+			}
+
+		}
+	}
+	else
+	{
+		<h1>File not available</h1>
+	}
+}
+
+<script type="text/javascript">
+	document.getElementById('embedTag').addEventListener('contextmenu', function (event) {
+		console.log(event);
+		event.preventDefault();
+	});
+</script>
+
+
+

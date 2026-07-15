@@ -1,0 +1,211 @@
+﻿@model MPCRS.ViewModels.ProcurementDemandInfo
+@using MPCRS.Utilities
+@{
+    Layout = null;
+    var UOMList = Masters.GetMaster_General_Text("UOM");
+    var DemandItemDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Delete);
+
+    List<SelectListItem> MMGOrderNumberList = new List<SelectListItem>();
+    if (Model.DemandData.OrderNumbers != null)
+    {
+        foreach (var orderno in Model.DemandData.OrderNumbers.Split(","))
+        {
+            MMGOrderNumberList.Add(new SelectListItem() { Text = orderno.Trim(), Value = orderno.Trim() });
+        }
+    }
+}
+
+
+@{
+    <button class="btn btn-primary btn-sm float-end" onclick="SaveDemandItemDetail('@Model.DemandData.Item_Type')">Save</button>
+}
+@{
+    var rawmaterialList = Masters.GetMaterialList();
+    var rmItemTypeList = Masters.GetMaster_General_Text("Raw_Material_Type");
+    if (Model.DemandData.Item_Type == "RM")
+    {
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>UOM</th>
+                    @*  <th>Dia</th>
+                        <th>Thickness</th>
+                    *@
+                    <th>Quantity</th>
+                    <th>Order No</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="demandEditItemstbl">
+                <tr style="display:none">
+                    <td style="display:none"><input type="number" style="display:none" class="DemandItemKey" id="DemandItemKey" value="0" /></td>
+                    <td><select class="form-select Items" asp-items="rawmaterialList"></select></td>
+                  @*  <td><select class="form-select ItemDbKey select2class" id="ItemDbKey" asp-items="rawmaterialList" onchange="FillRawMaterialParameters(this)"></select></td>*@
+                    <td><select class="form-select UOM" asp-items="UOMList" id="UOM"></select></td>
+                    @*    <td><select class="form-select Outer_Dia_mm" id="Outer_Dia_mm"></select></td>
+                          <td><select class="form-select Thickness" id="Thickness"></select></td>
+                    *@
+                    <td><input type="number" class="form-control Qty" id="Qty" /></td>
+                    <td><select class="form-select MMGOrderNumber" asp-items="MMGOrderNumberList" id="MMGOrderNumber"></select></td>
+                    <td><i class="text-warning uil uil-trash fs-1" style="cursor:pointer" onclick="delRow(this)"></i></td>
+                </tr>
+                @{
+                    foreach (var item in Model.procurement_Demand_Items_VMs)
+                    {
+                        <tr class="rowClass">
+                            <td style="display:none"><input type="hidden" class="DemandItemKey" asp-for="@item.DemandItemKey" /></td>
+                            <td><select class="form-select Items ItemDbKey" asp-for="@item.ItemDbKey" asp-items="rawmaterialList"></select></td>
+                            <td><select class="form-select UOM" asp-for="@item.UOM" asp-items="UOMList"></select></td>
+                            <td><input class="form-control Qty" asp-for="@item.Qty"></td>
+                            <td><select class="form-select MMGOrderNumber" asp-for="@item.MMGOrderNumber" asp-items="MMGOrderNumberList" id="MMGOrderNumber"></select></td>
+                            <td>
+                                @{
+                                    if (DemandItemDeleteAccess)
+                                    {
+                                        <i class="text-danger uil uil-trash-alt fs-1" style="cursor:pointer" onclick="InactivateDemandItem(@item.DemandItemKey,this)"></i>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>
+                        <span class="btn btn-primary" onclick="addRow()">+ Add</span>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    }
+    else if (Model.DemandData.Item_Type == "LRU" || Model.DemandData.Item_Type == "Parts" || Model.DemandData.Item_Type == "BOI")
+    {
+
+        var sub_item_types = Masters.GetMaster_General_Text("Procurement_SubItem_Type");
+        var mpllist = Masters.GetPartsList();
+        bool IsLRU = Model.DemandData.Item_Type == "LRU" ? true : false;
+
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th style="@(IsLRU? "display:none" : "")">Ref Part</th>
+                    <th>Item Code</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>UM</th>
+                    <th>Quantity</th>
+                    <th>Order No</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="demandEditItemstbl">
+                <tr style="display:none">
+                    <td style="display:none"><input type="hidden" class="DemandItemKey" value="0" /></td>
+                    <td style="@(IsLRU? "display:none" : "")"><select class="form-select Engine_Part_Dbkey" id="Engine_Part_Dbkey" asp-items="mpllist"></select></td>
+                    <td><input type="text" class="form-control Item_Code" id="Item_Code" /></td>
+                    <td><textarea class="form-control Remarks" id="Remarks"></textarea></td>
+                    <td><select class="form-select Item_Sub_Type" id="Item_Sub_Type" asp-items="sub_item_types"></select></td>
+                    <td><select class="form-select UOM" asp-items="UOMList" id="UOM"></select></td>
+                    <td><input type="number" class="form-control Qty" id="Qty" /></td>
+                    <td><select class="form-select MMGOrderNumber" asp-items="MMGOrderNumberList" id="MMGOrderNumber"></select></td>
+                    <td><i class="text-warning uil uil-trash fs-1" style="cursor:pointer" onclick="delRow(this)"></i></td>
+                </tr>
+                @{
+                    foreach (var item in Model.procurement_Demand_Items_VMs)
+                    {
+                        <tr>
+                            <td style="display:none"><input type="hidden" class="DemandItemKey" asp-for="@item.DemandItemKey" /></td>
+                            <td style="@(IsLRU? "display:none" : "")"><select class="form-select Engine_Part_Dbkey" asp-for="@item.Engine_Part_Dbkey" id="Engine_Part_Dbkey" asp-items="mpllist"></select></td>
+                            <td><input type="text" class="form-control Item_Code" asp-for="@item.Item_Code" id="Item_Code" /></td>
+                            <td><textarea class="form-control Remarks" id="Remarks" asp-for="@item.Remarks"></textarea></td>
+                            <td><select class="form-select Item_Sub_Type" id="Item_Sub_Type" asp-for="@item.Item_Sub_Type" asp-items="sub_item_types"></select></td>
+                            <td><select class="form-select UOM" asp-items="UOMList" asp-for="@item.UOM" id="UOM"></select></td>
+                            <td><input type="number" class="form-control Qty" asp-for="@item.Qty" id="Qty" /></td>
+                            <td><select class="form-select MMGOrderNumber" asp-for="@item.MMGOrderNumber" asp-items="MMGOrderNumberList" id="MMGOrderNumber"></select></td>
+                            <td>
+                                @{
+                                    if (DemandItemDeleteAccess)
+                                    {
+                                        <i class="text-danger uil uil-trash-alt fs-1" style="cursor:pointer" onclick="InactivateDemandItem(@item.DemandItemKey,this)"></i>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>
+                        <span class="btn btn-primary" onclick="addRow()">+ Add</span>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    }
+    else if (Model.DemandData.Item_Type == "SER" || Model.DemandData.Item_Type == "Service")
+    {
+
+        var sub_item_types = Masters.GetMaster_General_Text("Procurement_SubItem_Type");
+
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Item Code</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>UM</th>
+                    <th>Quantity</th>
+                    <th>Order No</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="demandEditItemstbl">
+                <tr style="display:none">
+                    <td style="display:none"><input type="hidden" class="DemandItemKey" value="0" /></td>
+                    <td><input type="text" class="form-control Item_Code" id="Item_Code" /></td>
+                    <td><textarea class="form-control Remarks" id="Remarks"></textarea></td>
+                    <td><select class="form-select Item_Sub_Type" id="Item_Sub_Type" asp-items="sub_item_types"></select></td>
+                    <td><select class="form-select UOM" asp-items="UOMList" id="UOM"></select></td>
+                    <td><input type="number" class="form-control Qty" id="Qty" /></td>
+                    <td><select class="form-select MMGOrderNumber" asp-items="MMGOrderNumberList" id="MMGOrderNumber"></select></td>
+                    <td><i class="text-warning uil uil-trash fs-1" style="cursor:pointer" onclick="delRow(this)"></i></td>
+                </tr>
+                @{
+                    foreach (var item in Model.procurement_Demand_Items_VMs)
+                    {
+                        <tr>
+                            <td style="display:none"><input type="hidden" class="DemandItemKey" asp-for="@item.DemandItemKey" /></td>
+                            <td><input type="text" class="form-control Item_Code" asp-for="@item.Item_Code" id="Item_Code" /></td>
+                            <td><textarea class="form-control Remarks" id="Remarks" asp-for="@item.Remarks"></textarea></td>
+                            <td><select class="form-select Item_Sub_Type" id="Item_Sub_Type" asp-for="@item.Item_Sub_Type" asp-items="sub_item_types"></select></td>
+                            <td><select class="form-select UOM" asp-items="UOMList" asp-for="@item.UOM" id="UOM"></select></td>
+                            <td><input type="number" class="form-control Qty" asp-for="@item.Qty" id="Qty" /></td>
+                            <td><select class="form-select MMGOrderNumber" asp-for="@item.MMGOrderNumber" asp-items="MMGOrderNumberList" id="MMGOrderNumber"></select></td>
+                            <td>
+                                @{
+                                    if (DemandItemDeleteAccess)
+                                    {
+                                        <i class="text-danger uil uil-trash-alt fs-1" style="cursor:pointer" onclick="InactivateDemandItem(@item.DemandItemKey,this)"></i>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>
+                        <span class="btn btn-primary" onclick="addRow()">+ Add</span>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    }
+}
+
+
+

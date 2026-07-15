@@ -1,0 +1,129 @@
+﻿@model List<MPCRS.ViewModels.demandSummaryData>
+@{
+	////@model List<MPCRS.ViewModels.Project_Do_Report>
+	Layout = null;
+
+	var demandStatus = Model.Where(x => x.statusCategory == "Open") 
+									.Select(x => new { x.CurrentStatus, x.statusDisplayOrder }).Distinct().OrderBy(x => int.Parse(x.statusDisplayOrder)).ToList();
+
+	var projects = Model.Select(x => new { x.Display_title, x.Project_Dbkey }).Distinct().ToList();
+
+}
+
+<style>
+	.qtyCols {
+		/* width: 15% !important; */
+		text-align: right;
+		padding-right: 9px !important;
+	}
+
+	/* 	.rotated-text {
+			 display: block;
+			transform: rotate(-45deg);
+			transform-origin: bottom left; /* Adjust rotation point
+			white-space: nowrap;
+			position: absolute;
+			bottom: 0;
+			left: 0;
+		} */
+</style>
+
+<table class="table table-bordered table-sm table-hover">
+	<thead>
+		<tr>
+			<th>Project Tile</th>
+			<th class="qtyCols">Total</th>
+			<th class="qtyCols">Closed</th>
+			<th class="qtyCols">
+				Open
+				<a class="fas fa-angle-double-right" id="openIconDemandsStatus" style="cursor:pointer; color:#3874ffe3" onclick="toggleDemandStatus('Open')"></a>
+				<a class="fas fa-angle-double-left" id="closeIconDemandsStatus" style="cursor:pointer; display:none;color:#3874ffe3" onclick="toggleDemandStatus('Close')"></a>
+			</th>
+			@{
+				foreach (var openstatus in demandStatus)
+				{
+					<th style="font-size:12px; display:none" class="open-status-cols rotated-text">@openstatus.CurrentStatus</th>
+				}
+			}
+		</tr>
+	</thead>
+	<tbody>
+		@{
+			foreach (var project in projects)
+			{
+
+				int totalOpen = Model.Where(x => x.statusCategory == "Open" && x.Display_title == project.Display_title)
+				.Select(x => x.DemandCount).Sum();
+				int totalClosed = Model.Where(x => x.statusCategory != "Open" && x.Display_title == project.Display_title)
+				.Select(x => x.DemandCount).Sum();
+
+				//var openDemands =(project.TotalDemands - project.closedDemands);
+				<tr>
+					<td class="p-2">
+						<b>@project.Display_title</b>
+						<a style="cursor:pointer" id="icon-Open-@project.Display_title" class="float-end" onclick="toogleProject('@project.Display_title','Open')">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-down" viewBox="0 0 16 16">
+								<path fill-rule="evenodd" d="M1.646 6.646a.5.5 0 0 1 .708 0L8 12.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708" />
+								<path fill-rule="evenodd" d="M1.646 2.646a.5.5 0 0 1 .708 0L8 8.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708" />
+							</svg>
+						</a>
+						<a style="cursor:pointer; display:none" id="icon-Close-@project.Display_title" class="float-end" onclick="toogleProject('@project.Display_title','Close')">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-up" viewBox="0 0 16 16">
+								<path fill-rule="evenodd" d="M7.646 2.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 3.707 2.354 9.354a.5.5 0 1 1-.708-.708z" />
+								<path fill-rule="evenodd" d="M7.646 6.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 7.707l-5.646 5.647a.5.5 0 0 1-.708-.708z" />
+							</svg>
+						</a>
+					</td>
+					<td class="p-2 qtyCols" style="cursor:pointer" onclick="getDemandListPopup(@ViewBag.DemandingOfficerDbKey,@project.Project_Dbkey,'Total')"><b>@(totalClosed + totalOpen)</b></td>
+					<td class="p-2 qtyCols" style="cursor:pointer" onclick="getDemandListPopup(@ViewBag.DemandingOfficerDbKey,@project.Project_Dbkey,'Closed')"><b>@totalClosed</b></td>
+					<td class="p-2 qtyCols" style="cursor:pointer" onclick="getDemandListPopup(@ViewBag.DemandingOfficerDbKey,@project.Project_Dbkey,'Open')"><b>@totalOpen</b></td>
+					@{
+						foreach (var openstatus in demandStatus)
+						{
+							int statusCount = Model.Where(x => x.Display_title == project.Display_title && x.CurrentStatus == openstatus.CurrentStatus)
+							.Select(x => x.DemandCount).Sum();
+							<td style="display:none;cursor:pointer" onclick="getDemandListPopup(@ViewBag.DemandingOfficerDbKey,@project.Project_Dbkey,'@openstatus.CurrentStatus')" class="open-status-cols qtyCols">@(statusCount == 0 ? "-" : statusCount)</td>
+						}
+					}
+				</tr>
+
+				//<tr id="demandingOfficers-@project" style="display:none; background-color:lightgray">
+
+				//@{
+				var demandingOfficers = Model.Where(x => x.Display_title == project.Display_title).Select(x => new { x.DemandingOfficer, x.DemandingOfficerKey , x.Project_Dbkey}).ToList().Distinct();
+
+
+				@foreach (var officer in demandingOfficers)
+				{
+
+					int totalOpenDO = Model.Where(x => x.statusCategory == "Open" && x.Display_title == project.Display_title && x.DemandingOfficerKey == officer.DemandingOfficerKey)
+					.Select(x => x.DemandCount).Sum();
+					int totalClosedDO = Model.Where(x => x.statusCategory != "Open" && x.Display_title == project.Display_title && x.DemandingOfficerKey == officer.DemandingOfficerKey)
+					.Select(x => x.DemandCount).Sum();
+
+					<tr style="background-color:#edeff7;display:none" class="demandingOfficers-@project.Display_title">
+						<td class="p-2 " style="padding-left:25px!important" >@officer.DemandingOfficer</td>
+						<td class="qtyCols" style="cursor:pointer;" onclick="getDemandListPopup(@officer.DemandingOfficerKey,@officer.Project_Dbkey,'Total')">@(totalClosedDO + totalOpenDO)</td>
+						<td class="qtyCols" style="cursor:pointer;" onclick="getDemandListPopup(@officer.DemandingOfficerKey,@officer.Project_Dbkey,'Closed')">@totalClosedDO</td>
+						<td class="qtyCols" style="cursor:pointer;" onclick="getDemandListPopup(@officer.DemandingOfficerKey,@officer.Project_Dbkey,'Open')">@totalOpenDO</td>
+
+						@foreach (var openstatus in demandStatus)
+						{
+							int statusCount = Model.Where(x => x.Display_title == project.Display_title && x.CurrentStatus == openstatus.CurrentStatus && x.DemandingOfficerKey == officer.DemandingOfficerKey)
+							.Select(x => x.DemandCount).Sum();
+							<td style="display:none;cursor:pointer;" onclick="getDemandListPopup(@officer.DemandingOfficerKey,@officer.Project_Dbkey,'@openstatus.CurrentStatus')" class="open-status-cols qtyCols">@(statusCount == 0 ? "-" : statusCount)</td>
+						}
+
+					</tr>
+				}
+
+				//}
+
+
+
+				//</tr>
+
+			}
+		}
+	</tbody>
+</table>

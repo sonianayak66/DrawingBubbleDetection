@@ -1,0 +1,709 @@
+﻿@model MPCRS.ViewModels.DrawingBubbleIndexVM
+@{
+    ViewData["Title"] = "Drawing Bubble Inspection";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="fas fa-circle-notch me-2"></i>Drawing Bubble Inspection</h4>
+    <div class="btn-group btn-group-sm" role="group">
+        <a asp-action="Logs" asp-controller="DrawingBubble" class="btn btn-outline-secondary"
+           target="_blank" title="View live detection logs">
+            <i class="fas fa-stream me-1"></i> Logs
+        </a>
+        <a asp-action="History" asp-controller="DrawingBubble" class="btn btn-outline-secondary">
+            <i class="fas fa-list me-1"></i> Extraction Records
+        </a>
+    </div>
+</div>
+
+<div class="row">
+
+     
+    <div class="col-md-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-upload me-2"></i>Upload Drawing</h6>
+            </div>
+            <div class="card-body">
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Part Number <span class="text-danger">*</span></label>
+                    <select id="partSelect" class="form-control" required>
+                        <option value="">— Select Part —</option>
+                        @foreach (var part in Model.Parts)
+                        {
+                            <option value="@part.Engine_Part_Dbkey"
+                                    data-revision="@part.Revision"
+                                    data-description="@part.Description"
+                                    data-partno="@part.Draw_part_no">
+                                @part.Draw_part_no — @part.Description
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Revision <span class="text-danger">*</span></label>
+                    <select id="partRevision" class="form-control">
+                        <option value="">— Select Revision —</option>
+                        @foreach (var item in (SelectList)ViewBag.RevisionList)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Detection Method <span class="text-danger">*</span></label>
+                    <select id="detectionMethod" class="form-control">
+                        @foreach (var dm in Model.DetectionMethods)
+                        {
+                            if (dm.Id == Model.DefaultMethod)
+                            {
+                                <option value="@dm.Id" selected>@dm.DisplayName</option>
+                            }
+                            else
+                            {
+                                <option value="@dm.Id">@dm.DisplayName</option>
+                            }
+                        }
+                    </select>
+                    <small class="text-muted">Pick which detection engine to use for this run.</small>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Drawing File <span class="text-danger">*</span></label>
+                    <input type="file" id="drawingFile" class="form-control"
+                           accept=".jpg,.jpeg,.png,.pdf,.tiff,.tif,.bmp" />
+                    <small class="text-muted">Accepted: PDF, PNG, JPG, TIFF</small>
+                </div>
+
+                <button id="processBtn" class="btn btn-success w-100 py-2 fw-bold" onclick="startProcessing()">
+                    <i class="fas fa-cogs me-2"></i><span id="processBtnLabel">Start Detection</span>
+                </button>
+
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="col-md-7">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0"><i class="fas fa-eye me-2"></i>File Preview</h6>
+            </div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center bg-light"
+                 style="min-height: 400px;">
+                <div id="previewPlaceholder" class="text-center text-muted">
+                    <i class="fas fa-file-image fa-4x mb-3 opacity-25"></i>
+                    <p>Select a file to preview</p>
+                </div>
+                <img id="imgPreview" src="#" alt="Preview"
+                     style="display:none; max-width:100%; max-height:450px; object-fit:contain;" />
+                <iframe id="pdfPreview"
+                        style="display:none; width:100%; height:450px; border:none;"></iframe>
+                <div id="tiffNotice" style="display:none;" class="text-center text-muted">
+                    <i class="fas fa-file-alt fa-4x mb-3 opacity-25"></i>
+                    <p>TIFF file selected — preview not available in browser.<br />File will be processed correctly.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- ── Inline Detection Progress + Live Log Panel ─────────────────────────
+     Shown only while a detection run is in flight (or has just finished).
+     Replaces the old fullscreen modal overlay. Each run gets its own
+     panel showing a progress bar + live tail of the Python log records
+     for that request_id. Log entries are also persisted to disk on the
+     server so they can be replayed from the History view later. -->
+<div id="detectionPanel" class="card shadow-sm border-0 mt-4" style="display:none;">
+    <div class="card-header bg-dark text-white d-flex align-items-center">
+        <i class="fas fa-stream me-2"></i>
+        <h6 class="mb-0">Detection Progress &amp; Live Logs</h6>
+        <span id="detectionStage" class="badge bg-light text-dark ms-3">Preparing…</span>
+        <span id="detectionRid" class="ms-auto small opacity-75 font-monospace"></span>
+    </div>
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <small id="detectionFile" class="text-muted">—</small>
+            <small id="detectionPct" class="text-muted">0%</small>
+        </div>
+        <div class="progress mb-3" style="height: 14px;">
+            <div id="detectionBar"
+                 class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                 role="progressbar" style="width: 0%"></div>
+        </div>
+
+        <!-- Per-step progress list. Populated dynamically as the
+             Python detector emits "[STEP] start/done/skip" log lines.
+             Each row shows the step name, a status icon, and the
+             elapsed time once the step finishes — so the user can
+             see at a glance which stage of the pipeline is slow. -->
+        <div class="mb-3">
+            <div class="d-flex align-items-center mb-1">
+                <strong class="me-2"><i class="fas fa-tasks me-1"></i>Pipeline Steps</strong>
+                <span id="stepSummary" class="text-muted small">no steps yet</span>
+            </div>
+            <div id="stepList" class="border rounded"
+                 style="background:#f8f9fa; max-height:240px; overflow-y:auto;">
+                <div class="text-muted small p-2">
+                    Steps will appear here as detection progresses.
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center mb-2">
+            <strong class="me-2"><i class="fas fa-terminal me-1"></i>Live Logs</strong>
+            <span id="detectionLogCount" class="text-muted small">0 entries</span>
+            <div class="form-check form-switch ms-auto">
+                <input class="form-check-input" type="checkbox" id="logTailSwitch" checked>
+                <label class="form-check-label small" for="logTailSwitch">Auto-scroll</label>
+            </div>
+        </div>
+        <div id="detectionLog"
+             style="background:#0d1117; color:#c9d1d9; border:1px solid #30363d;
+                    border-radius:4px; padding:8px 12px; font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;
+                    height:280px; overflow-y:auto;">
+            <div class="text-muted">Waiting for logs…</div>
+        </div>
+        <div class="mt-2 small text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Logs are saved automatically and can be reviewed later from the
+            <a asp-action="History" asp-controller="DrawingBubble" class="link-secondary">Extraction Records</a> page.
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ── TomSelect for part dropdown ──────────────────────────────
+        var partSelect = new TomSelect('#partSelect', {
+            placeholder: '— Search Part Number —',
+            searchField: ['text'],
+            maxOptions: 500,
+                   onChange: function(value) {
+            if (!value) {
+                $('#partRevision').val('').trigger('change');
+            }
+        },
+            render: {
+                option: function(data, escape) {
+                    return '<div><strong>' + escape(data.partno) + '</strong><br/><small class="text-muted">' + escape(data.description) + '</small></div>';
+                }
+            }
+        });
+
+        // Populate custom data from option attributes
+        document.querySelectorAll('#partSelect option[value]').forEach(function(opt) {
+            if (opt.value) {
+                partSelect.options[opt.value] = Object.assign(partSelect.options[opt.value] || {}, {
+                    revision:    opt.dataset.revision,
+                    description: opt.dataset.description,
+                    partno:      opt.dataset.partno,
+                });
+            }
+        });
+
+        // ── Action button label tracks the selected method ──────────
+        // "Start Annotation" when the user picks the auto-annotate
+        // method, otherwise "Start Detection". Run once on load and
+        // again every time the dropdown changes.
+        function updateProcessBtnLabel() {
+            var sel = document.getElementById('detectionMethod');
+            var labelEl = document.getElementById('processBtnLabel');
+            if (!sel || !labelEl) return;
+            var isAutoAnnotate = (sel.value || '').toLowerCase() === 'auto-annotate';
+            labelEl.textContent = isAutoAnnotate ? 'Start Annotation' : 'Start Detection';
+        }
+        document.getElementById('detectionMethod').addEventListener('change', updateProcessBtnLabel);
+        updateProcessBtnLabel();
+
+        // ── File preview ─────────────────────────────────────────────
+        document.getElementById('drawingFile').addEventListener('change', function() {
+            var file = this.files[0];
+            var imgPrev  = document.getElementById('imgPreview');
+            var pdfPrev  = document.getElementById('pdfPreview');
+            var tiffNote = document.getElementById('tiffNotice');
+            var placeholder = document.getElementById('previewPlaceholder');
+
+            imgPrev.style.display  = 'none';
+            pdfPrev.style.display  = 'none';
+            tiffNote.style.display = 'none';
+            placeholder.style.display = 'none';
+
+            if (!file) { placeholder.style.display = 'block'; return; }
+
+            var ext = file.name.split('.').pop().toLowerCase();
+
+            if (ext === 'pdf') {
+                pdfPrev.src = URL.createObjectURL(file);
+                pdfPrev.style.display = 'block';
+            } else if (['tif', 'tiff'].includes(ext)) {
+                tiffNote.style.display = 'block';
+            } else {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    imgPrev.src = e.target.result;
+                    imgPrev.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // ── Inline Live Log Tail ─────────────────────────────────────
+        // Drives the inline detection panel: polls /DrawingBubble/LogsData
+        // every 1.5 s for the active request_id, renders new entries, and
+        // advances the progress bar based on log-message milestones.
+
+        var _logPoll  = { timer: null, sinceSeq: 0, requestId: null, method: null, count: 0 };
+        var _stageWeights = [
+            // Ordered low→high. Each milestone bumps the bar to at least
+            // its weight; we never go backwards. Phrases match log lines
+            // emitted by the M1 detector pipeline.
+            { re: /Pre-warming detector/i,                  pct: 5,  label: 'Warming up' },
+            { re: /req=.+file=.+size=/i,                    pct: 10, label: 'Image received' },
+            { re: /BubbleDetector ready|RapidOCR/i,         pct: 18, label: 'OCR ready' },
+            { re: /Image size|Scale factor|scaling/i,       pct: 25, label: 'Pre-processing' },
+            { re: /Hough|circles? detected|circles? found/i, pct: 40, label: 'Detecting bubbles' },
+            { re: /OCR pass|OCR scale|running OCR/i,        pct: 55, label: 'Reading text' },
+            { re: /rescue|missed digit/i,                   pct: 65, label: 'Rescuing tokens' },
+            { re: /callout|tolerance|merging/i,             pct: 75, label: 'Linking dimensions' },
+            { re: /annotat(ing|ion|ed)/i,                   pct: 88, label: 'Drawing annotations' },
+            { re: /bubbles=\d+\s+ms=/i,                     pct: 96, label: 'Finalising' },
+        ];
+
+        function _newRequestId() {
+            // Short, URL-safe id. Doesn't need crypto-strength uniqueness —
+            // it just needs to be distinct enough to tag this run.
+            var s = 'r' + Date.now().toString(36) +
+                    Math.random().toString(36).slice(2, 8);
+            return s.toLowerCase();
+        }
+
+        function _escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, function(c) {
+                return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+            });
+        }
+
+        // Step tracking. Each unique step name encountered in the log
+        // stream gets its own row in #stepList. Order is preserved by
+        // first-seen order. State transitions: pending → running → done
+        // (or skipped). Done rows show their elapsed milliseconds.
+        var _steps = { order: [], state: {} };
+
+        function _resetDetectionPanel(filename) {
+            var panel = document.getElementById('detectionPanel');
+            panel.style.display = 'block';
+            document.getElementById('detectionStage').textContent = 'Preparing…';
+            document.getElementById('detectionPct').textContent = '0%';
+            document.getElementById('detectionBar').style.width = '0%';
+            document.getElementById('detectionBar').classList.remove('bg-danger', 'bg-success');
+            document.getElementById('detectionBar').classList.add('bg-success');
+            document.getElementById('detectionFile').textContent = filename || '—';
+            document.getElementById('detectionLog').innerHTML =
+                '<div class="text-muted">Waiting for the detection service to emit log records…</div>';
+            _steps = { order: [], state: {} };
+            document.getElementById('stepList').innerHTML =
+                '<div class="text-muted small p-2">Steps will appear here as detection progresses.</div>';
+            document.getElementById('stepSummary').textContent = 'no steps yet';
+            // Scroll the panel into view so the user sees it immediately
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function _stepIcon(status) {
+            // FontAwesome glyphs we already pull in elsewhere on the
+            // app, no extra deps needed.
+            if (status === 'running') return '<i class="fas fa-spinner fa-spin text-primary"></i>';
+            if (status === 'done')    return '<i class="fas fa-check-circle text-success"></i>';
+            if (status === 'failed')  return '<i class="fas fa-times-circle text-danger"></i>';
+            if (status === 'skipped') return '<i class="far fa-circle text-muted"></i>';
+            return '<i class="far fa-circle text-muted"></i>'; // pending
+        }
+
+        function _formatMs(ms) {
+            if (ms == null || isNaN(ms)) return '';
+            if (ms < 1000) return ms.toFixed(0) + ' ms';
+            return (ms / 1000).toFixed(2) + ' s';
+        }
+
+        function _msToBar(ms, maxMs) {
+            // Width of the per-step time bar, scaled to the slowest
+            // step seen so far. Capped at 100%.
+            if (!ms || !maxMs) return 0;
+            var pct = (ms / maxMs) * 100;
+            return Math.max(2, Math.min(100, pct));
+        }
+
+        function _renderStepList() {
+            var listEl = document.getElementById('stepList');
+            if (!_steps.order.length) {
+                listEl.innerHTML =
+                    '<div class="text-muted small p-2">Steps will appear here as detection progresses.</div>';
+                return;
+            }
+
+            // Find the slowest finished step so each step's mini-bar
+            // is scaled relative to it.
+            var maxMs = 0;
+            for (var i = 0; i < _steps.order.length; i++) {
+                var s = _steps.state[_steps.order[i]];
+                if (s.ms && s.ms > maxMs) maxMs = s.ms;
+            }
+
+            var html = '';
+            for (var j = 0; j < _steps.order.length; j++) {
+                var name = _steps.order[j];
+                var s = _steps.state[name];
+                var barColor = s.status === 'failed' ? 'bg-danger'
+                             : s.status === 'skipped' ? 'bg-secondary'
+                             : s.status === 'running' ? 'bg-primary progress-bar-striped progress-bar-animated'
+                             : 'bg-success';
+                var barWidth = s.status === 'running'
+                    ? 100
+                    : (s.ms != null ? _msToBar(s.ms, maxMs) : 0);
+                var rightLabel = s.status === 'running'
+                    ? '<span class="text-primary small">running…</span>'
+                    : s.status === 'skipped'
+                        ? '<span class="text-muted small">skipped' +
+                            (s.reason ? ' (' + _escapeHtml(s.reason) + ')' : '') + '</span>'
+                        : s.status === 'failed'
+                            ? '<span class="text-danger small">failed at ' + _formatMs(s.ms) + '</span>'
+                            : (s.ms != null
+                                ? '<span class="text-success small fw-semibold">' + _formatMs(s.ms) + '</span>'
+                                : '<span class="text-muted small">pending</span>');
+
+                html +=
+                    '<div class="px-2 py-1 border-bottom" style="font-size:13px;">' +
+                        '<div class="d-flex align-items-center">' +
+                            '<span class="me-2" style="width:18px; text-align:center;">' +
+                                _stepIcon(s.status) + '</span>' +
+                            '<span class="flex-grow-1">' + _escapeHtml(name) + '</span>' +
+                            rightLabel +
+                        '</div>' +
+                        '<div class="progress mt-1" style="height:4px; background:#e9ecef;">' +
+                            '<div class="progress-bar ' + barColor + '" style="width:' + barWidth + '%"></div>' +
+                        '</div>' +
+                    '</div>';
+            }
+            listEl.innerHTML = html;
+
+            // Summary: how many done / skipped / running
+            var done = 0, skipped = 0, running = 0, totalMs = 0;
+            for (var k = 0; k < _steps.order.length; k++) {
+                var st = _steps.state[_steps.order[k]];
+                if (st.status === 'done')    { done++; totalMs += (st.ms || 0); }
+                if (st.status === 'skipped') { skipped++; }
+                if (st.status === 'running') { running++; }
+            }
+            var summary = done + ' done';
+            if (running) summary += ' · ' + running + ' running';
+            if (skipped) summary += ' · ' + skipped + ' skipped';
+            if (totalMs)  summary += ' · total ' + _formatMs(totalMs);
+            document.getElementById('stepSummary').textContent = summary;
+        }
+
+        function _processStepLog(message) {
+            // Match exactly the format emitted by detector._step_begin/_end.
+            // "[STEP] start: <name>"
+            // "[STEP] done:  <name> | ms=<n>"
+            // "[STEP] skip:  <name> | reason=<text>"
+            // "[STEP] fail:  <name> | ms=<n>"
+            var m = /^\[STEP\]\s+(start|done|skip|fail):\s+(.+?)(?:\s+\|\s+(.*))?$/.exec(message || '');
+            if (!m) return false;
+            var kind = m[1], name = m[2].trim(), tail = m[3] || '';
+            if (!_steps.state[name]) {
+                _steps.order.push(name);
+                _steps.state[name] = { status: 'pending', ms: null, reason: null };
+            }
+            var s = _steps.state[name];
+            if (kind === 'start') {
+                s.status = 'running';
+            } else if (kind === 'done') {
+                s.status = 'done';
+                var msMatch = /ms=([\d.]+)/.exec(tail);
+                if (msMatch) s.ms = parseFloat(msMatch[1]);
+            } else if (kind === 'fail') {
+                s.status = 'failed';
+                var msMatch2 = /ms=([\d.]+)/.exec(tail);
+                if (msMatch2) s.ms = parseFloat(msMatch2[1]);
+            } else if (kind === 'skip') {
+                s.status = 'skipped';
+                var rMatch = /reason=(.+)$/.exec(tail);
+                if (rMatch) s.reason = rMatch[1].trim();
+            }
+            _renderStepList();
+
+            // Drive the overall progress bar from the step number
+            // ("12. Reverse leader discovery" → 12 / 20 = 60%). Capped
+            // at 95 % until the .NET response confirms success — that
+            // way the bar only hits 100 % when the whole run is done.
+            var numMatch = /^(\d+)\./.exec(name);
+            if (numMatch) {
+                var stepNum = parseInt(numMatch[1], 10);
+                var pct = Math.min(95, Math.round((stepNum / 20) * 95));
+                _setProgress(pct, name.replace(/^\d+\.\s*/, ''));
+            }
+            return true;
+        }
+
+        function _setProgress(pct, label) {
+            pct = Math.max(0, Math.min(100, Math.round(pct)));
+            var prev = parseInt(document.getElementById('detectionBar').style.width) || 0;
+            if (pct < prev) return; // monotonic
+            document.getElementById('detectionBar').style.width = pct + '%';
+            document.getElementById('detectionPct').textContent = pct + '%';
+            if (label) document.getElementById('detectionStage').textContent = label;
+        }
+
+        function _renderLogEntry(rec) {
+            var lvlColors = {
+                INFO:    '#58a6ff',
+                WARNING: '#d29922',
+                ERROR:   '#f85149',
+                DEBUG:   '#8b949e',
+            };
+            var lvl = (rec.level || 'INFO').toUpperCase();
+            var color = lvlColors[lvl] || '#c9d1d9';
+            var ts = rec.ts_human || '';
+            var msg = rec.message || '';
+
+            var div = document.createElement('div');
+            div.style.padding = '1px 0';
+            div.style.wordBreak = 'break-word';
+            div.innerHTML =
+                '<span style="color:#6e7681">' + _escapeHtml(ts) + '</span> ' +
+                '<span style="color:' + color + '; font-weight:600">' + _escapeHtml(lvl) + '</span> ' +
+                '<span>' + _escapeHtml(msg) + '</span>';
+            return div;
+        }
+
+        function _applyMilestones(message) {
+            for (var i = _stageWeights.length - 1; i >= 0; i--) {
+                var s = _stageWeights[i];
+                if (s.re.test(message)) {
+                    _setProgress(s.pct, s.label);
+                    return;
+                }
+            }
+        }
+
+        function _stopPolling() {
+            if (_logPoll.timer) {
+                clearInterval(_logPoll.timer);
+                _logPoll.timer = null;
+            }
+        }
+
+        function _setLogStatus(text, kind) {
+            // kind: 'live' | 'waiting' | 'error' — affects badge colour
+            var el = document.getElementById('detectionLogCount');
+            el.textContent = text;
+            el.classList.remove('text-muted', 'text-success', 'text-warning', 'text-danger');
+            if (kind === 'live')         el.classList.add('text-success');
+            else if (kind === 'waiting') el.classList.add('text-warning');
+            else if (kind === 'error')   el.classList.add('text-danger');
+            else                         el.classList.add('text-muted');
+        }
+
+        async function _pollLogsOnce() {
+            // We do NOT filter by request_id on the wire — instead we
+            // capture a baseline `since_seq` at run-start and stream
+            // every record that arrives after that point. This keeps
+            // the live tail working even if the Python service hasn't
+            // been restarted to pick up the request_id query param.
+            // The persistence step on the .NET side still uses
+            // request_id for tighter filtering.
+            var params = new URLSearchParams();
+            params.set('method', _logPoll.method || '');
+            if (_logPoll.sinceSeq) params.set('sinceSeq', _logPoll.sinceSeq);
+            params.set('limit', '500');
+
+            // Abort any individual poll that takes longer than ~4 s so
+            // requests don't pile up on the wire if Python is briefly
+            // busy. The next 1.5 s tick will retry.
+            var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+            var abortTimer = ctrl ? setTimeout(function() { ctrl.abort(); }, 4000) : null;
+
+            try {
+                var r = await fetch('@Url.Action("LogsData", "DrawingBubble")?' + params.toString(),
+                                    { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined });
+                if (!r.ok) {
+                    if (_logPoll.count === 0) _setLogStatus('service busy, retrying…', 'waiting');
+                    return;
+                }
+                var data = await r.json();
+                if (data.error) {
+                    // Treat proxy-reported errors as transient — show a
+                    // soft "busy" badge rather than a scary red one,
+                    // because the next poll will most likely succeed.
+                    if (_logPoll.count === 0) _setLogStatus('service busy, retrying…', 'waiting');
+                    return;
+                }
+                var entries = data.entries || [];
+                if (!entries.length) {
+                    if (_logPoll.count === 0) _setLogStatus('waiting for service…', 'waiting');
+                    return;
+                }
+
+                var logEl = document.getElementById('detectionLog');
+                if (_logPoll.count === 0) logEl.innerHTML = ''; // clear placeholder
+
+                for (var i = 0; i < entries.length; i++) {
+                    var rec = entries[i];
+                    var msg = rec.message || '';
+                    // Step lines update the per-step list above AND
+                    // stay in the raw pane so nothing is hidden. The
+                    // panel is a structured summary; the pane is the
+                    // full trace.
+                    _processStepLog(msg);
+                    logEl.appendChild(_renderLogEntry(rec));
+                    if (rec.seq > _logPoll.sinceSeq) _logPoll.sinceSeq = rec.seq;
+                    _logPoll.count++;
+                    _applyMilestones(msg);
+                }
+                _setLogStatus('live · ' + _logPoll.count +
+                              ' entr' + (_logPoll.count === 1 ? 'y' : 'ies'), 'live');
+
+                if (document.getElementById('logTailSwitch').checked) {
+                    logEl.scrollTop = logEl.scrollHeight;
+                }
+            } catch (e) {
+                // AbortError + network blips: just stay on the "waiting"
+                // badge. Next poll handles it.
+                if (_logPoll.count === 0) _setLogStatus('service busy, retrying…', 'waiting');
+            } finally {
+                if (abortTimer) clearTimeout(abortTimer);
+            }
+        }
+
+        async function _captureBaselineSeq(method) {
+            // Grab the current max seq so the live tail only shows
+            // records produced *after* this run begins. The new Python
+            // service exposes head_seq directly so we don't have to
+            // download anything else. For older Python builds without
+            // head_seq, we fall back to pulling the whole buffer once
+            // and picking the max — slightly wasteful but only at the
+            // start of a run.
+            try {
+                var base = '@Url.Action("LogsData", "DrawingBubble")?method=' +
+                           encodeURIComponent(method || '');
+                var r = await fetch(base + '&limit=1', { cache: 'no-store' });
+                if (r.ok) {
+                    var data = await r.json();
+                    if (typeof data.head_seq === 'number') return data.head_seq;
+                }
+                var r2 = await fetch(base + '&limit=2000', { cache: 'no-store' });
+                if (!r2.ok) return 0;
+                var d2 = await r2.json();
+                var entries = d2.entries || [];
+                var max = 0;
+                for (var i = 0; i < entries.length; i++) {
+                    if (entries[i].seq > max) max = entries[i].seq;
+                }
+                return max;
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        async function _startPolling(requestId, method) {
+            _stopPolling();
+            _logPoll.count     = 0;
+            _logPoll.requestId = requestId;
+            _logPoll.method    = method || '';
+            _logPoll.sinceSeq  = await _captureBaselineSeq(method);
+            document.getElementById('detectionRid').textContent = 'id: ' + requestId;
+            _setLogStatus('connecting…', 'waiting');
+            _pollLogsOnce();
+            _logPoll.timer = setInterval(_pollLogsOnce, 1500);
+        }
+
+        // ── Start Processing ──────────────────────────────────────────
+        function startProcessing() {
+            var partDbkey  = document.getElementById('partSelect').value;
+            var drawPartNo = partSelect.options[partDbkey]?.partno || '';
+            var revision   = document.getElementById('partRevision').value;
+            var fileInput  = document.getElementById('drawingFile');
+            var method     = document.getElementById('detectionMethod').value;
+
+            if (!partDbkey) {
+                bootbox.alert({ title: 'Validation', message: 'Please select a part number.', size: 'small' });
+                return;
+            }
+            if (!fileInput.files.length) {
+                bootbox.alert({ title: 'Validation', message: 'Please select a drawing file.', size: 'small' });
+                return;
+            }
+
+            if (fileInput.files[0].size > 52428800) {
+                bootbox.alert({ title: 'File Too Large', message: 'Maximum file size is 50MB.', size: 'small' });
+                return;
+            }
+
+            // Pre-generate the request id so logs can be tailed from the
+            // moment the request lands on the Python side. The .NET layer
+            // forwards this id verbatim to /api/detect.
+            var requestId = _newRequestId();
+
+            _resetDetectionPanel(fileInput.files[0].name);
+            _setProgress(3, 'Uploading file');
+            _startPolling(requestId, method);
+            document.getElementById('processBtn').disabled = true;
+
+            var formData = new FormData();
+            formData.append('enginePartDbkey', partDbkey);
+            formData.append('drawPartNo', drawPartNo);
+            formData.append('revision', revision);
+            formData.append('method', method);
+            formData.append('requestId', requestId);
+            formData.append('drawingFile', fileInput.files[0]);
+
+            fetch('@Url.Action("Process", "DrawingBubble")', {
+                method: 'POST',
+                body: formData,
+                headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '' }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(result) {
+                // Final flush — Process completed, but a few last log
+                // entries may still be in the ring buffer we haven't
+                // read yet. Pull them, then redirect or show error.
+                return _pollLogsOnce().then(function() { return result; });
+            })
+            .then(function(result) {
+                _stopPolling();
+                if (result && result.success) {
+                    _setProgress(100, 'Complete');
+                    document.getElementById('detectionBar').classList.remove('progress-bar-animated');
+                    setTimeout(function() { window.location.href = result.redirect; }, 600);
+                } else {
+                    var bar = document.getElementById('detectionBar');
+                    bar.classList.remove('bg-success');
+                    bar.classList.add('bg-danger');
+                    bar.classList.remove('progress-bar-animated');
+                    document.getElementById('detectionStage').textContent = 'Failed';
+                    document.getElementById('processBtn').disabled = false;
+                    bootbox.alert({
+                        title: 'Detection Failed',
+                        message: (result && result.message) || 'Unknown error.',
+                        size: 'small'
+                    });
+                }
+            })
+            .catch(function() {
+                _stopPolling();
+                var bar = document.getElementById('detectionBar');
+                bar.classList.remove('bg-success');
+                bar.classList.add('bg-danger');
+                bar.classList.remove('progress-bar-animated');
+                document.getElementById('detectionStage').textContent = 'Failed';
+                document.getElementById('processBtn').disabled = false;
+                bootbox.alert({ title: 'Error', message: 'An unexpected error occurred. Please try again.', size: 'small' });
+            });
+        }
+    </script>
+}

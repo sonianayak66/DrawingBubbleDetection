@@ -1,0 +1,55 @@
+﻿@using MPCRS.Utilities;
+<div class="row">
+    <div class="col-md-2">
+        <h2>ACSN</h2>
+    </div>
+    <div class="col-md-8">
+        <partial name="SummaryBanner.cshtml">
+    </div>
+
+    <div class="col-md-2">
+        <a href="/Home/Index" class="btn btn-secondary btn-sm float-end m-1" style="float:right;">Back</a>
+        @{
+            if (UserData.IsAuthorized(User, Constants.UserPermissions.ACSN_Write))
+            {
+                <a href="/ACSN/ManageItem/" class="btn btn-primary btn-sm float-end m-1" style="float:right;">Create</a>
+            }
+        }
+    </div>
+</div>
+<ul class="nav nav-underline" id="myTab" role="tablist">
+    <li class="nav-item" ><a class="nav-link active" id="acsn-list-tab" data-bs-toggle="tab" href="#tab-acsn-list" role="tab" aria-controls="tab-acsn-list" aria-selected="true">List</a></li>
+    <li class="nav-item" ><a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#tab-profile" role="tab" aria-controls="tab-profile" aria-selected="false">Dashboard</a></li>
+
+</ul>
+<div class="tab-content mt-3" id="myTabContent">
+    <div class="tab-pane fade show active" id="tab-acsn-list" role="tabpanel" aria-labelledby="acsn-list-tab">
+
+     </div>
+    <div class="tab-pane fade" id="tab-profile" role="tabpanel" aria-labelledby="profile-tab">
+        
+    </div>
+</div>
+
+ 
+
+
+
+
+
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/js/highcharts.js"></script>
+    <script src="~/mpi/acsn.js" asp-append-version="true" ></script>
+    <script>
+        $(document).ready(function () {
+            GetAcsnList();
+            GetDashborad();
+           
+        });
+       
+    </script>
+}
+

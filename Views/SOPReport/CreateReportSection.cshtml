@@ -1,0 +1,156 @@
+﻿@model MPCRS.ViewModels.SOPBuildReportSectionVM
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "CreateReportSection";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var UsersList = MPCRS.Utilities.Masters.GetUsersList();
+    var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.Sop_ReportTemplate_Write);
+}
+<link href="~/css/summernote-lite.min.css" rel="stylesheet" />
+ 
+@*<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">*@
+
+@*<link href="~/assets/summernote/summernote.min.css" rel="stylesheet" />*@
+
+
+<form asp-action="CreateReportSection" class="needs-validation" novalidate="novalidate" enctype="multipart/form-data">
+    <input asp-for="Id" type="hidden"/>
+    <input asp-for="BuildGuid" type="hidden"/>
+    <input asp-for="SopReportSectionGUID" type="hidden"/>
+    <input asp-for="ReportTemplateSectionGUID" type="hidden" />
+    <div class="col-12">
+        <div class="row">
+            <div class="col-sm-8">
+                <h3>Edit Section of @Model.SectionHeader</h3>
+            </div>  
+            
+            <div class="col-6 col-sm-4 pull-right">
+                <a class="btn btn-secondary float-end" href="/SOPReport/ReportSection?buildguid=@Model.BuildGuid">Back</a>
+                @{
+                    if (Permission_Write)
+                    {
+                        <button type="submit" class="btn btn-primary float-end" style="margin-right:10px;">Submit</button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+    <hr />
+    <div class="col-12">
+
+        <input class="form-control" asp-for="Id" type="hidden">
+        <div class="row">
+            <div class="col-6">
+                <div class="form-group row">
+                    <div class="offset-2 col-12">
+                        <div class="form-floating mb-1">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" asp-for="IsCompleted" name="IsCompleted" type="checkbox" />
+                                <label class="form-check-label" asp-for="IsCompleted">Completed</label>
+                            </div>
+                        </div>
+                        <div class="form-floating mb-1">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" asp-for="IsReviewed" name="IsReviewed" type="checkbox" />
+                                <label class="form-check-label" asp-for="IsReviewed">Reviewed</label>
+                            </div>
+                        </div>
+                        <div class="form-floating mb-1">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" asp-for="IsActive" name="IsActive" type="checkbox" />
+                                <label class="form-check-label" asp-for="IsActive">Active</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+         <div class="col-5">
+             <label>Upload Word/Pdf Document</label>
+                <input type="file" name="File" class="form-control" accept=".doc, .docx, .pdf" />
+                <span style="font-style: italic;">
+                    The Word file will be extracted, and the PDF file will be directly rendered in the report
+                </span>
+         </div>
+         <div class="container">
+                <div class="container">
+                    <label asp-for="Body"></label>
+                    <textarea asp-for="Body" id="mytextarea"></textarea>
+                </div>        
+         </div>
+            
+
+        </div>
+    </div>
+</form>
+
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    <script src="~/js/summernote.min.js"></script>
+    @*    <script src="~/assets/summernote/summernote.min.js"></script>*@
+@*    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>*@
+
+   @* <script src="~/vendors/tinymce/tinymce.min.js"></script>*@
+    <script>
+
+        // Initialize the editor with basic editor.
+        //tinymce.init({
+        //    selector: '#mytextarea',
+        //    height: 500,
+        //    branding: false,
+        //    menubar: false,
+        //    plugins: [
+        //        'advlist autolink lists link image charmap print preview anchor',
+        //        'searchreplace visualblocks code fullscreen',
+        //        'insertdatetime media table paste code help wordcount', 'table'
+        //    ],
+        //    toolbar: 'undo redo | formatselect | ' +
+        //        'bold italic backcolor | alignleft aligncenter ' +
+        //        'alignright alignjustify | bullist numlist outdent indent | ' +
+        //        'removeformat | table',
+        //    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+        //});
+
+
+
+
+
+        $(document).ready(function () {
+            //$('#Body').summernote(
+            //{
+            //    height:200
+            //});
+
+
+            $('#mytextarea').summernote({
+                toolbar: [
+                    ['style', ['bold', 'italic', 'underline', 'clear']],
+                    ['fontsize', ['fontsize']],
+                    ['font', ['strikethrough', 'superscript', 'subscript']],
+                    ['fontname', ['fontname']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['height', ['height']],
+                    ['insert', ['picture', 'hr']],
+                    ['table', ['table']],
+                    ['view', ['fullscreen', 'codeview']],
+                ],
+                fontSizes: ['8', '9', '10', '11', '12', '14', '18', '24', '36', '48', '64', '82', '150'],
+                lineHeights: ['0.2', '0.3', '0.4', '0.5', '0.6', '0.8', '1.0', '1.2', '1.4', '1.5', '2.0', '3.0'],
+                height: 585,
+             
+
+
+
+         });
+          
+            applySelect2();
+        });
+        function applySelect2() {
+            $('.userlist').select2();
+        }
+    </script>
+}

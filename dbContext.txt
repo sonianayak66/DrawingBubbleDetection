@@ -1,0 +1,25 @@
+﻿
+// USE THIS
+Scaffold-DbContext "Name=ConnectionStrings:MPCRS" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models -UseDatabaseNames -f
+
+// On Confih Db context
+new ConfigurationBuilder().AddJsonFile("appsettings.json").Build().GetSection("ConnectionStrings")["MPCRS"]
+
+
+<configuration>
+  <location path="." inheritInChildApplications="false">
+    <system.webServer>
+<httpErrors errorMode="Detailed" />
+      <handlers>
+        <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+      </handlers>
+      <aspNetCore processPath=".\MPCRS.exe" stdoutLogEnabled="false" stdoutLogFile=".\logs\stdout" hostingModel="inprocess">
+<environmentVariables>
+  <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Development" />
+</environmentVariables>
+ </aspNetCore>
+
+    </system.webServer>
+
+  </location>
+</configuration>

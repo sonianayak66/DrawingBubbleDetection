@@ -1,0 +1,149 @@
+﻿@using MPCRS.Utilities;
+
+
+<ul class="nav nav-underline" id="myTab" role="tablist">
+    <li class="nav-item"><a class="nav-link active" id="home-tab" data-bs-toggle="tab" href="#tab-home" role="tab" aria-controls="tab-home" aria-selected="true">Summary</a></li>
+    <li class="nav-item"><a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#tab-profile" role="tab" aria-controls="tab-profile" aria-selected="false">Recently Uploaded Files</a></li>
+
+</ul>
+<div class="tab-content mt-3" id="myTabContent">
+    <div class="tab-pane fade show active" id="tab-home" role="tabpanel" aria-labelledby="home-tab">
+        <div class="row">
+            <div class="col-md-4 col-sm-4 col-lg-4"">
+                <table class="table table-bordered table-condensed table-sm">
+                                <thead>
+                                    <tr>
+                            <th>Document List Summary</th>
+                                    <tr>
+                                        <th>Details</th>
+                                        <th>Count</th>
+                                    </tr>
+                                </thead>
+
+                                @{
+                                    System.Data.DataTable data = MPGlobals.GetDataForDatalist(@"select ' Total Files' as Datails,count(dbo.Documentation.Document_Dbkey )as count from dbo.Documentation where  (dbo.Documentation.Item_type = 'File') and  (isnull(dbo.Documentation.is_active,1) = 1)
+                                union all
+                                (select 'Approved' as Details,count(dbo.Documentation.Document_Dbkey ) from dbo.Documentation where  dbo.Documentation.Approved_Status='1' and (dbo.Documentation.Item_type = 'File') and  (isnull(dbo.Documentation.is_active,1) = 1) )
+                                union all
+                                (select 'Rejected' as Details,count(dbo.Documentation.Document_Dbkey ) from dbo.Documentation where  dbo.Documentation.Approved_Status='-1' and (dbo.Documentation.Item_type = 'File') and   (isnull(dbo.Documentation.is_active,1) = 1) )
+                                union all
+                                (Select 'Approval Pending' as Details, Count(Doc_files.Document_Dbkey) from  dbo.Documentation Doc_files where Doc_files.Parent_id in (
+                                Select Parent_id from dbo.Documentation where is_required_approve = 1 and Item_type = 'Folder'  and (isnull(dbo.Documentation.is_active,1) = 1)
+                                ) and Doc_files.Item_type = 'File' and Doc_files.Approved_Status = 1 )");
+
+                                    foreach (System.Data.DataRow dr in data.Rows)
+                                    {
+                                        <tr>
+
+                                            <td>@dr["Datails"].ToString()</td>
+                                            <td>@dr["count"].ToString()</td>
+                                        </tr>
+
+                                    }
+                                }
+                            </table>
+            </div>
+
+            <div class="col-md-5 col-sm-5 col-lg-5">
+
+                <table class="table table-bordered table-condensed table-sm">
+                                <thead>
+                                    <tr>
+                                       <th>Pending approvals</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Folder</th>
+                                        <th>File</th>
+                                        <th>Uploaded On</th>
+                                     </tr>
+
+                                </thead>
+                                <tbody>
+
+
+                                    @{
+                System.Data.DataTable file = MPGlobals.GetDataForDatalist(@"Select *,parent.Refrence_Title as FolderName from  dbo.Documentation Doc_files, dbo.Documentation parent where Doc_files.Parent_id in (
+                        Select Parent_id from dbo.Documentation where is_required_approve = 1 and Item_type = 'Folder'  and (isnull(dbo.Documentation.is_active,1) = 1)
+                        ) and Doc_files.Item_type = 'File' and Doc_files.Approved_Status = 1 and Doc_files.Parent_id = parent.Document_Dbkey");
+
+                                        foreach (System.Data.DataRow dr in file.Rows)
+                                        {
+                                            <tr>
+                                                  <td>@dr["FolderName"].ToString()</td>
+                                                  <td>@dr["Refrence_Title"].ToString()</td>
+                                                 <td>@dr["Updated_On"].ToString()</td>
+                                            </tr>
+
+                                        }
+                                    }
+
+                                </tbody>
+
+
+                            </table>
+            
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade" id="tab-profile" role="tabpanel" aria-labelledby="profile-tab">
+
+        <table class="table table-bordered table-condensed table-sm">
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Folder</th>
+                    <th>Date</th>
+                    <th>Updated By</th>
+                    <th>Status</th>
+                    <th>Approved By</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                System.Data.DataTable dataTable = MPGlobals.GetDataForDatalist(@"SELECT top 20 [dbo].[Documentation].[Document_Dbkey]
+                ,[Refrence_Title]
+                ,left([Refrence_Title],30) + '..' as DisplayTitle
+                ,(select top 1 [Refrence_Title] from [dbo].[Documentation] folder  where folder.Document_Dbkey = [dbo].[Documentation].[Parent_id] ) as FolderName
+                ,[Description]
+                ,[Item_type]
+                ,[File_Location]
+                ,[File_Name]
+                ,[System_File_Name]
+                ,[File_Size]
+                ,[File_type]
+                ,case when [is_required_approve] = 1 then (case when isnull([Approved_Status],1) = 0 then 'Pending' when isnull([Approved_Status],1) = 1 then 'Approved'  else 'Rejected' end) else 'NA' end as [Approved_Status_text]
+                ,[Parent_id]
+                ,Approved_Status as Approved_Status
+                ,[Updated_On]
+                ,[is_required_approve]
+                ,[dbo].[Get_UserName]([Updated_By]) as [Updated_By]
+                ,[dbo].[Get_UserName]([Approved_by]) as Approved_by
+                FROM [dbo].[Documentation] where Item_type = 'File'  order by 1  desc");
+
+                    for (int i = 0; i < dataTable.Rows.Count; i++)
+                    {
+                        <tr>
+                            <td>@dataTable.Rows[i]["DisplayTitle"]</td>
+                            <td>@dataTable.Rows[i]["FolderName"]</td>
+                            <td>@dataTable.Rows[i]["Updated_On"]</td>
+                            <td>@dataTable.Rows[i]["Updated_By"]</td>
+                            <td>@dataTable.Rows[i]["Approved_Status"]</td>
+                            <td>@dataTable.Rows[i]["Approved_by"]</td>
+                            <td></td>
+                        </tr>
+                    }
+
+                }
+
+
+
+
+            </tbody>
+        </table>
+    
+    </div>
+   </div>
+
+
+ 

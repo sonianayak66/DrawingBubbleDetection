@@ -1,0 +1,309 @@
+@using MPCRS.Utilities
+@using MPCRS.ViewModels
+@model AssignedNCRListPageVM
+
+@{
+	ViewData["Title"] = "NCR Assignment List";
+	if (@ViewBag.LayoutType == false)
+	{
+		Layout = null;
+	}
+
+	// Map server-side ActiveTab to the JS filter value
+	var activeTab = Model.ActiveTab ?? "PendingWithMe";
+	var defaultFilter = activeTab == "InProgress" ? "inprogress"
+					  : activeTab == "Closed"     ? "closed"
+					  : activeTab == "All"        ? "all"
+					  : "pending";  // PendingWithMe is the default
+
+	// Pre-count for badge rendering (avoids FOUC before JS runs)
+	int countPending = 0, countInProgress = 0, countClosed = 0;
+	if (Model.Assignments != null)
+	{
+		foreach (var a in Model.Assignments)
+		{
+			if (a.CloseNCR == 1) countClosed++;
+			else if (a.IsMyActionRequired == 1) countPending++;
+			else countInProgress++;
+		}
+	}
+	int countAll = (Model.Assignments?.Count ?? 0);
+}
+
+<style>
+	.ncr-tab-bar {
+		display: flex;
+		gap: 2px;
+		border-bottom: 2px solid #dee2e6;
+		margin-bottom: 1rem;
+		padding-left: 0;
+		list-style: none;
+	}
+	.ncr-tab-bar li { list-style: none; }
+	.ncr-tab {
+		display: inline-block;
+		padding: 8px 18px;
+		color: #495057;
+		text-decoration: none;
+		background-color: #f8f9fa;
+		border: 1px solid #dee2e6;
+		border-bottom: none;
+		border-top-left-radius: 6px;
+		border-top-right-radius: 6px;
+		margin-bottom: -2px;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color 0.15s ease-in-out;
+		user-select: none;
+	}
+	.ncr-tab:hover {
+		background-color: #e9ecef;
+		color: #212529;
+		text-decoration: none;
+	}
+	.ncr-tab.active {
+		background-color: #ffffff;
+		color: #0d6efd;
+		border-color: #dee2e6 #dee2e6 #ffffff;
+		border-bottom: 2px solid #ffffff;
+		font-weight: 600;
+	}
+	.ncr-tab .badge {
+		font-size: 0.75em;
+		padding: 2px 7px;
+		border-radius: 10px;
+		margin-left: 6px;
+		vertical-align: middle;
+	}
+	.ncr-tab .badge.bg-primary   { background-color: #0d6efd !important; color: #fff; }
+	.ncr-tab .badge.bg-info      { background-color: #0dcaf0 !important; color: #000; }
+	.ncr-tab .badge.bg-secondary { background-color: #6c757d !important; color: #fff; }
+	.ncr-tab .badge.bg-dark      { background-color: #343a40 !important; color: #fff; }
+
+	#assignmnetListTbl_wrapper .dataTables_scrollBody {
+		overflow-x: auto;
+	}
+</style>
+
+<div class="row">
+	<div class="col-6">
+		<h4>NCR Assignments</h4>
+	</div>
+	<div class="col-6 d-flex justify-content-end align-items-center gap-2">
+		<a href="/NCR/ModuleWiseNCRList" target="_blank" class="btn btn-outline-secondary btn-sm">
+			<i class="uil uil-chart-bar me-1"></i>Module Wise Report
+		</a>
+		@{
+			if (@ViewBag.LayoutType == false && Model.Assignments != null && Model.Assignments.Count > 0)
+			{
+				<input type="button" class="btn btn-success btn-sm"
+				       onclick="GetPopupToAssign('@Model.Assignments.First().NCRGUID')"
+				       value="Assign Module" />
+			}
+		}
+	</div>
+</div>
+
+<hr />
+
+@{
+	// Different tooltips for admin vs module users
+	string tipPending    = Model.IsAdmin
+		? "NCRs that need forwarding to the next stage — a module has marked complete, waiting for your action"
+		: "NCRs waiting for your remarks — action needed from you";
+	string tipInProgress = Model.IsAdmin
+		? "NCRs currently being worked on by a module — no admin action needed right now"
+		: "Your part is done — NCR is now with other modules or stages";
+	string tipClosed     = "NCRs that have completed all stages and are officially closed";
+	string tipAll        = Model.IsAdmin
+		? "All NCRs — Needs Forwarding, With Modules, and Closed combined"
+		: "All NCRs assigned to you — Pending, In Progress, and Closed combined";
+
+	// Admin sees different tab label for "Pending With Me"
+	string labelPending  = Model.IsAdmin ? "Needs Forwarding" : "Pending With Me";
+	string labelInProgress = Model.IsAdmin ? "With Modules" : "In Progress";
+}
+<ul class="ncr-tab-bar" id="ncrTabBar">
+	<li>
+		<a class="ncr-tab @(defaultFilter == "pending" ? "active" : "")"
+		   data-filter="pending" onclick="filterTab(this)"
+		   title="@tipPending">
+			@labelPending <span class="badge bg-primary" id="countPending">@countPending</span>
+		</a>
+	</li>
+	<li>
+		<a class="ncr-tab @(defaultFilter == "inprogress" ? "active" : "")"
+		   data-filter="inprogress" onclick="filterTab(this)"
+		   title="@tipInProgress">
+			@labelInProgress <span class="badge bg-info" id="countInProgress">@countInProgress</span>
+		</a>
+	</li>
+	<li>
+		<a class="ncr-tab @(defaultFilter == "closed" ? "active" : "")"
+		   data-filter="closed" onclick="filterTab(this)"
+		   title="@tipClosed">
+			Closed <span class="badge bg-secondary" id="countClosed">@countClosed</span>
+		</a>
+	</li>
+	<li>
+		<a class="ncr-tab @(defaultFilter == "all" ? "active" : "")"
+		   data-filter="all" onclick="filterTab(this)"
+		   title="@tipAll">
+			All <span class="badge bg-dark" id="countAll">@countAll</span>
+		</a>
+	</li>
+</ul>
+
+@if (Model.Assignments == null || Model.Assignments.Count == 0)
+{
+	<div class="alert alert-light text-center text-muted py-4 border" id="emptyState">
+		No NCR assignments found.
+	</div>
+}
+else
+{
+<table class="table table-bordered" id="assignmnetListTbl">
+	<thead>
+		<tr>
+			<th>NCR Number</th>
+			<th>Part No</th>
+			<th>Rev</th>
+			<th>Received From/On</th>
+			<th>Committee</th>
+			<th>Serial Numbers</th>
+			<th>Module</th>
+			<th>Current Status</th>
+			<th>Remarks</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		@{
+			foreach (var item in Model.Assignments)
+			{
+				// Categorise each row for client-side tab filtering
+				var tabCategory = item.CloseNCR == 1         ? "closed"
+								: item.IsMyActionRequired == 1 ? "pending"
+								: "inprogress";
+
+				List<NCRItemStatusRow> itemRows = null;
+				if (!string.IsNullOrEmpty(item.NCRGUID) && Model.ItemMap.ContainsKey(item.NCRGUID))
+				{
+					itemRows = Model.ItemMap[item.NCRGUID];
+				}
+
+				<tr data-tab-category="@tabCategory">
+					<td class="p-2"><b>@item.ReferenceNumber</b></td>
+					<td>
+						<b>@item.Draw_part_no/@item.PartDescription</b>
+					</td>
+					<td>@item.Revision</td>
+					<td>
+						@item.ReceivedFromString
+						<br />
+						<i>@(MPCRS.Utilities.MPGlobals.GetFormattedDate(item.ReceivedDate))</i>
+					</td>
+					<td>@item.ComitteeReferred</td>
+					<td>
+						@if (!string.IsNullOrEmpty(item.SerialNumber))
+						{
+							var serialNumbers = item.SerialNumber
+								.Split(',')
+								.Select(s => s.Trim())
+								.Where(s => !string.IsNullOrEmpty(s))
+								.Distinct();
+							foreach (var sn in serialNumbers)
+							{
+								<span class="badge bg-light text-dark border me-1 mb-1" style="font-size:0.8em;">@sn</span>
+							}
+						}
+					</td>
+					<td class="p-2">@item.Module_Responsibilty_String</td>
+					<td style="max-width:10%">
+						@if (!string.IsNullOrEmpty(item.CurrentStatusText))
+						{
+							@if (item.CurrentStatusText.EndsWith("Marked As Complete"))
+							{
+								<p class="text-success fw-bold">@item.CurrentStatusText</p>
+							}
+							else if (item.CurrentStatusText == "Closed")
+							{
+								<p>Closed</p>
+							}
+							else
+							{
+								<p>@item.CurrentStatusText</p>
+							}
+						}
+					</td>
+					<td>@item.Remarks</td>
+					<td class="p-2">
+						<a href="/NCR/AssignmentDetail?id=@item.NCRWorkflowGUID&NCRGuid=@item.NCRGUID">View</a>
+					</td>
+				</tr>
+			}
+		}
+	</tbody>
+</table>
+}
+
+@section Scripts {
+	<script src="~/mpi/ncr.js" asp-append-version="true"></script>
+	<script>
+		// Active filter — set from the server-rendered default
+		var activeTabFilter = '@defaultFilter';
+
+		$(document).ready(function () {
+			var $tbl = $("#assignmnetListTbl");
+			if (!$tbl.length || $tbl.find("tbody tr").length === 0) return;
+
+			// Register custom DataTables search filter BEFORE init
+			$.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+				if (settings.nTable.id !== 'assignmnetListTbl') return true;
+				if (activeTabFilter === 'all') return true;
+				var row = settings.aoData[dataIndex].nTr;
+				return $(row).attr('data-tab-category') === activeTabFilter;
+			});
+
+			var table = $tbl.DataTable({
+				scrollY: 'calc(100vh - 340px)',
+				scrollCollapse: true,
+				scrollX: false,
+				paging: true,
+				pageLength: 25,
+				lengthMenu: [
+					[25, 50, 100, -1],
+					['25', '50', '100', 'All']
+				],
+				ordering: false,
+				info: true,
+				searching: true,
+				columnDefs: [
+					{ targets: 0, width: '10%' }
+				]
+			});
+
+			// Initial draw applies the default filter
+			table.draw();
+		});
+
+		function filterTab(el) {
+			// Update active tab styling
+			$('#ncrTabBar .ncr-tab').removeClass('active');
+			$(el).addClass('active');
+
+			// Apply filter and redraw
+			activeTabFilter = $(el).data('filter');
+			var table = $('#assignmnetListTbl').DataTable();
+			table.draw();
+
+			// Update URL without reload (for bookmarkability)
+			var tabName = activeTabFilter === 'pending' ? 'PendingWithMe'
+						: activeTabFilter === 'inprogress' ? 'InProgress'
+						: activeTabFilter === 'closed' ? 'Closed' : 'All';
+			var url = new URL(window.location);
+			url.searchParams.set('tab', tabName);
+			window.history.replaceState({}, '', url);
+		}
+	</script>
+}

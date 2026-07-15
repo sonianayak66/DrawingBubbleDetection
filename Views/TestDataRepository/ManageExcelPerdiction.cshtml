@@ -1,0 +1,99 @@
+﻿@model MPCRS.ViewModels.TestDataRepositoryVM
+
+@{
+    Layout = null;
+}
+<form id="RawData" method="post" asp-controller="TestDataRepository" asp-action="ManageExcelPerdiction" class="needs-validation" novalidate="novalidate" enctype="multipart/form-data">
+    <div class="col-md-12 mb-2">
+        <h3>Engine test Performance Predection</h3>
+    </div>
+
+    <div class="col-12 offset-1">
+        <input asp-for="TestdataDbKey" hidden />
+        <div class="form-group row">
+            <div class="col-8">
+                <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" asp-for="CellNo" placeholder="AA" />
+                    <label asp-for="CellNo">CELL NO. :</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-8">
+                <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" asp-for="EngineName" placeholder="AA" />
+                    <label asp-for="EngineName">Engine Name</label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-8">
+                <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" asp-for="BuildNo" placeholder="AA" />
+                    <label asp-for="BuildNo">Build No</label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-8">
+                <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" asp-for="RunNo" placeholder="AA" />
+                    <label asp-for="RunNo">Run No</label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-8">
+                <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" asp-for="NH" placeholder="AA" />
+                    <label asp-for="NH"></label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-8">
+                <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" asp-for="NL" placeholder="AA" />
+                    <label asp-for="NL"></label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-8">
+                <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" asp-for="AtmosphericPressure" placeholder="AA" />
+                    <label asp-for="AtmosphericPressure">Atmospheric Pressure</label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-8">
+                <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" asp-for="RoomTemperature" placeholder="AA" />
+                    <label asp-for="RoomTemperature">Room Temperature </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-8 mb-3">
+                <input class="form-control form-control-sm" id="UploadedFileData" placeholder="AA" type="file" />
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-8">
+                <div class="form-floating mb-3">
+                    <input class="form-control form-control-sm" asp-for="DecuSWBuildNumber" placeholder="AA" type="text" />
+                    <label asp-for="DecuSWBuildNumber">Decu S/W Build Number </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="form-footer">
+                @* <input type="button" class="btn btn-success btn-sm" value="Upload Excel" id="btnupload" onclick="UploadExcel()" /> *@
+                <input type="button" class="btn btn-primary btn-sm" onclick="SaveTestDataRepo(0)" value="Save" />
+                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="closeBootboxes()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</form>

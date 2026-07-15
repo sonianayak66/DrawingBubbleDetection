@@ -1,0 +1,270 @@
+﻿@model List<MPCRS.ViewModels.GenericIssuesViewModel>
+@using MPCRS.Utilities;
+@{
+	var VendorList = Masters.GetVendorsList();
+	var EngineList = Masters.GetEngineList();
+
+}
+
+<style>
+
+	/* Make serial number column wider */
+	#new-generic-material-issue .serial-no-column {
+		min-width: 300px;
+		max-width: 600px;
+	}
+
+	/* Style Select2 container for better tag display */
+	.select-serialNos + .select2-container {
+		width: 100% !important;
+	}
+
+		.select-serialNos + .select2-container .select2-selection--multiple {
+			min-height: 80px !important;
+			max-height: 200px;
+			overflow-y: auto;
+		}
+
+</style>
+
+<form id="GenericMaterialIssueForm" method="post">
+	@* <div class="d-flex align-items-center justify-content-between mb-3">
+
+		<div>
+			<a class="btn btn-success me-2" onclick="saveGenericMaterialIssue('@ViewBag.OrderType')"> Save</a>
+			<a class="btn btn-secondary" href="/Orders/OrdersList/?Ordertype=@ViewBag.OrderType">Back</a>
+		</div>
+	</div> *@
+
+	@if (Model != null && Model.Count > 0)
+	{
+		var issueDetails = Model.First();
+		<input id="issueDbKey" type="hidden" asp-for="@issueDetails.IssueDbKey" />
+		<div class="row">
+			<div class="col-2">
+				<h5>@ViewBag.OrderType Material Issue</h5>
+			</div>
+			<div class="col-3">
+				<div class="">
+					<label for="issued-vendor">Vendor</label>
+					<select class="form-select select-vendor" asp-for="@issueDetails.VendorDbKey" id="issued-vendor" asp-items="@(new SelectList(VendorList, "Value", "Text"))"></select>
+
+				</div>
+			</div>
+			<div class="col-2">
+				<div class="form-floating mb-3">
+					<input class="form-control" asp-for="@issueDetails.ReferenceNo" type="text" id="referenceNo">
+					<label for="referenceNo">Reference Number</label>
+				</div>
+			</div>
+			<div class="col-2">
+				<div class="form-floating mb-3">
+					<input class="form-control" asp-for="@issueDetails.IssueDate" type="date" id="issuedDate">
+					<label for="issuedDate">Issue Date</label>
+				</div>
+			</div>
+			<div class="col-2">
+				<a class="btn btn-success me-2" onclick="saveGenericMaterialIssue('@ViewBag.OrderType')"> Save</a>
+				<a class="btn btn-secondary" href="/Orders/OrdersList/?Ordertype=@ViewBag.OrderType&tab=Issues-tab">Back</a>
+
+			</div>
+		</div>
+
+
+		<table class="table table-bordered table-hover" id="new-generic-material-issue">
+			<thead>
+				<tr>
+					<th>MMG OrderNo.</th>
+					<th>Order Refrence No./Receipt No.</th>
+					@* <th>Receipt No.</th> *@
+					<th>PartName</th>
+					<th>Batch No./Heat No.</th>
+					@* <th>Heat No.</th> *@
+					<th>Qty Available</th>
+					<th>Qty per engine</th>
+					<th>For Engine</th>
+					<th>Issue Qty</th>
+					<th class="serial-no-column">Issued serial No</th>
+					<th>JobCard</th>
+					<th>	</th>
+					@if (issueDetails.IssueDbKey != 0)
+					{
+						<th></th>
+					}
+				</tr>
+			</thead>
+			<tbody>
+
+				@foreach (var item in Model.OrderBy(x => x.IssueItemKey))
+				{
+					<tr>
+						<td class="p-2">
+							<input type="hidden" asp-for="@item.CastingDbkey" />
+							<input class="qtySplitKey" type="hidden" asp-for="@item.QtySplitKey" />
+							<input class="issueItemKey" type="hidden" asp-for="@item.IssueItemKey" />
+							<input class="engine_Part_Dbkey" type="hidden" asp-for="@item.Engine_Part_Dbkey" />
+							@item.MMGOrderNumber
+						</td>
+						<td>
+							@item.OrderNumber /
+							<p>@item.ReceiptNumber</p>
+						</td>
+						<td>
+							@item.PartNumber - @item.PartDescription
+						</td>
+						<td>
+							@item.BatchNumber /
+							<p>@item.HeatNumber</p>
+						</td>
+						<td class="qtyAvailable">@item.SplitQty</td>
+						<td class="qtyPerEngine">@item.QuantityPerEngine</td>
+						<td>
+							@* <input class="form-control forEngine" asp-for="@item.ForEngine" /> *@
+							@{
+								if (item.IssueDbKey == 0)
+								{
+									<select class="form-select select-ForEngine" asp-items="@EngineList" multiple></select>
+
+								}
+								else
+								{
+									string[] splittedSelectedEngines = new string[0];  // Empty array
+
+									if (item.ForEngine != null)
+									{
+										splittedSelectedEngines = item.ForEngine.Split(",");
+									}
+									<select class="form-select select-ForEngine" id="Engine-@item.IssueItemKey" asp-items="@EngineList" asp-for="@splittedSelectedEngines" multiple></select>
+
+								}
+
+							}
+						</td>
+						<td><input class="form-control issue-qty" asp-for="@item.IssueQty" /></td>
+						<td class="p-1 serial-no-column">
+							@if (item.IssueDbKey == 0)
+							{
+								var remainingSerialNos = item.SerialNos?.Split(',').Except(item.GlobalIssuedSerialNos?.Split(',') ?? new string[0]).ToArray() ?? new string[0];
+								List<SelectListItem> selectListItems = remainingSerialNos.Select(value => new SelectListItem { Text = value, Value = value }).ToList();
+								<div>
+									<a href="javascript:void(0)" class="select-all-serialnos" style="font-size: 11px; color: #0066cc;">Select All</a> |
+									<a href="javascript:void(0)" class="clear-all-serialnos" style="font-size: 11px; color: #dc3545;">Clear All</a>
+									<select class="form-select select-serialNos" asp-items="@selectListItems" multiple></select>
+									<small class="serialno-count" style="color: #666; font-style: italic;">0 items selected</small>
+								</div>
+								@* <select class="form-select select-serialNos" asp-items="@selectListItems" multiple></select> *@
+							}
+							else
+							{
+								if (item.currentIssuedSlno != null)
+								{
+									var splitedCurrentIssuedSlno = item.currentIssuedSlno.Split(',');
+									var remainingSerialNos = item.SerialNos?
+									.Split(',')
+									.Except(item.GlobalIssuedSerialNos?.Split(',') ?? new string[0])
+									.ToArray() ?? new string[0];
+									var combinedSerialNos = remainingSerialNos.Concat(splitedCurrentIssuedSlno).ToArray();
+									List<SelectListItem> selectListItemsToEdit = combinedSerialNos.Select(value => new SelectListItem { Text = value, Value = value }).ToList();
+									<div>
+										<a href="javascript:void(0)" class="select-all-serialnos" style="font-size: 11px; color: #0066cc;">Select All</a> |
+										<a href="javascript:void(0)" class="clear-all-serialnos" style="font-size: 11px; color: #dc3545;">Clear All</a>
+										<select class="form-select select-serialNos" id="serialNos-@item.IssueItemKey" asp-for="@splitedCurrentIssuedSlno" asp-items="@selectListItemsToEdit" multiple></select>
+										<small class="serialno-count" style="color: #666; font-style: italic;">0 items selected</small>
+									</div>
+									@* <select class="form-select select-serialNos" id="serialNos-@item.IssueItemKey" asp-for="@splitedCurrentIssuedSlno" asp-items="@selectListItemsToEdit" multiple></select> *@
+								}
+							}
+						</td>
+						<td>
+							<input type="text" class="form-control form-control1 decimal JobCardNumber" asp-for="@item.JobCardNumber" />
+						</td>
+						<td class="text-center">
+							<input type="file" onchange="UpdateJobCardUploadCtrlColour(this)" id="orderItemFiles" class="orderItemFiles" style="display:none" />
+							<input asp-for="@item.JCFileLocation" class="JCFileLocation" type="hidden" />
+							<input asp-for="@item.JCFileName" class="JCFileName" type="hidden" />
+							@{
+								if (!string.IsNullOrEmpty(item.JCFileLocation) && !string.IsNullOrEmpty(item.JCFileName))
+								{
+									<a class="fa fa-upload" style="color:green;cursor:pointer" onclick="OpenGenricFileDialog(this)"></a>
+									<a href="@item.JCFileLocation" target="_blank">@item.JCFileName</a>
+								}
+								else
+								{
+									<a class="fa fa-upload" style="color:royalblue;cursor:pointer" onclick="OpenGenricFileDialog(this)"></a>
+								}
+							}
+						</td>
+						@if (item.IssueDbKey != 0)
+						{
+							<td><a style="cursor:pointer; color:red" onclick="deleteGenericMaterialIssue_Item(@item.IssueItemKey)"><i class="fa fa-trash"></i></a></td>
+						}
+
+					</tr>
+
+				}
+
+			</tbody>
+		</table>
+		@if (issueDetails.IssueDbKey != 0)
+		{
+			<a class="btn btn-primary btn-sm" onclick="showRemainingData('@ViewBag.OrderType', '@issueDetails.IssueDbKey')">Add New Row</a>
+
+			<div id="showRemainingData">
+			</div>
+		}
+		<hr />
+
+		@if (issueDetails.IssueDbKey != 0)
+		{
+			<div id="GenericMaterialIssueDocumentsDiv">
+			</div>
+		}
+
+	}
+
+</form>
+
+
+
+
+
+
+
+@section Scripts {
+	<script src="~/mpi/GenericOrders.js" asp-append-version="true"></script>
+	<script>
+		$(document).ready(function () {
+			apply_Select2_Datatable();
+			UploadCastingMaterialIssueDocument(@Model.First().IssueDbKey,"Edit");
+					// Select All functionality for serial numbers
+			$(document).on('click', '.select-all-serialnos', function(e) {
+				e.preventDefault();
+				var $select = $(this).closest('div').find('.select-serialNos');
+				$select.find('option').prop('selected', true);
+				$select.trigger('change');
+			});
+
+			// Clear All functionality for serial numbers
+			$(document).on('click', '.clear-all-serialnos', function(e) {
+				e.preventDefault();
+				var $select = $(this).closest('div').find('.select-serialNos');
+				$select.val(null);
+				$select.trigger('change');
+			});
+
+					// Update serial number count on change
+			$('.select-serialNos').on('change', function() {
+				var selectedCount = $(this).val() ? $(this).val().length : 0;
+				var totalCount = $(this).find('option').length;
+				$(this).closest('div').find('.serialno-count').text(selectedCount + ' of ' + totalCount + ' items selected');
+			});
+
+			// Initialize counts on page load
+			$('.select-serialNos').each(function() {
+				var selectedCount = $(this).val() ? $(this).val().length : 0;
+				var totalCount = $(this).find('option').length;
+				$(this).closest('div').find('.serialno-count').text(selectedCount + ' of ' + totalCount + ' items selected');
+			});
+		});
+	</script>
+}

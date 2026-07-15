@@ -1,0 +1,85 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@model MPCRS.ViewModels.CastingViewModel
+@{
+    var CastingApplicableParts = Masters.GetCastApplicableParts("Casting");
+    var rawmaterialList = Masters.GetMaterialList();
+    var vendorslist = Masters.GetVendorsList();
+    var DeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Delete);
+    List<SelectListItem> OrderNumberList = new List<SelectListItem>();
+    if (Model.castingDetailViewModel.OrderNumbers != null)
+    {
+        foreach (var orderno in Model.castingDetailViewModel.OrderNumbers.Split(","))
+        {
+            OrderNumberList.Add(new SelectListItem() { Text = orderno.Trim(), Value = orderno.Trim() });
+        }
+    }
+}
+<style>
+    td {
+        vertical-align: top; /* Align content to the top */
+    } 
+   
+</style>
+
+
+
+<table class="table table-sm table-hover table-bordered table-warning" width="100%">
+    <thead>
+        <tr>
+            <th style="width:25%!important">Part</th>
+            <th style="width:7%!important">Qty</th>
+            <th style="width:10%!important">Remarks</th>
+            <th style="width:15%!important">RM</th>
+            <th style="width:20%!important">Vendor</th>
+            <th style="width:10%!important">Or.Number</th>
+            <th style="width:10%!important">DeliveryDate</th>
+            <th style="width:3%!important"></th>
+        </tr>
+    </thead>
+    <thead id="Tbl_castItems">
+        <tr style="display:none">
+            <td style="width:25%!important"><select class="form-select part EnginePartDbkey" asp-items="CastingApplicableParts"></select></td>
+            <td style="width:7%!important;"><input class="form-control Qty" value="0" type="number" style="vertical-align:top"></td>
+            <td style="width:10%!important"><textarea class="form-control ItemDescription"></textarea></td>
+            <td style="width:15%!important"><select class="form-select RawMaterial" asp-items="rawmaterialList"></select></td>
+            <td style="width:20%!important"><select class="form-select Vendor" asp-items="vendorslist"></select></td>
+            <td style="width:10%!important"><select class="form-select OrderNumber" asp-items="OrderNumberList"></select></td>
+            <td style="width:10%!important"><input class="form-control DeliveryDate" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")"></td>
+            <td style="width:3%!important">
+                <input class="form-control CastingItemKey" type="hidden" value="0">
+                <i class="text-warning uil uil-trash fs-1" style="cursor:pointer" onclick="delRow(this)"></i>
+            </td>
+        </tr>
+        @{
+            foreach (var item in Model.CastingItemViewModel)
+            {
+                <tr>
+                    <td style="width:25%!important"><select class="form-select part EnginePartDbkey PartchoiceClass" asp-for="@item.EnginePartDbkey" asp-items="CastingApplicableParts"></select></td>
+                    <td style="width:7%!important"><input class="form-control Qty" asp-for="@item.OrderQty" type="number" style="vertical-align:top"></td>
+                    <td style="width:10%!important"><textarea class="form-control ItemDescription" asp-for="@item.ItemDescription"></textarea></td>
+                    <td style="width:15%!important"><select class="form-select RawMaterial RMchoiceClass" asp-for="@item.RawMaterial" asp-items="rawmaterialList"></select></td>
+                    <td style="width:20%!important"><select class="form-select Vendor VendorchoiceClass" asp-for="@item.Vendor" asp-items="vendorslist"></select></td>
+                    <td style="width:10%!important"><select class="form-select OrderNumber OrderchoiceClass" asp-for="@item.OrderNumber" asp-items="OrderNumberList"></select></td>
+                    <td style="width:10%!important"><input class="form-control DeliveryDate" asp-for="@item.DeliveryDate" type="date"></td>
+                    <td style="width:3%!important">
+                        <input class="form-control CastingItemKey" type="hidden" asp-for="@item.CastingItemKey">
+                        @{
+                            if (DeleteAccess)
+                            {
+                                <i class="text-warning uil uil-trash fs-1" style="cursor:pointer" onclick="DeleteCastingComponents(this,@item.CastingItemKey,'CastingItems')"></i>
+                            }
+                        }
+                    </td>
+                </tr>
+            }
+        }
+    </thead>
+    <tfoot>
+        <tr>
+            <td><a style="cursor:pointer;color:rgb(56 116 255);" onclick="AddRow_CastingItem()">Add Item</a></td>
+            <td colspan="5"></td>
+            <td colspan="2"><button class="btn btn-sm btn-small btn-success float-end" onclick="SaveCastingItems()">Save</button></td>
+        </tr>
+    </tfoot>
+</table>

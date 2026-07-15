@@ -1,0 +1,96 @@
+﻿@model MPCRS.ViewModels.CastingViewModel
+@using MPCRS.Utilities;
+@{
+    Layout = null;
+    SelectList DocumentList = Masters.CastingReciptDocsReference(ViewBag.CastingReceiptDbkey);
+    var DeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Delete);
+    string[] attachkeys;
+}
+<div class="row">
+    <div class="col-6">
+        <h5>Split</h5>
+    </div>
+</div>
+
+<table class="table table-bordered  table-condensed table-sm" style="width:100%;border:1px!important;">
+    <thead>
+        <tr>
+            <th>Part</th>
+            <th>Qty</th>
+            <th>Revision</th>
+            <th>Serial Number</th>
+            <th>Batch No</th>
+            <th>Status</th>
+            <th>Remarks</th>
+            <th>Attachments</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="casting_split_tbl_bdy">
+        @{
+            foreach (var item in Model.receiptSplitVMs)
+            {
+                <tr>
+                    <td> <b>@item.PartName</b></td>
+                    <td>@item.Qty</td>
+                    <td>@item.Revision</td>
+                    <td>@item.SerialNumber</td>
+                    <td>@item.BatchNumber</td>
+                    <td> 
+                        <a class="badge badge-phoenix fs--2 @(@item.Status != "Accepted" ? "badge-phoenix-danger" :"badge-phoenix-success")">
+                            @item.Status
+                        </a> 
+                    </td>
+                    <td>@item.Remarks</td>
+                    <td>
+                        <div>
+                            <ul style="list-style-type: none; margin: 2px; padding: 0;">
+                                @{
+                                    if (!string.IsNullOrEmpty(item.Attachments))
+                                    {
+                                        attachkeys = item.Attachments.Split(",");
+                                    }
+                                    else
+                                    {
+                                        attachkeys = new string[0];
+                                    }
+
+                                    foreach (var uploadedFile in DocumentList.Where(x => x.Text != "Select"))
+                                    {
+                                        <li>
+                                            @{
+                                                if (Array.Exists(attachkeys, element => element == uploadedFile.Value))
+                                                {
+                                                    @uploadedFile.Text  <a class="uil uil-cloud-download fs-1" style="cursor:pointer" href="/Attachment/DownloadfileWithKey?id=@uploadedFile.Value"></a>
+                                                }
+                                            }
+                                        </li>
+                                    }
+                                }
+                            </ul>
+                        </div>
+                    </td>
+                    <td><i class="text-primary uil uil-edit fs-2" style="cursor:pointer" onclick="GetCastingReceiptSplitModel(@item.CastingDbkey,@item.CastingReceiptDbkey,@item.Id)"></i></td>
+                    <td >
+                        @{
+                            if (DeleteAccess && @item.CastingReceiptDbkey!=0)
+                            {
+                                <i class="text-warning uil uil-trash fs-1" style="cursor:pointer" onclick="DeleteCastingComponents(this,@item.Id,'CastingReceiptsItemSplit')"></i>
+                            }
+                        }
+                    </td>
+                </tr>
+
+            }
+        }
+    </tbody>
+
+
+    <tfoot>
+        <tr>
+            <td colspan="11"><a href="#" onclick="GetCastingReceiptSplitModel(@ViewBag.CastingDbkey,@ViewBag.CastingReceiptDbkey,-1)">+ Add</a></td>
+        </tr>
+    </tfoot>
+
+
+</table>

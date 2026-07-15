@@ -1,0 +1,476 @@
+﻿@model MPCRS.ViewModels.CastingViewModel
+@using MPCRS.Utilities;
+@using System.Data;
+@{
+	ViewData["Title"] = "Casting Details";
+	var CastingWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Write);
+	var PyroWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Pyro_Write);
+	var ForgingWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Forging_Write);
+	
+	var CastingWriteReceipts = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Write_Receipts);
+	var PyroWriteReceipts = UserData.IsAuthorized(User, Constants.UserPermissions.Pyro_Write_Receipts);
+	var ForgingWriteReceipts = UserData.IsAuthorized(User, Constants.UserPermissions.Forging_Write_Receipts);
+	
+	
+	var CastingDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Delete);
+	var PyroDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Pyro_Delete);
+	var ForgingDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Forging_Delete);
+
+	var receiptCommnetAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Order_Receipt_Comment);
+	var IsModuleUser = UserData.IsAuthorized(User, Constants.UserPermissions.Order_Module_User);
+	SelectList DocumentList = Masters.CastingReciptDocsReference(@Model.castingDetailViewModel.CastingDbkey);
+
+	string[] attachkeys;
+}
+
+<link href="~/vendors/choices/choices.min.css" rel="stylesheet" />
+<link href="~/css/jquery-ui.css" rel="stylesheet" />
+
+
+<style>
+	.choices {
+		position: relative;
+		overflow: hidden;
+		margin-bottom: 1px;
+		font-size: 16px;
+		padding: 0px !important
+	}
+
+	.choices__button {
+		color: black !important;
+	}
+
+
+	.ui-autocomplete {
+		z-index: 9999 !important;
+	}
+
+	.partcol {
+		width: 35% !important;
+		padding-left: 10px !important;
+	}
+
+	.drawingNoCol {
+		width: 10% !important;
+		padding-left: 10px !important;
+	}
+
+	.dateCol {
+		width: 15% !important;
+		padding-left: 10px !important;
+	}
+
+	.qtyCols {
+		width: 7% !important;
+		text-align: right;
+		padding-right: 15px !important;
+	}
+
+</style>
+
+
+<input type="hidden" id="GlobalCastingDbkey" value="@Model.castingDetailViewModel.CastingDbkey" />
+<input type="hidden" id="isCustomAccess" value="@ViewBag.customAccess" />
+<input type="hidden" id="Id" value="@ViewBag.Id" />
+<input type="hidden" id="Generic-Ordertype" asp-for="castingDetailViewModel.OrderType" />
+
+
+<div class="row">
+@* 
+	@if (ViewBag.customAccess == "false")
+	{
+		<div class="col float-end">
+			
+			<a href="/Orders/OrdersList?OrderType=@ViewBag.Ordertype&tab=orders-tab" class="btn btn-secondary btn-small float-end">Back</a>
+			
+		</div>
+	} *@
+
+	@if (IsModuleUser)
+	{
+		<div class="col float-end">
+			<a href="/Orders/Orders?Ordertype=@ViewBag.Ordertype" class="btn btn-secondary btn-small float-end">Back</a>
+		</div>
+	}
+	else
+	{
+		<div class="col float-end">
+			<a href="/Orders/OrdersList?OrderType=@ViewBag.Ordertype&tab=orders-tab" class="btn btn-secondary btn-small float-end">Back</a>
+		</div>		
+	}
+
+
+
+	<table class="table table-sm table-bordered m-0">
+		<tbody>
+			<tr>
+				<th>
+					@ViewBag.Ordertype Order
+					@{
+						if( (CastingWriteAccess && ViewBag.Ordertype == "Casting") || (PyroWriteAccess && ViewBag.Ordertype == "Pyro") || (ForgingWriteAccess && ViewBag.Ordertype == "Forging"))
+						{
+							<i class="text-primary uil uil-edit fs-1 float-end" style="cursor:pointer" onclick="CreateEditOrder(@Model.castingDetailViewModel.CastingDbkey, '@Model.castingDetailViewModel.OrderType')" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Casting"></i>
+						}
+					}
+				</th>
+			</tr>
+		</tbody>
+	</table>
+	<div class="col-12 p-0" id="order-basic-info-area">
+		<table class="table table-sm table-bordered table-hover table-primary" style="border:1px!important solid;border-color:black">
+			<tr>
+				@* <th>Demand Number</th> *@
+				@* <td>@Model.castingDetailViewModel.DemandNumber</td> *@
+				<th>MMG Number</th>
+				<td>@Model.castingDetailViewModel.MMGOrderNumber</td>
+				<th>Status</th>
+				<td>@Model.castingDetailViewModel.OrderStatus</td>
+			</tr>
+			<tr>
+				<th>Demand Description </th>
+				<td colspan="5">@Model.castingDetailViewModel.DemandDesc </td>
+			</tr>
+			<tr>
+				<th>Order Date</th>
+				<td>@MPGlobals.GetFormattedDate(Model.castingDetailViewModel.OrderDate)</td>
+
+				<th>Remarks</th>
+				<td colspan="3">@Model.castingDetailViewModel.Remarks</td>
+			</tr>
+			<tr>
+				<th>Order Number(s)</th>
+				<td>@Model.castingDetailViewModel.OrderNumbers</td>
+				<th>Demanding Officer</th>
+				<td colspan="3">@Model.castingDetailViewModel.DOName</td>
+			</tr>
+		</table>
+	</div>
+
+</div>
+<div class="row">
+	@{
+		if (Model.castingDetailViewModel.CastingDbkey != 0)
+		{
+			<table class="table table-sm table-bordered m-0">
+				<tbody>
+					<tr>
+						<th>
+							Items
+							@{
+								if((CastingWriteAccess && ViewBag.Ordertype == "Casting") || (PyroWriteAccess && ViewBag.Ordertype == "Pyro") || (ForgingWriteAccess && ViewBag.Ordertype == "Forging"))
+								{
+									<i class="text-primary uil uil-edit fs-1 float-end" style="cursor:pointer" onclick="EditOrderItems(@Model.castingDetailViewModel.CastingDbkey)" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Items"></i>
+								}
+							}
+						</th>
+					</tr>
+				</tbody>
+			</table>
+			<div class="col-12 p-0" id="casting-items-container">
+				<table class="table table-sm table-bordered table-hover table-warning">
+					<thead>
+						<tr>
+							<th class="partcol">Part</th>
+							<th class="drawingNoCol">GTRE Drg. No.</th>
+							<th class="dateCol">Expected Delivery Date</th>
+							<th class="text-end qtyCols">Order Qty</th>
+							<th class="text-end qtyCols">Received</th>
+							<th class="text-end qtyCols">Accepted</th>
+							<th class="text-end qtyCols">Rejected</th>
+							<th class="text-end qtyCols">Balance</th>
+							<th>Remarks</th>
+						</tr>
+					</thead>
+					<tbody>
+						@{
+							var previousOrderNo = "NOT-Specified";
+							foreach (var item in Model.CastingItemViewModel.OrderBy(x => x.OrderNumber))
+							{
+
+								if (previousOrderNo != item.OrderNumber)
+								{
+									previousOrderNo = item.OrderNumber;
+									<tr>
+										<td colspan="9" style="background-color:lightgray">
+											<b>Order #:  @item.OrderNumber </b>  [@item.Vendor_Name]
+										</td>
+
+									</tr>
+								}
+
+								<tr>
+									<td class="partcol">
+										<b>@item.PartName</b>
+										@if(item.TestSpecimen == 1)
+										{
+											<small>Test Specimen</small>
+										}
+										<a style="cursor: pointer; display: none;" id="icon-Open-@item.CastingItemKey" class="float-end" onclick="GetItemReceiptBatches(@item.CastingItemKey, 'Open')">
+											<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-down" viewBox="0 0 16 16">
+												<path fill-rule="evenodd" d="M1.646 6.646a.5.5 0 0 1 .708 0L8 12.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708"></path>
+												<path fill-rule="evenodd" d="M1.646 2.646a.5.5 0 0 1 .708 0L8 8.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708"></path>
+											</svg>
+										</a>
+										<a style="cursor: pointer;" id="icon-Close-@item.CastingItemKey" class="float-end" onclick="GetItemReceiptBatches(@item.CastingItemKey, 'Close')">
+											<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-up" viewBox="0 0 16 16">
+												<path fill-rule="evenodd" d="M7.646 2.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 3.707 2.354 9.354a.5.5 0 1 1-.708-.708z"></path>
+												<path fill-rule="evenodd" d="M7.646 6.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 7.707l-5.646 5.647a.5.5 0 0 1-.708-.708z"></path>
+											</svg>
+										</a>
+									</td>
+									<td class="drawingNoCol">@item.GTREDrgNo</td>
+									<td class="dateCol">@MPGlobals.GetFormattedDate(item.DeliveryDate)</td>
+									<td class="text-end qtyCols">@item.OrderQty</td>
+									<td class="text-end qtyCols">@item.SumReceivedQty</td>
+									<td class="text-end qtyCols text-success">@item.AcceptedQty</td>
+									<td class="text-end qtyCols text-danger">@item.RejectedQty</td>
+									<td class="text-end qtyCols">@(item.OrderQty - item.SumReceivedQty)</td>
+									<td class="qtyCols">@item.ItemDescription</td>
+								</tr>
+								<tr style="display:none; padding:0px!important" id="item_@item.CastingItemKey">
+									<td style="padding:0px!important" colspan="9"></td>
+								</tr>
+							}
+						}
+
+					</tbody>
+				</table>
+			</div>
+		}
+	}
+
+
+</div>
+
+<div class="row">
+	@{
+		if (Model.castingDetailViewModel.CastingDbkey != 0 && Model.CastingItemViewModel.Count > 0)
+		{
+			<div class="col-12">
+				<div class="row">
+					<div class="col-6">
+						<b>Receipts</b>
+					</div>
+					<div class="col-6">
+						@{
+							if ((CastingWriteReceipts && ViewBag.Ordertype == "Casting") || (PyroWriteReceipts && ViewBag.Ordertype == "Pyro") || (ForgingWriteReceipts && ViewBag.Ordertype == "Forging"))
+							{
+								<a href="#" class="text-primary float-end" onclick="GetReceiptSplitModel(@Model.castingDetailViewModel.CastingDbkey,0)"><b>Create New Receipt</b></a>
+							}
+						}
+					</div>
+				</div>
+				<hr />
+				<div class="row">
+
+					@*    <ul class="nav nav-tabs" id="myTab" role="tablist">
+			<li class="nav-item" role="presentation"><a class="nav-link active"  data-bs-toggle="tab" href="#tab-batch" role="tab" aria-controls="batchsummary-tab" aria-selected="true">Receipts (Batch Summary)</a></li>
+			<li class="nav-item" role="presentation"><a class="nav-link" id="Parts-tab" data-bs-toggle="tab" href="#tab-detail" role="tab" aria-controls="Detail-list-tab" aria-selected="false" tabindex="-1">Receipts </a></li>
+			</ul>*@
+
+					@*  <div class="tab-content mt-0" id="myTabContent">
+			<div class="tab-pane fade show active" id="tab-batch" role="tabpanel" aria-labelledby="batchsummary-tab">
+
+			<table class="table table-bordered">
+			<thead>
+			<tr>
+			<th>Part</th>
+			<th>Receipt Date</th>
+			<th>Batch No</th>
+			@{
+			foreach (var StatusRemark in Model.receiptBatchSummary.Select(x => x.StatusRemarks).Distinct())
+			{
+			<th class="text-end">@StatusRemark</th>
+			}
+			}
+			<th class="text-end">Total</th>
+			</tr>
+			</thead>
+			<tbody>
+
+			@{
+			foreach (var item in Model.receiptBatchSummary.Select(x => new { x.Vendor_Name, x.PartName, x.ReceiptDate, x.BatchNumber, x.OrderItemKey }).Distinct())
+			{
+			double? rowTot = 0;
+			var receiptNumbers = "";
+
+
+			foreach (var rptno in Model.receiptSplitVMs.Where(x => x.BatchNumber == item.BatchNumber && x.OrderItemKey == item.OrderItemKey && x.ReceiptDate == item.ReceiptDate).Select(x=>x.ReceiptNumber).ToList().Distinct() )
+			{
+			receiptNumbers = (receiptNumbers == "" ? rptno : receiptNumbers + ", " + rptno);
+			}
+
+			<tr>
+			<td> <b>@item.PartName</b>  <p>[@item.Vendor_Name]</p>  </td>
+			<td> <b>@MPGlobals.GetFormattedDate(item.ReceiptDate)</b>   <p>[@receiptNumbers]</p>  </td>
+			<td> @item.BatchNumber </td>
+			@{
+			foreach (var StatusRemark in Model.receiptBatchSummary.Select(x => x.StatusRemarks).Distinct())
+			{
+			var splitQty = Model.receiptBatchSummary.Where(x => x.Vendor_Name == item.Vendor_Name &&
+			x.PartName == item.PartName && x.ReceiptDate == item.ReceiptDate &&
+			x.BatchNumber == item.BatchNumber
+			&& x.OrderItemKey == item.OrderItemKey && x.StatusRemarks == StatusRemark).Select(x => x.SplitQty).Sum();
+			rowTot = rowTot + splitQty;
+			<td class="text-end">@splitQty</td>
+			}
+			}
+			<td class="text-end"> <b>@rowTot</b> </td>
+			</tr>
+			}
+			}
+			</tbody>
+			</table>
+
+			</div>*@
+					@* <div class="tab-pane fade show" id="tab-detail" role="tabpanel" aria-labelledby="Detail-list-tab">*@
+					<table class="table table-bordered  table-condensed table-sm" id="grneric-order-receipt-display" style="width:100%;border:1px!important;">
+						<thead>
+							<tr>
+								<th>Receipt No/Date</th>
+								<th>Part</th>
+								<th>Vendor</th>
+								<th>Vendor Drg. #</th>
+								<th>Batch No & Heat No</th>
+								<th>Qty Received</th>
+								<th>Attachments</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody id="casting_split_tbl_bdy">
+							@{
+								foreach (var item in Model.receiptSplitVMs)
+								{
+									<tr>
+										<td>
+											<b>@item.ReceiptNumber</b>
+											<p class="p-0 m-0">@MPGlobals.GetFormattedDate(item.ReceiptDate)</p>
+										</td>
+										<td> 
+										<b>  @item.PartName </b> 
+										@((string.IsNullOrEmpty(item.Revision)) ? "" : " (Rev: " + item.Revision + ")") </td>
+										<td><p >@item.Vendor_Name</p></td>
+										<td>@item.VendorDrawingNo</td>
+										<td><p>@item.BatchNumber</p> @item.HeatNumber</td>
+										<td>
+											<partial name="../Casting/CastingQtySplit.cshtml" model="@item.Id.ToString()">
+												@{
+													if (!string.IsNullOrEmpty(item.Remarks))
+													{
+														<p class="p-0 m-0"> <b>Remarks: </b> @item.Remarks</p>
+													}
+												}
+										</td>
+										<td>
+											@{
+												var data = new MPCRS.ViewModels.DetailedCastingDataVM();
+												data.EnginePartDbkey = item.EnginePartDbkey;
+												data.SplitId = item.Id;
+												 <partial name="../Casting/CastingSplitDocChecklist.cshtml" model="data" />
+											}
+										</td>
+										<td>
+											@{
+												if ((CastingWriteReceipts && ViewBag.Ordertype == "Casting") || (PyroWriteReceipts && ViewBag.Ordertype == "Pyro") || (ForgingWriteReceipts && ViewBag.Ordertype == "Forging"))
+												{
+													<i title="Edit Receipt" class="text-primary uil uil-edit fs-1" style="cursor:pointer" onclick="GetReceiptSplitModel(@item.CastingDbkey,@item.Id)"></i>
+												}
+
+												if ((CastingDeleteAccess && ViewBag.Ordertype == "Casting") || (PyroDeleteAccess && ViewBag.Ordertype == "Pyro") || (ForgingDeleteAccess && ViewBag.Ordertype == "Forging"))
+												{
+													<p  title="Delete Receipt" class="p-0 m-0"><i class="text-warning uil uil-trash fs-1" style="cursor:pointer" onclick="DeleteOrderComponents(this,@item.Id,'CastingReceiptsItemSplit')"></i></p>
+												}
+												if (receiptCommnetAccess)
+												{
+													<i title="Add Remarks" style="cursor:pointer" onclick="getCommentSection(@Model.castingDetailViewModel.CastingDbkey,@item.Id)" class="fas fa-comment-alt"></i>
+												}
+											}
+										</td>
+									</tr>
+
+								}
+							}
+						</tbody>
+
+					</table>
+					@* </div>
+			</div>*@
+				</div>
+			</div>
+		}
+	}
+
+</div>
+
+
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+	<script src="~/mpi/GenericOrders.js" asp-append-version="true"></script>
+	<script src="~/vendors/choices/choices.min.js"></script>
+	<script src="~/js/jquery-ui.min.js"></script>
+
+	<script>
+		$(document).ready(function () {
+			// if (document.getElementById("isCustomAccess").value == "true") {
+			// 	document.getElementById("navbarTop").innerHTML = "";
+			// }
+
+			if (document.getElementById("Id").value == "NEW") {
+				var GenericOrdertype = document.getElementById("Generic-Ordertype").value
+				CreateEditOrder(0, GenericOrdertype);
+			}
+			else {
+				$('#grneric-order-receipt-display').DataTable({
+					paging: false,
+					dom: 'Bfrtip',
+					language: {
+						searchPanes: {
+							button: 'Advanced Filter'
+						}
+					},
+					buttons: [
+						{
+							extend: 'searchPanes',
+							text: 'Advanced Filter',
+							config: {
+								text: 'Advanced Filter',
+								columns: [1,2],  // Adjust these indexes according to the columns you want to filter
+								cascadePanes: true,
+								
+							}
+						}
+					],
+					columnDefs: [
+						{
+							searchPanes: {
+								show: true
+							},
+							targets: [1]
+						}
+					],
+					
+					// stateSave: true,
+					// stateSaveCallback: function (settings, data) {
+					// 	localStorage.setItem(
+					// 		'DataTables_' + settings.sInstance,
+					// 		JSON.stringify(data)
+					// 	);
+					// },
+					// stateLoadCallback: function (settings) {
+					// 	return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+					// }
+					//order: [1],	
+					
+					// scrollY: 280,
+				});
+				//$('#grneric-order-receipt-display').DataTable().searchPanes.rebuildPane();
+				var dttable = $('#grneric-order-receipt-display').DataTable();
+				dttable.searchPanes.rebuildPane();
+
+			}
+		});
+	</script>
+
+}

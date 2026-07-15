@@ -1,0 +1,25 @@
+﻿@model List<MPCRS.ViewModels.EngineBuildSlnoUsage>
+
+
+<table class="table table-bordered">
+	<thead>
+		<tr>
+			<th>Drawing Number</th>
+			<th>Serial Number</th>
+			<th>Build Name</th>
+			<th>Part Status</th>
+		</tr>
+	</thead>
+	<tbody>
+		@{
+			foreach(var item in Model){
+				<tr>
+					<td class="p-2">@item.DrawingNumber</td>
+					<td>@item.SerialNumber</td>
+					<td>@item.BuildName</td>
+					<td>@item.PartStatus</td>
+				</tr>
+			}
+		}
+	</tbody>
+</table>

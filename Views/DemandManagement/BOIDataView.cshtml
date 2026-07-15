@@ -1,0 +1,45 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+
+
+@{
+	ViewBag.Title = "DemandReceiptsHistory";
+
+	var demandSelectList = Masters.GetDemandSelectList();
+}
+<style>
+	table.dataTable tr.group td {
+		font-weight: bold;
+		background-color: #e0e0e0
+	}
+</style>
+
+
+<hr />
+<div class="row">
+	<div class="">
+		<table id="BOItbl" class="table table-sm fs--1 mb-2 table-bordered table-responsive" cellspacing="0" style="width:100%;">
+			<thead>
+				<tr>
+					@* <th>Demand No.</th> *@
+					<th>MMG No.</th>
+					<th>Receipt No.</th>
+					<th>Receipt Date.</th>
+					<th>Item</th>
+					<th class="text-end">Ordered Qty</th>
+					<th class="text-end">Received Qty</th>
+					<th>More Info</th>
+				</tr>
+			</thead>
+
+		</table>
+	</div>
+</div>
+
+
+
+
+
+
+
+

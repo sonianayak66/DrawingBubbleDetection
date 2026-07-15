@@ -1,0 +1,141 @@
+﻿@using System.Data
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "SOP Comparison";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var builds = MPGlobals.GetDataForDatalist("SELECT * FROM [dbo].[EngineBuilds] order by 1 desc");
+}
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-sm-3">
+                <h4>SOP Comparison (Across all builds)</h4>
+            </div>
+            <div class="col-md-2">
+                <b>Build 1 (Old Build )</b>
+                <div class="input-group">
+                    <select class="form-control form-select" id="build1">
+                        @{
+                            <option value="0">Select Old Build</option>
+                            foreach (DataRow item in builds.Rows)
+                            {
+                                <option value="@item["Id"]">@item["BuildName"]</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <b>Build 2 (New Build - Check Changes)</b>
+                <div class="input-group">
+                    <select class="form-control form-select" id="build2">
+                        @{
+                            <option value="0">Select New Build</option>
+                            foreach (DataRow item in builds.Rows)
+                            {
+                                <option value="@item["Id"]">@item["BuildName"]</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-2" style="margin-top:25px!important">
+                <input type="checkbox" id="changesOnly" checked style="height:18px!important;width:18px!important" />Show only changes
+            </div>
+            <div class="col-md-1" style="margin-top:25px!important">
+                <a onclick="GetSOPComparison()" class="btn btn-primary" style="width:100%">Go</a>
+            </div>
+            <div class="col-md-1" style="margin-top:25px!important">
+                <a class="btn btn-secondary" href="/SOPManagement/BaseLineEngines">Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+<hr />
+<div class="col-md-12 col-sm-12 col-lg-12 divc">
+    <label id="Comparsion_Label"></label>
+    <table class="table table-bordered table-sm fs--1 mb-2" id="SOPBuildsCompTable">
+        <thead>
+            <tr>
+                <th data-sortable="true" scope="col">Sl No</th>
+                <th data-sortable="true" scope="col">Build Name</th>
+                <th data-sortable="true" scope="col">Parent</th>
+                <th data-sortable="true" scope="col">Part No</th>
+                <th data-sortable="true" scope="col">Description</th>
+                <th data-sortable="true" scope="col">Part Status</th>
+                <th data-sortable="true" scope="col">Comparison Notes for <span id="Comparisiontxt"></span></th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        var MPCData;
+        var MPCDataForList = [];
+
+        $(document).ready(function () {
+            //GetMPL_Comaparision();
+        });
+
+        function GetSOPComparison() {
+            var E1 = document.getElementById("build1");
+            var E2 = document.getElementById("build2");
+            var IsChangeOnly = document.getElementById("changesOnly").checked;
+
+            // Validate selection
+            if (E1.value == "0" || E2.value == "0") {
+                alert("Please select both Old Build (Build 1) and New Build (Build 2) to compare");
+                return;
+            }
+
+            document.getElementById("Comparsion_Label").innerText = "SOP Comparison: Changes in " + E2.options[E2.selectedIndex].text + " compared to " + E1.options[E1.selectedIndex].text;
+            document.getElementById("Comparisiontxt").innerText = E2.options[E2.selectedIndex].text;
+
+            $.ajax({
+                type: "Get",
+                url: "/SOPManagement/GetComparisonData?BL1=" + E1.value + "&BL2=" + E2.value + "&IsChangeOnly=" + IsChangeOnly,
+                success: function (data) {
+                    MPCDataForList = JSON.parse(data);
+                    GetMPL_Comaparisionlist();
+                }
+            })
+        }
+
+        function GetMPL_Comaparisionlist() {
+
+            try {
+                dataTable.destroy();
+            } catch (e) {
+            }
+
+            dataTable = $("#SOPBuildsCompTable").DataTable({
+                scrollY: 510,
+                data: MPCDataForList,
+                paging: false,
+                dom: 'Bfrtip',
+                buttons: [{
+                    extend: 'excel',
+                    title: document.getElementById("Comparsion_Label").innerText,
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5]
+                    }
+                }],
+                    "columns": [
+            { "data": "SL_No" },
+            { "data": "BuildName" },  // Added BuildName column
+            { "data": "ParentPart" },
+            { "data": "Part" },
+            { "data": "PartDescription" },
+            { "data": "PartStatus" },
+            { "data": "ChangeRemarks" }
+        ]
+            });
+        }
+    </script>
+}

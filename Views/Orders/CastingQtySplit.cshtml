@@ -1,0 +1,65 @@
+﻿@using Newtonsoft.Json;
+@using MPCRS.Utilities;
+@model string
+
+
+@{
+	Layout = null;
+
+	List<CastingReceiptQtySplit> castingQtySplit = new();
+
+	string cmdStr = $"EXEC dbo.GetCastingQtySplit @ReceiptSplitKeys='{Model}'";
+
+	System.Data.DataTable dt = MPCRS.Utilities.MPGlobals.GetDataForDatalist(cmdStr);
+	if (dt.Rows.Count > 0)
+	{
+		string json = JsonConvert.SerializeObject(dt);
+		castingQtySplit = JsonConvert.DeserializeObject<List<CastingReceiptQtySplit>>(json);
+	}
+
+
+
+	if (castingQtySplit.Count > 0)
+	{
+		<table class="table table-bordered m-0">
+			<tbody>
+				@{
+					foreach (var item in castingQtySplit)
+					{
+						<tr>
+							<td class="p-0" style="width:150px!important">@item.StatusRemarks</td>
+							<td class="p-0 text-end" style="width:40px!important;padding-right:10px!important"><b>@item.SplitQty</b> </td>
+							<td class="p-0" style="padding-left:10px!important;word-wrap:break-word!important;">
+								@if (item.SerialNos.Split(',').Count() > 9)
+								{
+									<div style="max-height:100px;max-width:300px;overflow:hidden;" class="serialNoDiv">
+										@foreach (var serialNo in item.SerialNos.Split(','))
+										{
+											<span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark ">@serialNo</span>
+										}
+									</div>
+									<i class="fas fa-angle-down fa-1x" style="cursor:pointer" onclick="viewMore(this,'serialNoDiv')"></i>
+								}
+								else
+								{
+									<div style="max-width:300px;">
+										@foreach (var serialNo in item.SerialNos.Split(','))
+										{
+											<span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark ">@serialNo</span>
+										}
+									</div>
+								}
+							</td>
+						</tr>
+
+						
+						
+					}
+				}
+			</tbody>
+		</table>
+	}
+}
+
+
+

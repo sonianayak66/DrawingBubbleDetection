@@ -1,0 +1,158 @@
+﻿@using System.Data
+@using MPCRS.Utilities
+
+@{
+    Layout = null;
+    DataTable doctypes = MPGlobals.GetDataForDatalist("SELECT [Master_Dbkey],[Master_Name] FROM [dbo].[Master_General] where [Master_Type] = 'Procurement_Doument_Type'");
+    DataTable dataTable = MPGlobals.GetDataForDatalist("[dbo].[Get_Demand_Receipts_History] @Receipt_dbkey = " + @ViewBag.Receipt_dbkey + "");
+    DataTable docs = MPGlobals.GetDataForDatalist(@"SELECT * FROM [dbo].[Attachments] where [Source_table] = 'Procurement_Demand_Receipts' and [Source_table_key] = " + @ViewBag.Receipt_dbkey + "");
+
+    var DemandReceiptWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write_Receipts);
+    var DemandDocDelete = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Delete);
+ 
+}
+
+<style>
+
+    .table-sm td {
+        padding: 10px !important;
+        white-space: nowrap;
+    }
+
+    .table-sm {
+        padding: 10px !important;
+    }
+
+    .table-sm input,
+    .table-sm select {
+        border-radius: 0;
+        border: none;
+    }
+</style>
+<div class="row">
+
+    <div class="col-md-3">
+        <h4>Demand No : @dataTable.Rows[0]["Demand_No"].ToString()</h4>
+    </div>
+    <div class="col-md-3">
+        <h4>Receipt No : @dataTable.Rows[0]["Receipt_No"].ToString()</h4>
+    </div>
+    <div class="col-md-3">
+        <h4>Item : @dataTable.Rows[0]["Material_name"].ToString()</h4>
+    </div>
+</div>
+<hr />
+<div class="card">
+    <div class="col-md-12">
+        <table class="table table-sm fs--1 mb-2" id="AttachmentTableData" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Document Type</th>
+                    <th>Reference No.</th>
+                    <th>File</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="recptDocs_tblbody"> 
+                @foreach (DataRow dr in docs.Rows)
+                {
+                    <tr>
+                        <td>
+                            @foreach (DataRow drtype in doctypes.Rows)
+                            {
+                                if (@drtype["Master_Dbkey"].ToString() == @dr["File_DVD_Num"].ToString())
+                                {
+                                   @drtype["Master_Name"]
+                                } 
+
+                            }
+                        </td>
+                        <td>
+                            @dr["File_Revision"]
+                        </td>
+
+                        <td> 
+                            <a target="_blank" href="@(dr["Attachment_location"].ToString() + dr["Attachment_FileName"].ToString())">@dr["Orginal_File_Name"].ToString()</a>
+                        </td>
+                        <td>
+                            @* <a class="btn btn-default" target="_blank" href="@(dr["Attachment_location"].ToString() + dr["Attachment_FileName"].ToString())"><i class="uil uil-cloud-download fs-2" aria-hidden="true"></i> </a> *@
+                            @* <a class="btn btn-default" target="_blank"><i class="uil uil-cloud-upload fs-2" aria-hidden="true" onclick="UploadReceiptDos(@ViewBag.Receipt_dbkey)" readonly></i> </a> *@
+
+                        </td>
+                        <td>
+                            @{
+                                if (DemandDocDelete)
+                                {
+                                    <i class="uil uil-trash-alt fs-1" style="color:red;text-align:center; font-size:xx-small; cursor:pointer" onclick="DeleteDemandReceiptDocs(@dr["Attachment_Db_Key"],@dr["Source_table_key"],this)"></i>
+                                }
+                            }
+
+                        </td>
+                    </tr>
+                }
+                @{
+                    if (ViewBag.readmode != 1)
+                    {
+                        <tr class="docinput">
+                            <td>
+                                <select class="form-select File_DVD_Num">
+                                    <option value="0">Select</option>
+                                    @foreach (DataRow drtype in doctypes.Rows)
+                                    {
+                                        <option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+                                    }
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control File_Revision" />
+                            </td>
+                            <td>
+                                <input type="file" class="form-control fileName" />
+                            </td>
+                            <td >
+                                @{
+                                    if (DemandReceiptWriteAccess)
+                                    {
+                                        <a class="btn btn-default" style="padding:0px!important">
+                                            <i class="uil uil-cloud-upload fs-2" aria-hidden="true" onclick="UploadReceiptDos(@ViewBag.Receipt_dbkey)"></i>
+                                        </a>
+                                    }
+                                }
+                              
+                            </td>
+                            <td>
+                                
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+         @*   @{
+                if (DemandReceiptWriteAccess)
+                {
+                    <tfoot>
+                        @{
+                            if (ViewBag.readmode != 1)
+                            {
+                                <tr>
+                                    <td>
+                                        <a id="btnAdd" style="cursor:pointer;font-size:15px!important" class="fa fa-plus" onclick="AddReceiptDocRow()">Add Lines</a>
+                                    </td>
+                                    <td></td>
+                                    <td>
+                    <button class="btn btn-success" onclick="UploadReceiptDos(@ViewBag.Receipt_dbkey)">Upload</button>
+                    </td>
+
+                                </tr>
+                            }
+                        }
+                    </tfoot>
+                }
+            }*@
+
+        </table>
+    </div>
+</div>
+
+ 

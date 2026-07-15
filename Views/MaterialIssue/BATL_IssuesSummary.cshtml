@@ -1,0 +1,58 @@
+﻿ @model List<MPCRS.ViewModels.BATL_IssueSummary>
+
+@{
+	Layout = null;
+}
+
+<table class="table table-bordered" id="BATLIssueSummaryTbl" style="width:100%">
+    <thead>
+        <tr>
+
+            <th>Parent Part No</th>
+            <th>Part No</th> 
+            <th>Description</th>
+            <th>Quantity Per Engine</th>
+            <th>Qty For 44 Engines</th> 
+            <th>Issued For Qty </th>
+            <th>Job Card </th>
+
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+			var FontColor = item.Total_Issued_Qty < item.Qty_For_44Eng ? "red" : "black";
+           // <tr style="@(item.Total_Issued_Qty < item.Qty_For_44Eng ? "background-color:#f5b7b1;" : "")">
+            <tr>
+
+                <td>@item.parent_partno</td>
+                <td>@item.Draw_part_no</td> 
+                <td>@item.Description</td>
+                <td>@item.Quantity</td>
+                <td>@item.Qty_For_44Eng</td>
+                <td style="color:@FontColor;"> @item.Total_Issued_Qty</td>
+                <td>
+                    @{
+                        var fileNames = item.JobCardFileName?.Split(",") ?? new string[0];
+                        var filePaths = item.JobCardFileLocation?.Split(",") ?? new string[0];
+                    }
+
+                    @if (fileNames.Length == filePaths.Length)
+                    {
+                        for (int i = 0; i < fileNames.Length; i++)
+                        {
+                            var name = fileNames[i].Trim();
+                            var path = filePaths[i].Trim();
+                            <a class="badge badge-phoenix badge-phoenix-success fs--2" target="_blank" style="cursor:pointer" href="@path">@name</a>
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-danger">Mismatch in file names and paths.</span>
+                    }
+
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

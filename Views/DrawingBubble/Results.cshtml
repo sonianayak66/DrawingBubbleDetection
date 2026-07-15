@@ -1,0 +1,431 @@
+﻿@model MPCRS.ViewModels.DrawingBubbleResultViewModel
+@{
+    ViewData["Title"] = "Bubble Detection Results";
+    bool isReadOnly = Model.IsReadOnly;
+}
+
+<div class="page-header d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+        <i class="fas fa-circle-notch me-2"></i>
+        Detection Results —
+        <span class="text-primary">@Model.Draw_part_no</span>
+        <small class="text-muted ms-2">Rev: @Model.Revision</small>
+        @if (!string.IsNullOrEmpty(Model.Detection_Method_DisplayName))
+        {
+            <span class="badge bg-info ms-2" title="Detection method used">@Model.Detection_Method_DisplayName</span>
+        }
+    </h4>
+    <div>
+        @if (!isReadOnly)
+        {
+            <button class="btn btn-success btn-sm me-2" onclick="confirmSave()">
+                <i class="fas fa-save me-1"></i> Confirm & Save
+            </button>
+        }
+        <a asp-action="History" asp-controller="DrawingBubble"
+           asp-route-enginePartDbkey="@Model.Engine_Part_Dbkey"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-list me-1"></i> Records    
+        </a>
+        <a asp-action="Index" asp-controller="DrawingBubble"
+           class="btn btn-outline-primary btn-sm ms-1">
+            <i class="fas fa-plus me-1"></i> New
+        </a>
+    </div>
+</div>
+
+@if (Model.IsMultiPage)
+{
+    <ul class="nav nav-tabs mb-0" id="pageTabs">
+        @foreach (var pg in Model.Pages)
+        {
+            <li class="nav-item">
+                <a class="nav-link @(pg.PageNumber == 1 ? "active" : "")"
+                   data-bs-toggle="tab"
+                   href="#page-@pg.PageNumber">
+                    Page @pg.PageNumber
+                    @if (pg.Bubbles.Any(b => b.Needs_Review))
+                    {
+                        <span class="badge bg-warning text-dark ms-1">@pg.Bubbles.Count(b => b.Needs_Review)</span>
+                    }
+                </a>
+            </li>
+        }
+    </ul>
+}
+
+<div class="tab-content">
+    @foreach (var pg in Model.Pages)
+    {
+        <div class="tab-pane fade @(pg.PageNumber == 1 ? "show active" : "")"
+             id="page-@pg.PageNumber">
+
+            <div class="row g-0" style="min-height: 75vh;">
+
+                 
+                <div class="col-md-7 border-end">
+                    <div class="card border-0 h-100">
+                        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
+                            <span><i class="fas fa-image me-2"></i>Annotated Drawing</span>
+                            <div>
+                                <button class="btn btn-sm btn-outline-light me-1" onclick="zoomIn(@pg.PageNumber)" title="Zoom In">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-light me-1" onclick="zoomOut(@pg.PageNumber)" title="Zoom Out">
+                                    <i class="fas fa-search-minus"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-light" onclick="resetZoom(@pg.PageNumber)" title="Reset">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0 bg-dark overflow-auto"
+                             id="imgContainer-@pg.PageNumber"
+                             style="max-height: 75vh; cursor: grab;">
+                            <img id="annotatedImg-@pg.PageNumber"
+                                 src="@pg.AnnotatedImageUrl"
+                                 alt="Annotated Drawing Page @pg.PageNumber"
+                                 style="width:100%; transition: transform 0.2s; transform-origin: top left;"
+                                 draggable="false" />
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="col-md-5">
+                    <div class="card border-0 h-100">
+                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-2">
+                            <span>
+                                <i class="fas fa-list me-2"></i>
+                                Detected Bubbles
+                                <span class="badge bg-light text-dark ms-2 bubbleCount-@pg.PageNumber">
+                                    @pg.Bubbles.Count
+                                </span>
+                            </span>
+                            @if (!isReadOnly)
+                            {
+                                <button class="btn btn-sm btn-light fw-bold"
+                                        onclick="addRow(@pg.PageNumber)">
+                                    <i class="fas fa-plus me-1"></i>Add Row
+                                </button>
+                            }
+                        </div>
+
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 72vh; overflow-y: auto;">
+                                <table class="table table-hover table-sm align-middle mb-0"
+                                       id="bubbleTable-@pg.PageNumber">
+                                    <thead class="table-dark sticky-top">
+                                        <tr>
+                                            <th style="width:70px;">Bubble</th>
+                                            <th>Dimension</th>
+                                            <th >Tolerance</th>
+                                            @if (!isReadOnly)
+                                            {
+                                                <th style="width:50px;"></th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var bubble in pg.Bubbles)
+                                        {
+                                            <tr class="@(bubble.Needs_Review ? "table-warning" : "")"
+                                                data-page="@pg.PageNumber"
+                                                data-bubble="@bubble.Bubble_Number"
+                                                data-x="@bubble.X_Coordinate"
+                                                data-y="@bubble.Y_Coordinate"
+                                                data-radius="@bubble.Radius"
+                                                data-confidence="@bubble.Confidence"
+                                                data-manual="false"
+                                                data-corrected="false">
+
+                                                <td class="fw-bold text-center">
+                                                    @bubble.Bubble_Number
+                                                </td>
+
+                                                <td>
+                                                    @if (!isReadOnly)
+                                                    {
+                                                        <input type="text"
+                                                               class="form-control form-control-sm dim-input"
+                                                               value="@bubble.Dimension"
+                                                               placeholder="Enter dimension"
+                                                               onchange="markCorrected(this)" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@bubble.Dimension</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (!isReadOnly)
+                                                    {
+                                                        <input type="text"
+                                                               class="form-control form-control-sm tol-input"
+                                                               value="@bubble.Tolerance"
+                                                               placeholder="e.g. ±0.15 or +0.1/-0.05"
+                                                               pattern="^[±\+\-]\d+(\.\d+)?(\/[\+\-]\d+(\.\d+)?)?$"
+                                                               title="Format: ±0.15 or +0.1/-0.05"
+                                                               onchange="validateTolerance(this)" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@bubble.Tolerance</span>
+                                                    }
+                                                </td>
+
+                                                @if (!isReadOnly)
+                                                {
+                                                    <td class="text-center">
+                                                        <button class="btn btn-sm btn-outline-danger p-1"
+                                                                onclick="deleteRow(this)" title="Delete">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </td>
+                                                }
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        @if (!isReadOnly)
+                        {
+                            <div class="card-footer bg-light d-flex justify-content-between align-items-center py-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                    <span class="reviewCount-@pg.PageNumber">@pg.Bubbles.Count(b => b.Needs_Review)</span> need review
+                                </small>
+                                <a href="@pg.OriginalImageUrl" target="_blank"
+                                   class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-external-link-alt me-1"></i> Original
+                                </a>
+                            </div>
+                        }
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    }
+</div>
+
+ 
+<input type="hidden" id="hEnginePartDbkey" value="@Model.Engine_Part_Dbkey" />
+<input type="hidden" id="hDrawPartNo" value="@Model.Draw_part_no" />
+<input type="hidden" id="hRevision" value="@Model.Revision" />
+<input type="hidden" id="hOriginalFileName" value="@Model.Original_File_Name" />
+<input type="hidden" id="hOriginalFilePath" value="@Model.Original_File_Path" />
+<input type="hidden" id="hDetectionMethod" value="@Model.Detection_Method" />
+
+@section Scripts {
+    <script>
+
+        // ── Zoom Controls ─────────────────────────────────────────────
+        var zoomLevels = {};
+
+        function getZoom(pageNum) {
+            return zoomLevels[pageNum] || 1.0;
+        }
+        function setZoom(pageNum, val) {
+            val = Math.min(Math.max(val, 0.3), 4.0);
+            zoomLevels[pageNum] = val;
+            document.getElementById('annotatedImg-' + pageNum).style.transform = 'scale(' + val + ')';
+        }
+        function zoomIn(pageNum)    { setZoom(pageNum, getZoom(pageNum) + 0.2); }
+        function zoomOut(pageNum)   { setZoom(pageNum, getZoom(pageNum) - 0.2); }
+        function resetZoom(pageNum) { setZoom(pageNum, 1.0); }
+
+        // Mouse wheel zoom on image container
+        document.querySelectorAll('[id^="imgContainer-"]').forEach(function(container) {
+            container.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                var pageNum = container.id.split('-')[1];
+                setZoom(pageNum, getZoom(pageNum) + (e.deltaY < 0 ? 0.1 : -0.1));
+            });
+        });
+
+        // ── Mark corrected when dimension edited ─────────────────────
+        function markCorrected(input) {
+            input.closest('tr').dataset.corrected = 'true';
+        }
+
+        // ── Add row manually ─────────────────────────────────────────
+        function addRow(pageNum) {
+            var tbody = document.querySelector('#bubbleTable-' + pageNum + ' tbody');
+            var row = document.createElement('tr');
+            row.dataset.page      = pageNum;
+            row.dataset.bubble    = '';
+            row.dataset.x         = '0';
+            row.dataset.y         = '0';
+            row.dataset.radius    = '0';
+            row.dataset.manual    = 'true';
+            row.dataset.corrected = 'false';
+
+            row.innerHTML =
+                '<td class="fw-bold text-center">' +
+                    '<input type="text" class="form-control form-control-sm text-center bubble-num-input" ' +
+                           'placeholder="#" style="width:50px;" />' +
+                '</td>' +
+                '<td><input type="text" class="form-control form-control-sm dim-input" placeholder="Enter dimension" /></td>' +
+                '<td><input type="text" class="form-control form-control-sm tol-input" placeholder="e.g. ±0.15 or +0.1/-0.05" pattern="^[±\\+\\-]\\d+(\\.\\d+)?(\\/[\\+\\-]\\d+(\\.\\d+)?)?$" title="Format: ±0.15 or +0.1/-0.05" onchange="validateTolerance(this)" /></td>' +
+                '<td class="text-center"><button class="btn btn-sm btn-outline-danger p-1" onclick="deleteRow(this)"><i class="fas fa-times"></i></button></td>';
+
+            tbody.appendChild(row);
+            updateCounts(pageNum);
+            row.querySelector('.bubble-num-input').focus();
+        }
+
+        // ── Delete row ────────────────────────────────────────────────
+        function deleteRow(btn) {
+            bootbox.confirm({
+                title: 'Delete Row',
+                message: 'Remove this bubble from the list?',
+                size: 'small',
+                buttons: {
+                    confirm: { label: 'Delete', className: 'btn-danger' },
+                    cancel:  { label: 'Cancel', className: 'btn-secondary' }
+                },
+                callback: function(result) {
+                    if (result) {
+                        var row = btn.closest('tr');
+                        var pageNum = row.dataset.page;
+                        row.remove();
+                        updateCounts(pageNum);
+                    }
+                }
+            });
+        }
+
+        // ── Update bubble count badge ─────────────────────────────────
+        function updateCounts(pageNum) {
+            var count = document.querySelectorAll('#bubbleTable-' + pageNum + ' tbody tr').length;
+            var reviewCount = document.querySelectorAll('#bubbleTable-' + pageNum + ' tbody tr.table-warning').length;
+            var elCount  = document.querySelector('.bubbleCount-' + pageNum);
+            var elReview = document.querySelector('.reviewCount-' + pageNum);
+            if (elCount)  elCount.textContent  = count;
+            if (elReview) elReview.textContent = reviewCount;
+        }
+
+        // ── Collect all bubble data from all pages ────────────────────
+        function collectAllBubbles() {
+            var allItems = [];
+
+            document.querySelectorAll('[id^="bubbleTable-"] tbody tr').forEach(function(row) {
+                var dimInput = row.querySelector('.dim-input');
+                var numInput = row.querySelector('.bubble-num-input');
+
+                var bubbleNum = numInput
+                    ? numInput.value.trim()
+                    : (row.dataset.bubble || '');
+
+                if (!bubbleNum) return; // skip empty manual rows
+                var tolInput = row.querySelector('.tol-input');
+                allItems.push({
+                    Bubble_Number:     bubbleNum,
+                    Dimension:         dimInput ? dimInput.value.trim() : '',
+                    Tolerance:         tolInput ? tolInput.value.trim() : '',
+                    Confidence:        parseFloat(row.dataset.confidence) || 0,
+                    Needs_Review:      row.classList.contains('table-warning'),
+                    Is_Manually_Added: row.dataset.manual    === 'true',
+                    Is_Corrected:      row.dataset.corrected === 'true',
+                    X_Coordinate:      parseInt(row.dataset.x)      || 0,
+                    Y_Coordinate:      parseInt(row.dataset.y)      || 0,
+                    Radius:            parseInt(row.dataset.radius) || 0,
+                });
+            });
+
+            return allItems;
+        }
+
+        // ── Confirm & Save ────────────────────────────────────────────
+        function confirmSave() {
+            var items = collectAllBubbles();
+                    var invalidTol = document.querySelectorAll('.tol-input.is-invalid');
+        if (invalidTol.length > 0) {
+            bootbox.alert({ title: 'Invalid Tolerance', message: invalidTol.length + ' row(s) have invalid tolerance format. Use ±0.15 or +0.1/-0.05', size: 'small' });
+            return;
+        }
+            if (!items.length) {
+                bootbox.alert({ title: 'Nothing to Save', message: 'No bubble data found.', size: 'small' });
+                return;
+            }
+            var reviewItems = items.filter(function(i) { return i.Needs_Review; });
+            var message = items.length + ' bubble(s) will be saved.';
+            if (reviewItems.length) {
+                message += '<br/><span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>' +
+                           reviewItems.length + ' item(s) still marked as "Needs Review". Save anyway?</span>';
+            }
+
+            bootbox.confirm({
+                title: 'Confirm Save',
+                message: message,
+                buttons: {
+                    confirm: { label: '<i class="fas fa-save me-1"></i>Save', className: 'btn-success' },
+                    cancel:  { label: 'Cancel', className: 'btn-secondary' }
+                },
+                callback: function(result) {
+                    if (!result) return;
+
+                    var firstImg = document.querySelector('[id^="annotatedImg-"]');
+                    var annotatedUrl      = firstImg ? firstImg.getAttribute('src') : '';
+                    var annotatedFileName = annotatedUrl ? annotatedUrl.split('/').pop() : '';
+
+                    var payload = {
+                        Engine_Part_Dbkey:   parseInt(document.getElementById('hEnginePartDbkey').value),
+                        Draw_part_no:        document.getElementById('hDrawPartNo').value,
+                        Revision:            document.getElementById('hRevision').value,
+                        Original_File_Name:  document.getElementById('hOriginalFileName').value,
+                        Original_File_Path:  document.getElementById('hOriginalFilePath').value,
+                        Annotated_File_Name: annotatedFileName,
+                        Annotated_File_Path: annotatedUrl,
+                        Total_Bubbles:       items.length,
+                        Needs_Review_Count:  items.filter(function(i) { return i.Needs_Review; }).length,
+                        Detection_Method:    document.getElementById('hDetectionMethod').value,
+                        Items:               items,
+                    };
+
+                    fetch('@Url.Action("Save", "DrawingBubble")', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(res) {
+                        if (res.success) {
+                            bootbox.alert({
+                                title: 'Saved',
+                                message: '<i class="fas fa-check-circle text-success me-2"></i>Bubble inspection saved successfully.',
+                                size: 'small',
+                                callback: function() {
+                                    window.location.href = '@Url.Action("History", "DrawingBubble")';
+                                }
+                            });
+                        } else {
+                            bootbox.alert({ title: 'Save Failed', message: res.message, size: 'small' });
+                        }
+                    })
+                    .catch(function() {
+                        bootbox.alert({ title: 'Error', message: 'Connection error. Please try again.', size: 'small' });
+                    });
+                }
+            });
+        }
+                function validateTolerance(input) {
+            var val = input.value.trim();
+            if (val === '') {
+                input.classList.remove('is-invalid');
+                return;
+            }
+            var pattern = /^[±\+\-]\d+(\.\d+)?(\/[\+\-]\d+(\.\d+)?)?$/;
+            if (!pattern.test(val)) {
+                input.classList.add('is-invalid');
+                input.title = 'Invalid format. Use ±0.15 or +0.1/-0.05';
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        }
+    </script>
+}

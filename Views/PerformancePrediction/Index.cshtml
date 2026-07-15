@@ -1,0 +1,143 @@
+﻿@model List<MPCRS.Models.PerformancePrediction>
+@using MPCRS.Utilities;
+@{
+    var hasWritePermission = UserData.IsAuthorized(User, Constants.UserPermissions.Performance_Prediction_Write);
+}
+
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>Engine Performance Prediction</h3>
+    </div>
+    <div class="col-md-6">
+        <a asp-controller="home" asp-action="index" class="btn btn-secondary btn-sm float-end m-1" style="float:right;">Back</a>
+        @{
+            if (hasWritePermission)
+            {
+                <a onclick="GetPerformanceDialog('')" class="btn btn-primary btn-sm float-end m-1" style="float:right; cursor:pointer">Create</a>
+            }   
+        }
+
+    </div>
+</div>
+
+
+<table data-toggle="table" class="table table-sm fs--1 mb-2" role="grid" id="tblpredication">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>FileName </th>
+            <th>UploadedOn </th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Title </td>
+                    <td>@item.Description</td>
+                    <td>@item.inputFilename </td>
+                    <td>@item.createdon </td>
+                    <td><a asp-action="Results" asp-route-id="@item.predectionGUID">Results</a> </td>
+                </tr>
+            } 
+        } 
+    </tbody> 
+</table>
+
+
+
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function () {
+            ApplyDatatable();
+            
+        });
+        function ApplyDatatable() {
+            var Windowheight = window.innerHeight;
+            var x = $("#tblpredication").position();
+            var tableHeight = (Windowheight - x.top) * 0.75;
+
+            $('#tblpredication').DataTable({
+                "paging": false,
+                scrollY: tableHeight + 'px',
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'searchPanes',
+                        // className: 'btn btn-primary btn-sm',
+                        text: 'Filter',
+                        config: {
+                            //columns: [1],
+                            cascadePanes: true
+                        }
+                    },
+                    {
+                        extend: 'excel'
+                    }
+                ]
+            });
+        }
+    </script>
+    <script>
+  
+ 
+        function GetPerformanceDialog(performanceEntryGUID){
+            $.ajax({
+                url: '/PerformancePrediction/ManagePrediction/' + performanceEntryGUID,
+                type: 'GET',
+                success: function (data) {
+                    bootbox.alert({
+                        message: data, 
+                        size: 'large',
+                        buttons: {
+                            ok: {
+                                className: 'd-none'
+                            }
+                        }
+                    });
+                }
+            });
+        }
+         
+        function SavePredictionRequest() {
+            var fileUpload = document.getElementById("inputCSV");
+        
+            if (fileUpload.files.length > 0) {
+                var inputData = new FormData();
+                var file = fileUpload.files[0];
+                inputData.append("inputCSV", file);
+                inputData.append("predictionKey", document.getElementById("predictionKey").value);
+                inputData.append("predectionGUID", document.getElementById("predectionGUID").value);
+                inputData.append("Title", document.getElementById("Title").value);
+                inputData.append("Description", document.getElementById("Description").value);         
+                $.ajax({
+                    url: "/PerformancePrediction/ManagePrediction",
+                    contentType: false,
+                    processData: false,
+                    //datatype: 'json',
+                    data: inputData,
+                    type: 'POST',
+                    success: function (data) {
+                        var message = "Predection request submitted";
+                        if(!data.success){
+                            message = "Something went wrong. Please try later";
+                        }
+                        bootbox.alert({
+                            message: message
+                        })
+                    }
+                });
+            }
+            return false;
+        }
+         
+    </script>
+}

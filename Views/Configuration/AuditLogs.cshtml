@@ -1,0 +1,237 @@
+﻿@model List<MPCRS.Models.Audit_log>
+@using System.Data
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "AuditLogs";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    // var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Write);
+    // var Permission_read = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Read);
+    // var Permission_delete = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Delete);
+}
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-sm-2">
+                <h4>Audit Logs</h4>
+            </div>
+            <div class="col-sm-3">
+                <b>Start Date</b>
+                <input type="date" onchange="refreshtables()" id="input-StartDate" value="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-sm-3">
+                <b>End Date</b>
+                <input type="date" onchange="refreshtables()" id="input-EndDate" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+            </div>
+        </div>
+    </div>
+</div>
+<div class="col-md-12 col-sm-12 col-lg-12 divc">
+
+    <ul class="nav nav-pills" id="myTab" role="tablist">
+        <li class="nav-item" onclick="redrawTables()" role="presentation"><a class="nav-link active" id="mpltree-list-tab" data-bs-toggle="tab" href="#tab-mpltree-list" role="tab" aria-controls="tab-mpltree-list" aria-selected="true">Login Logs</a></li>
+        <li class="nav-item" onclick="redrawTables()" role="presentation"><a class="nav-link" id="mpltblview-tab" data-bs-toggle="tab" href="#tab-mpltblview" role="tab" aria-controls="tab-mpltblview" aria-selected="false" onclick="AdjustDatatable()" tabindex="-1">Other Activities</a></li>
+
+    </ul>
+
+    <div class="tab-content mt-3" id="myTabContent">
+        <div class="tab-pane fade show active" id="tab-mpltree-list" role="tabpanel" aria-labelledby="mpltree-list-tab">
+            <table class="table table-bordered table-sm fs--1 mb-2" id="auditlogs-userlogins">
+                <thead>
+                    <tr>
+                        <th data-sortable="true" scope="col">Event</th> 
+                        <th data-sortable="true" scope="col">User</th>
+                        <th data-sortable="true" scope="col">IP Address</th>
+                        <th data-sortable="true" scope="col">Time Stamp</th>
+
+                    </tr>
+                </thead>
+            </table>
+        </div> 
+        
+        <div class="tab-pane fade show" id="tab-mpltblview" role="tabpanel" aria-labelledby="mpltree-list-tab">
+            <table class="table table-bordered table-sm fs--1 mb-2" id="auditlogs-otherevents">
+                <thead>
+                    <tr>
+                        <th data-sortable="true" scope="col">Event</th>
+                        <th data-sortable="true" scope="col">Event Description</th>
+                        <th data-sortable="true" scope="col">Remarks</th>
+                        <th data-sortable="true" scope="col">User</th>
+                        <th data-sortable="true" scope="col">Time Stamp</th>
+
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+
+
+    
+</div>
+
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        var ALData;
+        var ALDataForList = [];
+        var ALDataLoginList = [];
+
+        var table1;
+        var table2;
+
+        function redrawTables(){
+            table1.draw();
+            table2.draw();
+
+        }
+
+
+        function refreshtables(){
+            var startDate = document.getElementById("input-StartDate").value;
+            var endDate = document.getElementById("input-EndDate").value;
+
+            getAuditLogData(startDate, endDate);
+            getAuditLogDataLogins(startDate, endDate);
+
+        } 
+
+        $(document).ready(function () {
+            refreshtables();
+           // getAuditLogData();
+           // getAuditLogDataLogins();
+        });
+        function getAuditLogData(start, end) {
+            $.ajax({
+                type: "Get",
+                url: "/Configuration/GetAuditLogs_OtherActivities?startDate=" + start + "&endDate=" + end,
+                success: function (data) {
+                    ALDataForList = data;
+                    GetAuditLoglist();
+                }
+            })
+        }
+
+        function getAuditLogDataLogins(start, end) {
+            $.ajax({
+                type: "Get",
+                url: "/Configuration/GetUserLoginLogs?startDate=" + start + "&endDate=" + end,
+                success: function (data) {
+                    ALDataLoginList = data;
+                    GetAuditLoglistLogins();
+                }
+            })
+        }
+
+        function GetAuditLoglist() {
+
+            try {
+                table2.destroy();
+            } catch (e) {
+            }
+
+            table2 = $("#auditlogs-otherevents").DataTable({
+                scrollY: 510,
+                data: JSON.parse(ALDataForList),
+                //responsive: true,
+                paging: false,
+                //"order": [[0, "asc"]],
+                "order": [4, "desc"],
+                //ordering: false,
+                dom: 'Bfrtip',
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem(
+                        'DataTables_' + settings.sInstance,
+                        JSON.stringify(data)
+                    );
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                },
+                buttons: [{
+                    extend: 'excel',
+                    title: 'Audit Logs',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4] //Your Colume value those you want
+                    }
+                }],
+                "columns": [
+                    { "data": "Activity_Name" },
+                    { "data": "Event_Description" },
+                    { "data": "Remarks" },
+                    { "data": "UserName" },
+                    {
+                        "data": "Updated_On",
+                        render: function (data, type, row) {
+                            if (type === 'display' || type === 'filter') {
+                                return (moment(data).format("DD/MM/YYYY h:mm:ss A"));
+                            }
+                            return data;
+                        }
+                    },
+                ],
+                columnDefs: [{
+                    targets: '_all',
+                    render: function (data, type, row, meta) {
+                        if (data == null) {
+                            return ''; // Or any other desired representation for null values
+                        }
+                        return data;
+                    }
+                }]
+
+            });
+        }
+
+        function GetAuditLoglistLogins() {
+
+            try {
+                table1.destroy();
+            } catch (e) {
+            }
+
+            table1 = $("#auditlogs-userlogins").DataTable({
+                scrollY: 510,
+                data: JSON.parse(ALDataLoginList),
+                //responsive: true,
+
+                paging: false,
+                "order": [3, "desc"],
+                dom: 'Bfrtip',
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem(
+                        'DataTables_' + settings.sInstance,
+                        JSON.stringify(data)
+                    );
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                },
+                buttons: [{
+                    extend: 'excel',
+                    title: 'Audit Logs',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3] //Your Colume value those you want
+                    }
+                }],
+                "columns": [
+                    { "data": "Activity" },
+                    { "data": "UserName" },
+                    { "data": "IP_address" },
+                    {
+                        "data": "Session_Start",
+                        render: function (data, type, row) {
+                            if (type === 'display' || type === 'filter') {
+                                return (moment(data).format("DD/MM/YYYY h:mm:ss A"));
+                            }
+                            return data;
+                        }
+                    },
+                ] 
+
+            });
+        }
+    </script>
+}

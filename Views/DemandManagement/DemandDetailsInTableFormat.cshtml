@@ -1,0 +1,234 @@
+﻿@model List<MPCRS.ViewModels.Procurement_Demands_VM>
+@using MPCRS.Utilities
+@using System.Globalization
+@{
+	Layout = null;
+	CultureInfo Indian = new CultureInfo("hi-IN");
+}
+<style>
+	.readmore-wrapper {
+		width: 100%;
+	}
+
+	.readmore-text {
+		display: block;
+		width: 100%;
+		white-space: normal;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+		line-height: 1.4em;
+	}
+
+		.readmore-text.collapsed {
+			max-height: 2.8em;
+			overflow: hidden;
+		}
+
+	.readmore-toggle {
+		color: #0d6efd;
+		cursor: pointer;
+		font-size: 12px;
+		text-decoration: none;
+		margin-top: 4px;
+		display: none;
+	}
+
+		.readmore-toggle:hover {
+			text-decoration: underline;
+		}
+
+	#demandDetailsTable {
+		width: 100% !important;
+	}
+
+	#demandDetailsTable th,
+	#demandDetailsTable td {
+		vertical-align: top;
+	}
+
+
+
+	.dataTables_wrapper .dataTables_filter {
+		float: right;
+		margin-bottom: 8px;
+	}
+
+	.dataTables_wrapper .dt-buttons {
+		float: left;
+		margin-bottom: 8px;
+	}
+
+	.dataTables_wrapper .dataTables_length,
+	.dataTables_wrapper .dataTables_info,
+	.dataTables_wrapper .dataTables_paginate {
+		margin-top: 8px;
+	}
+
+	.dataTables_wrapper .dataTables_scrollBody {
+		border-bottom: 1px solid #dee2e6;
+	}
+</style>
+<table class="table table-bordered" id="demandDetailsTable">
+	<thead>
+		<tr>
+			<th>ProjectTitle</th>
+			<th>SanctionedCost</th>
+			<th>MMG Number</th>
+			<th>Description</th>
+			<th>Item type</th>
+			<th>Estimated Cost</th>
+			<th>Actual Cost</th>
+			<th>Running Balance
+				<i class="fa fa-info-circle text-primary ms-1"
+				   title="Running Balance = Project Sanction Cost - Actual Cost"></i>
+			</th>
+			<th>Payment Made Till Date</th>
+			<th>
+				Balance Order Value
+				<i class="fa fa-info-circle text-primary ms-1"
+				   title="Balance Order Value = Actual Cost - Payment Made Till Date"></i>
+			</th>
+			<th>Tender Mode</th>
+			<th>Demanding Officer</th>
+			<th>Vendor</th>
+			<th>Current Status</th>
+			<th>Remarks</th>
+			<th>Updated On</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var item in Model)
+		{
+			<tr>
+				<td>@item.ProjectTitle</td>
+				<td>@string.Format(Indian, "{0:#,#}", item.ProjectSanctionedCost)</td>
+				<td class="p-2">@item.MMG_File_No</td>
+				@* <td style="max-width:25%">@item.Item_Description</td> *@
+				@* Description *@
+				<td style="width:250px; max-width:250px;">
+					@if (!string.IsNullOrWhiteSpace(item.Item_Description))
+					{
+						var descId = "desc_" + item.DemandDbKey;
+						<div class="readmore-wrapper">
+							<div id="@descId" class="readmore-text collapsed"
+								 onclick="return toggleReadMore('@descId', this)" title="Click to expand">
+								@item.Item_Description
+							</div>
+							<a href="javascript:void(0);" class="readmore-toggle"
+							   onclick="return toggleReadMore('@descId', this)">Read more</a>
+						</div>
+					}
+					else
+					{
+
+						<span>-</span>
+					}
+				</td>
+
+				<td>@item.Item_Type</td>
+				<td>@string.Format(Indian, "{0:#,#}", item.EstimatedCost)</td>
+				<td>@string.Format(Indian, "{0:#,#}", item.ActualCost)</td>
+				<td>
+					@if (item.ProjectRunningBalance.HasValue)
+					{
+						@string.Format(Indian, "{0:#,#}", item.ProjectRunningBalance)
+					}
+					else
+					{
+						//<span>Cancelled</span>
+						<span>-</span>
+					}
+				</td>
+				<td>@string.Format(Indian, "{0:#,#}", item.PaymentMadeTillDate ?? 0)</td>
+				<td>@string.Format(Indian, "{0:#,#}", item.BalanceOrderValue ?? 0)</td>
+				<td>@item.TenderMode</td>
+				<td>@item.DemandOfficerName</td>
+				@* <td>@item.VendorName</td> *@
+				@* Vendor *@
+				<td style="width:200px; max-width:200px;">
+					@if (!string.IsNullOrWhiteSpace(item.VendorName))
+					{
+						var vendorId = "vendor_" + item.DemandDbKey;
+						<div class="readmore-wrapper">
+							<div id="@vendorId" class="readmore-text collapsed"
+								 onclick="return toggleReadMore('@vendorId', this)" title="Click to expand">
+								@item.VendorName
+							</div>
+							<a href="javascript:void(0);" class="readmore-toggle"
+							   onclick="return toggleReadMore('@vendorId', this)">Read more</a>
+						</div>
+					}
+					else
+					{
+
+						<span>-</span>
+					}
+				</td>
+
+				<td>@item.CurrentStatus</td>
+				@* Added Remarks *@
+				
+				<td style="width:250px; max-width:250px;">
+					@if (!string.IsNullOrWhiteSpace(item.Remarks))
+					{
+						var remarksId = "remarks_" + item.DemandDbKey;
+						<div class="readmore-wrapper">
+							<div id="@remarksId" class="readmore-text collapsed"
+								 onclick="return toggleReadMore('@remarksId', this)" title="Click to expand">
+								@item.Remarks
+							</div>
+							<a href="javascript:void(0);" class="readmore-toggle"
+							   onclick="return toggleReadMore('@remarksId', this)">Read more</a>
+						</div>
+					}
+					else
+					{
+
+						<span>-</span>
+					}
+				</td>
+
+				<td>@MPGlobals.GetFormattedDate(item.Updated_On)</td>
+				<td>
+					<button class="btn btn-small btn-primary" onclick="goTODetailsTab(@item.DemandDbKey)">View</button>
+				</td>
+			</tr>
+		}
+	</tbody>
+	<tfoot>
+		@{
+			var showSummary = Model.Any() && Model.Select(x => x.Project_Dbkey).Distinct().Count() == 1;
+			if (showSummary)
+			{
+				var projectCost = Model.FirstOrDefault()?.ProjectSanctionedCost ?? 0;
+				var totalActualCost = Model
+				.Where(x => x.CurrentStatus != "Cancellation")
+				.Sum(x => x.ActualCost ?? 0);
+
+				var lastRunningBalance = Model
+				.Where(x => x.ProjectRunningBalance.HasValue)
+				.LastOrDefault()?.ProjectRunningBalance ?? 0;
+			}
+		}
+		@if (Model.Any() && Model.Select(x => x.Project_Dbkey).Distinct().Count() == 1)
+		{
+			<tr style="background-color: #f8f9fa; font-weight: bold; border-top: 2px solid #000;">
+				<td colspan="17" style="text-align: right; padding: 8px;">
+					<strong>Budget Summary:</strong>
+					<span style="margin: 0 15px;"></span>
+					Project Budget:
+					<strong>@string.Format(Indian, "{0:#,#}", Model.FirstOrDefault()?.ProjectSanctionedCost ?? 0)</strong>
+					<span style="margin: 0 15px;">|</span>
+					Total Cost:
+					<strong>@string.Format(Indian, "{0:#,#}", Model.Where(x => x.CurrentStatus != "Cancellation").Sum(x => x.ActualCost ?? 0))</strong>
+					<span style="margin: 0 15px;">|</span>
+					Running Balance:
+					<strong>@string.Format(Indian, "{0:#,#}", Model.Where(x => x.ProjectRunningBalance.HasValue).LastOrDefault()?.ProjectRunningBalance ?? 0)</strong>
+				</td>
+			</tr>
+		}
+	</tfoot>
+</table>
+
+

@@ -1,0 +1,62 @@
+﻿@model List<MPCRS.Models.AspNetRole>
+@using MPCRS.Utilities;
+@{
+    Layout = null;
+    var hasWritePermission = UserData.IsAuthorized(User, Constants.UserPermissions.User_RolesWrite);
+}
+<div class="card shadow-none border border-300 my-4" data-component-card="data-component-card">
+    <div class="card-header p-4 border-bottom border-300 bg-soft">
+        <div class="row g-3 justify-content-between">
+            <h4 class="text-900 mb-0 col-12 col-sm-6" data-anchor="data-anchor" id="sizing">Roles and Permissions </h4>
+
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="row">
+            <div class="col-md-3 shadow bg-body rounded d-flex flex-column" style="max-height:calc(100vh - 200px);">
+                <div class="px-4 pt-4 pb-2" style="flex-shrink:0;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong style="font-size:small;">Roles</strong>
+                        @if (hasWritePermission)
+                        {
+                            <a onclick="AddRoles('')" class="btn btn-primary btn-xs">New Role</a>
+                        }
+                    </div>
+                    <input type="text" id="roleSearch" onkeyup="SearchRoles(this)" class="form-control form-control-sm" placeholder="Search roles..." />
+                </div>
+                <div style="flex:1; overflow-y:auto; padding:0 1rem 1rem 1rem;">
+                    <table class="table table-sm responsive cell-border" cellspacing="0" style="width:100%; font-size:small">
+                        <tbody id="tblRoles">
+                            @{
+                                foreach (var item in Model)
+                                {
+                                    <tr data-rolename="@item.Name">
+                                        <td>
+                                            <a style="cursor:pointer" onclick="GetRolePermissions('@item.Id')">@item.Name</a>
+                                        </td>
+                                        <td>
+                                            @if (hasWritePermission)
+                                            {
+                                                <i class="far fa-edit float-end" onclick="AddRoles('@item.Id')"></i>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="p-4" id="div_rolepermissions">
+                </div>
+            </div>
+        </div>
+       
+        
+    </div>
+
+</div>
+
+

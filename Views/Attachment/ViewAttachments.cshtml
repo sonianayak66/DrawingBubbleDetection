@@ -1,0 +1,217 @@
+﻿@using System.Data
+@using MPCRS.Utilities
+
+
+
+<style>
+    tr.group,
+    tr.group:hover {
+        background-color: #ddd !important;
+    }
+</style>
+
+
+<div class="col-md-12">
+    @{
+        var DownloadWOWatermark = UserData.IsAuthorized(User, Constants.UserPermissions.Download_WO_waterMark);
+        var Permission_MPL_Write = UserData.IsAuthorized(User, Constants.UserPermissions.MPL_Write);
+        string cmdstr = "";
+
+        if (ViewBag.ViewFor != "MPL_DocumentView")
+        {
+            cmdstr = @"Select * from (SELECT Dense_rank() over(partition by [Attachment_type] order by [Attachment_Db_Key] desc) as rank_,
+    [Attachment_Db_Key]
+    ,[Source_table]
+    ,[Source_table_key]
+    ,[Revision]
+    ,[Approved_status]
+    ,[Attachment_location]
+    ,[Attachment_FileName]
+    ,[Attachment_type]
+    ,[Orginal_File_Name]
+    ,[File_DVD_Num]
+    ,[File_Revision]
+    ,[Updated_by]
+    ,[Updated_on]
+    FROM [dbo].[Attachments]   where [Source_table] = '" + ViewBag.Source_table + "'     and [Source_table_key] ='" + ViewBag.Source_table_key + "')t where t.rank_ = (case when '" + @ViewBag.ViewFor + "' = 'MPL_DocumentView' then 1 else t.rank_ end)";
+        }
+        else
+        {
+            cmdstr = @"Select * from(SELECT     Dense_rank() over(partition by [Attachment_type] order by [Attachment_Db_Key] desc) as rank_,   dbo.Attachments.Source_table, dbo.Attachments.Source_table_key, dbo.Attachments.Orginal_File_Name, dbo.Attachments.Revision, dbo.Attachments.Attachment_Db_Key, dbo.Attachments.Attachment_location,
+    dbo.Attachments.Attachment_FileName, dbo.Attachments.Attachment_type, dbo.Attachments.File_DVD_Num, dbo.Attachments.File_Revision, dbo.Attachments.Updated_by, dbo.Attachments.Updated_on,
+    dbo.Attachments.Approved_status
+    FROM            dbo.Engine_Parts_Usage RIGHT OUTER JOIN
+    dbo.Engine_Parts_Master ON dbo.Engine_Parts_Usage.Engine_Part_Dbkey = dbo.Engine_Parts_Master.Engine_Part_Dbkey RIGHT OUTER JOIN
+    dbo.Attachments ON dbo.Engine_Parts_Master.Engine_Part_Dbkey = dbo.Attachments.Source_table_key
+    WHERE(dbo.Attachments.Source_table = '" + ViewBag.Source_table + @"') and dbo.Attachments.Source_table_key = '" + ViewBag.Source_table_key + @"'
+    AND(dbo.Engine_Parts_Usage.BL_Engine_Dbkey = (Select dbo.Get_Active_BL_Engine())) and dbo.Attachments.File_Revision = dbo.Engine_Parts_Usage.Revision)t
+    where t.rank_ = 1";
+        }
+
+        DataTable dt = MPGlobals.GetDataForDatalist(cmdstr);
+
+        if (dt.Rows.Count > 0)
+        {
+
+
+            <table id="DocsTblBody" class="table table-striped table-bordered form-group-sm display DispTbl" cellspacing="0" style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>
+                            SL No
+                        </th>
+                        <th>
+                            File
+                        </th>
+                        <th>
+                            File  Type
+                        </th>
+                        <th>
+                            Revision
+                        </th>
+                        <th>
+                            Uploaded On
+                        </th>
+                        <th>
+                            View/Download
+                        </th>
+                        @{
+                            if (ViewBag.ViewFor != "MPL_DocumentView")
+                            {
+                                <th>
+
+                                </th>
+                            }
+                        }
+
+                    </tr>
+                </thead>
+                <tbody>
+
+                    @{
+                        foreach (DataRow dr in dt.Rows)
+                        {
+                            <tr>
+
+                                <td>
+                                    @dr["rank_"].ToString()
+                                </td>
+                                <td>
+                                    @dr["Orginal_File_Name"].ToString()
+                                    <br />
+                                    @{
+                                        if (bool.Parse(@dr["Approved_status"].ToString()) == false)
+                                        {
+                                            <span style="color:red">Pending Approval</span>
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @dr["Attachment_type"].ToString().Replace("_", " ")
+                                </td>
+                                <td>
+                                    @dr["File_Revision"].ToString().Replace("_", " ")
+                                </td>
+                                <td>
+                                    @dr["Updated_on"]
+                                </td>
+                                <td>
+                                    @if (DownloadWOWatermark)
+                                    {
+                                        <div class="dropdown font-sans-serif">
+                                            <a class="btn btn-default dropdown-toggle" id="dropdownMenuLink" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> View / Download </a>
+                                            <div class="dropdown-menu dropdown-menu-end py-0" aria-labelledby="dropdownMenuLink">
+                                                <a class="dropdown-item" href="/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=false&fileKey=@dr["Attachment_Db_Key"]">Download</a>
+                                                <a class="dropdown-item" href="/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=true&fileKey=@dr["Attachment_Db_Key"]">Download w/o watermark</a>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <a class="btn btn-default" href="/DownloadFiles/DownloadRequest?SourceTable=Attachment&withoutWatermark=false&fileKey=@dr["Attachment_Db_Key"]"> View / Download </a>
+                                    }
+                                    @* <a class="btn btn-default" href="/Attachment/DownloadfileWithKey?id=@dr["Attachment_Db_Key"]">View / Download</a>*@
+                                </td>
+                                @{
+                                    if (ViewBag.ViewFor != "MPL_DocumentView")
+                                    {
+                                        <td>
+                                            @*<i type="button" class="fa fa-trash fa-lg" style="color:red;text-align:center;cursor:pointer" onclick="RemoveAttachment(@dr["Attachment_Db_Key"])"></i>*@
+                                            @{
+                                                if (Permission_MPL_Write)
+                                                {
+                                                    <i type="button" class="fa fa-trash fa-lg" style="color:red;text-align:center;cursor:pointer" onclick="RemoveAttachment(@dr["Attachment_Db_Key"])"></i>
+                                                }
+                                            }
+                                        </td>
+                                    }
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+
+            </table>
+        }
+        else
+        {
+            <h2 class="text-center">Attachments not available</h2>
+        }
+
+
+
+    }
+
+
+</div>
+
+
+
+<script>
+
+    //    $(document).ready(function () {
+
+    //    $('#DocsTblBody').DataTable();
+    //} );
+
+    $(document).ready(function () {
+        var groupColumn = 2;
+        var table = $('#DocsTblBody').DataTable({
+            "columnDefs": [
+                { "visible": false, "targets": groupColumn }
+            ],
+            "order": [[groupColumn, 'asc']],
+            "paging": false,
+            "searching": false,
+            "displayLength": 25,
+            "drawCallback": function (settings) {
+                var api = this.api();
+                var rows = api.rows({ page: 'current' }).nodes();
+                var last = null;
+
+                api.column(groupColumn, { page: 'current' }).data().each(function (group, i) {
+                    if (last !== group) {
+                        $(rows).eq(i).before(
+                            '<tr class="group text-centre" ><td colspan="5">' + group + '</td></tr>'
+                        );
+
+                        last = group;
+                    }
+                });
+            }
+        });
+
+        // Order by the grouping
+        $('#DocsTblBody tbody').on('click', 'tr.group', function () {
+            var currentOrder = table.order()[0];
+            if (currentOrder[0] === groupColumn && currentOrder[1] === 'asc') {
+                table.order([groupColumn, 'desc']).draw();
+            }
+            else {
+                table.order([groupColumn, 'asc']).draw();
+            }
+        });
+    });
+
+
+</script>

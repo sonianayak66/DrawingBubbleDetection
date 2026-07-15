@@ -1,0 +1,275 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@{
+    ViewData["Title"] = "MPL";
+    var MPL_read = UserData.IsAuthorized(User, Constants.UserPermissions.MPL_Read);
+    var MPL_write = UserData.IsAuthorized(User, Constants.UserPermissions.MPL_Write);
+    DataTable dataTable = MPGlobals.GetDataForDatalist(@"dbo.Get_MPL_Summary ");
+}
+<link href="~/css/style.min.css" rel="stylesheet" />
+<style>
+    #jstree-container {
+    height: 500px; /* Set a fixed height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    }
+
+    .jstree-node {
+    font-size: 10pt;
+    }
+
+    .Isupdated {
+    color: #0eb438
+    }
+
+    .IsInactivated {
+    color: #e22111
+    }
+
+    .jstree-anchor, .nav-link {
+    color: black;
+    font-size: 12pt;
+    }
+
+    .soppartonly {
+    color: #e67c29;
+    }
+</style>
+<style>
+    #MPLdatatables td {
+    white-space: nowrap;
+    }
+
+    td {
+    padding: 2px !important;
+    font-size: small !important;
+    }
+
+    th {
+    font-size: small !important;
+    }
+
+    body {
+    font-size: small;
+    background-color: white;
+    }
+
+    /* Center-align the buttons */
+    .dataTables_wrapper .dataTables_filter {
+    float: left;
+    }
+
+    .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate {
+    float: right;
+    }
+
+    /* Add margin between search box and buttons */
+    .dataTables_wrapper .dataTables_filter {
+    margin-right: 20px;
+    }
+
+    .table {
+    --phoenix-table-striped-bg: white;
+    }
+
+
+    .buttons-html5 {
+    padding: 0.25rem 0.5rem; /* Adjust padding to make the button smaller */
+    font-size: 0.675rem; /* Adjust font size to make the text smaller */
+    line-height: 1.5;
+    }
+
+    /* Custom styles for smaller paging dropdown */
+
+    .dataTables_length select {
+    padding: 0.225rem 0.35rem; /* Adjust padding to make the dropdown smaller */
+    font-size: 0.65rem; /* Adjust font size to make the text in the dropdown smaller */
+    }
+
+    .form-control-sm {
+    min-height: calc(1.39em + 0.65rem + 2px);
+    padding: 0.175rem 0.35rem;
+    font-size: 0.6rem;
+    border-radius: 0.375rem;
+    }
+
+    a.disabled {
+    color: #666666; /* Disabled link color */
+    pointer-events: none; /* Disable click events */
+    cursor: not-allowed;
+    }
+</style>
+<input type="hidden" value="@ViewBag.BaselineEngineKey" id="BaseLineEngineDbkey" />
+<input type="hidden" value="MPLReadTree" id="MPLView" />
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>Master Parts List</h3>
+    </div>
+    <div class="offset-2 col-md-4 row"> 
+        <div class="col-md-3">
+            <a class="btn btn-secondary btn-sm pull-right" style="width:100%" onclick="ViewChangesOnMPL('/SharedCall/Audit_Logs?id=Engine_Parts_Master&viewID=1')">View Changes</a>
+        </div>
+        @{
+            if (MPL_write)
+            {
+                <div class="col-md-5">
+                    <a class="btn btn-secondary btn-sm pull-right" style="width:100%" onclick="GetUploadMfgStatusExcel()">Upload Manufacturing Status</a>
+                </div>
+            }
+
+            if (MPL_read)
+            {
+                <div class="col-md-4">
+                    <a class="btn btn-secondary btn-sm pull-right" style="width:100%" href="/MPL/PBSView" target="_blank">Part Breakdown Structure</a>
+                </div>
+            }
+        }
+      
+    </div>  
+</div>
+<hr />
+<div class="row">
+    <ul class="nav nav-pills" id="myTab" role="tablist">
+        <li class="nav-item"><a class="nav-link active" id="mpltree-list-tab" data-bs-toggle="tab" href="#tab-mpltree-list" role="tab" aria-controls="tab-mpltree-list" aria-selected="true">Tree View</a></li>
+ @*        <li class="nav-item"><a class="nav-link" id="mplTreeTbl-list-tab" data-bs-toggle="tab" href="#tab-mplTreeTbl-list" role="tab" aria-controls="tab-mplTreeTbl-list" aria-selected="true">Tree View 2</a></li> *@
+        <li class="nav-item"><a class="nav-link" id="mpltblview-tab" data-bs-toggle="tab" href="#tab-mpltblview" role="tab" aria-controls="tab-mpltblview" aria-selected="false" onclick="AdjustDatatable()">Table View</a></li>
+        <li class="nav-item"><a class="nav-link" id="summary-tab" data-bs-toggle="tab" href="#tab-summary" role="tab" aria-controls="tab-summary" aria-selected="false">Summary</a></li>
+        <li class="nav-item"><a class="nav-link" id="mplUniqueParts-tab" data-bs-toggle="tab" href="#tab-mplUniqueParts" role="tab" aria-controls="tab-mplUniqueParts" aria-selected="false" onclick="uniqueMPLPartsDatatbl.draw()">Unique Parts List</a></li>
+    </ul>
+    <div class="tab-content mt-3" id="myTabContent">
+        <div class="tab-pane fade show active" id="tab-mpltree-list" role="tabpanel" aria-labelledby="mpltree-list-tab">
+            <div class="col-md-12">
+                <div>
+                    <b id="totalCompCount"></b>
+                    <input class="search-input form-control" placeholder="Search......." />
+                </div>
+                <div style="max-height:500px!important;overflow-y:scroll" class="card">
+                    <div id="mpljstree">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+@*         <div class="tab-pane fade" id="tab-mplTreeTbl-list" role="tabpanel" aria-labelledby="mplTreeTbl-list-tab">
+            <div class="col-md-12">
+                <div class="row">
+                <div class="col-md-6">
+                    <b id="totalCompCountTreetbl"></b>
+                    <input class="search-input-treeTbl form-control" placeholder="Search......." />
+                    
+                </div>
+                <div class="col-md-6 ">
+                        <input type="button" id="searchMPLTreeTbl" class="btn btn-primary btn-sm mt-3" value="Search" />
+                </div>
+                </div>
+                <div style="max-height:60vh!important;overflow-y:scroll" class="card" id="jstree-container">
+                    <div id="mplJSTreeTbl">
+                    </div>
+                </div>
+            </div>
+        </div> *@
+
+        <div class="tab-pane fade" id="tab-mpltblview" role="tabpanel" aria-labelledby="profile-tab">
+           
+               <div class="card">
+                   <div class="card-body">
+                    <table id="MPLdatatables" class="table table-striped table-responsive" width="100%">
+                        <thead>
+                            <tr>
+                                <th>SL</th>
+                                <th>Type</th>
+                                <th>Drawing No.</th>
+                                 <th>Description</th>
+                                <th>Rev</th>
+                                <th>Qty</th>
+                               
+                                <th>RM</th>
+                                <th>Mod Res</th>
+                                <th>F/C/B/P</th>
+                                <th>Assem</th>
+                                <th>Rep Type</th>
+                                <th>Exe Res</th>
+                                @*<th>Verify RM</th>*@
+                                <th>Additional</th>
+                                <th>PBS Info</th>
+                            </tr>
+                        </thead>
+                    </table>
+                   </div>
+               </div>              
+        </div>
+        <div class="tab-pane fade" id="tab-summary" role="tabpanel" aria-labelledby="summary-tab">
+                                <table class="table table-bordered" style="width:50%">
+                                    <thead>
+                                        <tr>
+                                            <th>Part Type</th>
+                                            <th>Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        @for (int i = 0; i < dataTable.Rows.Count; i++)
+                                        {
+                                            <tr>
+                                                <td>@dataTable.Rows[i][1].ToString()</td>
+                                                <td>@dataTable.Rows[i][2].ToString()</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+
+            @{
+                if(MPL_read)
+                {
+                    <a class="btn btn-primary" target="_blank" href="~/MPL/ExcelExportMPL">Export to Excel</a>
+                }
+            }
+                            
+              </div>
+        <div class="tab-pane fade" id="tab-mplUniqueParts" role="tabpanel" aria-labelledby="mplUniqueParts-tab">
+            <div class="card">
+                <div class="card-body">
+                    <table id="mplUniquePartsTbl" class="table table-striped table-responsive" width="100%">
+                        <thead>
+                            <tr> 
+                                <th>Type</th>
+                                <th>Drawing No.</th>
+                                <th>Description</th>
+                                <th>Rev</th>
+                                <th>Qty</th> 
+                                <th>RM</th>
+                                <th>Mod Res</th>
+                                <th>F/C/B/P</th>
+                                <th>Assem</th>
+                                <th>Rep Type</th>
+                                <th>Exe Res</th> 
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div> 
+</div>
+
+
+
+
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/js/jstree.min.js" asp-append-version="true"></script>
+    <script src="~/js/jstreetable.js" asp-append-version="true"></script>
+    <script src="~/mpi/MPL.js" asp-append-version="true"></script>
+
+    <script>
+        $(function () {
+            LoadMplJstree();
+            GetMplDataTable(document.getElementById("BaseLineEngineDbkey").value, 0)
+            GetMplUniquePartsTbl(document.getElementById("BaseLineEngineDbkey").value, 0)
+          //  LoadMPLJSTreeTbl();
+        });
+    </script>
+
+}

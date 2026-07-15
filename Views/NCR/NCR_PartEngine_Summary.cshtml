@@ -1,0 +1,240 @@
+﻿@model MPCRS.ViewModels.NCRSummaryViewModel
+@{
+
+    ViewData["Title"] = "NCR Summary by Engine";
+}
+
+<style>
+    .summary-container {
+        padding: 15px;
+    }
+
+    .summary-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .table-section {
+        flex: 0 0 350px;
+        max-width: 350px;
+    }
+
+    .chart-section {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .card {
+        margin-bottom: 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        padding: 10px 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+        .card-header h5 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+    .card-body {
+        padding: 15px;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 350px;
+    }
+
+    #ncrSummaryTable {
+        font-size: 14px;
+        margin-bottom: 0 !important;
+    }
+
+        #ncrSummaryTable thead th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            padding: 8px;
+        }
+
+        #ncrSummaryTable tbody td {
+            padding: 6px 8px;
+        }
+
+    .dataTables_wrapper .dt-buttons {
+        margin-bottom: 8px;
+    }
+
+    .dt-button {
+        padding: 4px 12px !important;
+        font-size: 13px !important;
+    }
+
+    .page-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #333;
+    }
+
+    /* Responsive: Stack on smaller screens */
+    @@media (max-width: 992px) {
+        .summary-row
+
+    {
+        flex-direction: column;
+    }
+
+    .table-section {
+        flex: 1;
+        max-width: 100%;
+    }
+
+    }
+</style>
+
+<div class="summary-container">
+    <h4 class="page-title">NCR Summary by Engine</h4>
+   
+
+    @if (Model.EngineSummary != null && Model.EngineSummary.Any())
+    {
+        <div class="summary-row">
+            <!-- Table Section -->
+            <div class="table-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Engine-wise Count</h5>
+                    </div>
+                    <div class="card-body">
+                        <table id="ncrSummaryTable" class="table table-striped table-bordered table-hover" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Engine</th>
+                                    <th>NCR Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.EngineSummary)
+                                {
+                                    <tr>
+                                        <td>@item.Engine</td>
+                                        <td>@item.NCRCount</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="chart-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>NCR Distribution by Engine</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="ncrBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No data available for the summary.
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Initialize DataTable
+            var datatable = $('#ncrSummaryTable').DataTable({
+                paging: false,
+                searching: false,
+                ordering: true,
+                info: false,
+                dom: 'Brt',
+                buttons: [
+                    {
+                        extend: 'excel',
+                        text: '<i class="fas fa-file-excel"></i> Export',
+                        title: 'NCR Summary by Engine',
+                        className: 'btn-sm'
+                    }
+                ]
+            });
+
+            // Prepare data for Chart.js
+            var engineData = @Html.Raw(Json.Serialize(Model.EngineSummary));
+            var labels = engineData.map(item => item.engine);
+            var data = engineData.map(item => item.ncrCount);
+
+            // Create Bar Chart
+            var ctx = document.getElementById('ncrBarChart').getContext('2d');
+            var ncrBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'NCR Count',
+                        data: data,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                font: {
+                                    size: 11
+                                }
+                            },
+                            grid: {
+                                display: true,
+                                drawBorder: true
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 11
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

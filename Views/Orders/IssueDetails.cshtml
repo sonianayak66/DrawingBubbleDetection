@@ -1,0 +1,195 @@
+﻿@using MPCRS.Utilities
+@model List<MPCRS.ViewModels.GenericMaterialIssuedDetialsVM>
+@{
+	Layout = null;
+	string lastReferenceNo = null;
+	DateTime? lastIssueDate = null;
+	string lastVendorName = null;
+	//int rowspan = 0;
+	var CastingWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Write);
+	var PyroWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Pyro_Write);
+	var ForgingWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Forging_Write);
+
+	var CastingDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Delete);
+	var PyroDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Pyro_Delete);
+	var ForgingDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Forging_Delete);
+
+}
+
+
+<div class="d-flex justify-content-end">
+	@if ((CastingWriteAccess && ViewBag.Ordertype == "Casting") || (PyroWriteAccess && ViewBag.Ordertype == "Pyro") || (ForgingWriteAccess && ViewBag.Ordertype == "Forging"))
+	{
+		<a class="btn btn-success" href="/Orders/NewGenericMaterialIssue/?OrderType=@ViewBag.Ordertype&IssueDbKey=0">New Issue</a>
+	}
+</div>
+<br />
+<table class="table table-bordered " id="issueDetailsTbl">
+	<thead>
+		<tr>
+			<th>Reference No</th>
+			<th>Issue Date</th>
+			<th>Vendor_Name</th>
+			<th>Partname</th>
+			<th>For Engine</th>
+			<th>Issue Qty</th>
+			<th>Issue SlNo</th>
+			<th></th>
+		</tr>
+	</thead>
+
+
+	<tbody>
+		@{
+			int previousissuedbkey = 0;
+
+			// FIX: Pre-group the data to calculate accurate rowspans
+			var groupedData = Model
+			.OrderByDescending(x => x.IssueDate)
+			.ThenBy(x => x.IssueDbKey)
+			.GroupBy(x => new
+			{
+				RefNo = x.ReferenceNo ?? "",
+				Date = x.IssueDate,
+				Vendor = x.Vendor_Name ?? ""
+			})
+			.ToList();
+
+			foreach (var group in groupedData)
+			{
+				var groupItems = group.ToList();
+				int rowspan = groupItems.Count; // Accurate count for this group
+				bool isFirstInGroup = true;
+
+				foreach (var item in groupItems)
+				{
+					<tr>
+						 
+						@if (isFirstInGroup)
+						{
+							<td rowspan="@rowspan" class="p-2">@item.ReferenceNo</td>
+							<td rowspan="@rowspan">@MPGlobals.GetFormattedDate(@item.IssueDate)</td>
+							<td rowspan="@rowspan">@item.Vendor_Name</td>
+							isFirstInGroup = false;
+						}
+
+					 
+						<td class="p-2">@item.Draw_part_no - @item.Description</td>
+						<td class="p-2">@item.ForEngine</td>
+						<td>@item.IssueQty</td>
+						<td style="width:30%;">
+							@{
+								if (item.IssueSlNos != null)
+								{
+									foreach (var slno in item.IssueSlNos.Split(','))
+									{
+										<span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark ">@slno</span>
+									}
+								}
+							}
+						</td>
+
+						<td>
+							@{
+								if (previousissuedbkey != item.IssueDbKey)
+								{
+									if ((CastingWriteAccess && ViewBag.Ordertype == "Casting")
+									|| (PyroWriteAccess && ViewBag.Ordertype == "Pyro")
+									|| (ForgingWriteAccess && ViewBag.Ordertype == "Forging"))
+									{
+										<a style="cursor:pointer" title="Edit" href="/Orders/NewGenericMaterialIssue/?OrderType=@ViewBag.Ordertype&IssueDbKey=@item.IssueDbKey">
+											<i class="fa fa-edit"></i>
+										</a>
+									}
+									if ((CastingDeleteAccess && ViewBag.Ordertype == "Casting")
+									|| (PyroDeleteAccess && ViewBag.Ordertype == "Pyro")
+									|| (ForgingDeleteAccess && ViewBag.Ordertype == "Forging"))
+									{
+										<a style="cursor:pointer;color:red" class="p-2" title="Delete" onclick="deleteGenericMaterialIssue(@item.IssueDbKey)">
+											<i class="fa fa-trash"></i>
+										</a>
+									}
+								}
+								previousissuedbkey = (int)item.IssueDbKey;
+							}
+						</td>
+					</tr>
+				}
+			}
+		}
+	</tbody> 
+  
+	@*  <tbody>
+
+		@{
+
+			int previousissuedbkey = 0;
+			foreach (var item in Model.OrderByDescending(x => x.IssueDate).ThenBy(x => x.IssueDbKey))
+			{
+
+				//bool isNewGroup = (item.ReferenceNo != lastReferenceNo);
+
+				bool isNewGroup = (item.ReferenceNo != lastReferenceNo)
+				|| (item.IssueDate != lastIssueDate)
+				|| (item.Vendor_Name != lastVendorName);
+
+				if (isNewGroup)
+				{
+					// Calculate rowspan for the new group
+					rowspan = Model.Count(x => x.ReferenceNo == item.ReferenceNo && x.IssueDate == item.IssueDate && x.Vendor_Name == item.Vendor_Name);
+				}
+
+				<tr>
+					@if (isNewGroup)
+					{
+						<td rowspan="@rowspan" class="p-2">@item.ReferenceNo</td>
+						<td rowspan="@rowspan">@MPGlobals.GetFormattedDate(@item.IssueDate)</td>
+						<td rowspan="@rowspan">@item.Vendor_Name</td>
+					}
+					<td class="p-2">@item.Draw_part_no - @item.Description</td>
+					<td class="p-2">@item.ForEngine</td>
+					<td>@item.IssueQty</td>
+					<td style="width:30%;">
+						@{
+							if (item.IssueSlNos != null)
+							{
+								foreach (var slno in item.IssueSlNos.Split(','))
+								{
+									<span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark ">@slno</span>
+								}
+							}
+						}
+					 
+					</td>
+					
+						<td>
+							@{
+								if (previousissuedbkey != item.IssueDbKey)
+								{
+									if ((CastingWriteAccess && ViewBag.Ordertype == "Casting") || (PyroWriteAccess && ViewBag.Ordertype == "Pyro") || (ForgingWriteAccess && ViewBag.Ordertype == "Forging"))
+									{
+										<a style="cursor:pointer" title="Edit" href="/Orders/NewGenericMaterialIssue/?OrderType=@ViewBag.Ordertype&IssueDbKey=@item.IssueDbKey"><i class="fa fa-edit"></i></a>
+									}
+									if ((CastingDeleteAccess && ViewBag.Ordertype == "Casting") || (PyroDeleteAccess && ViewBag.Ordertype == "Pyro") || (ForgingDeleteAccess && ViewBag.Ordertype == "Forging"))
+									{
+										<a style="cursor:pointer;color:red" class="p-2" title="Delete" onclick="deleteGenericMaterialIssue(@item.IssueDbKey)"><i class="fa fa-trash"></i></a>
+									}
+								}
+								previousissuedbkey = (int)item.IssueDbKey;
+							}
+						</td>
+					
+				</tr>
+
+				lastReferenceNo = item.ReferenceNo;
+				  lastIssueDate = item.IssueDate;
+				lastVendorName = item.Vendor_Name;  
+			}
+		}
+		
+	</tbody>    *@
+
+
+	 
+</table>
+

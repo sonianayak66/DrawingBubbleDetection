@@ -1,0 +1,155 @@
+﻿@model  IEnumerable<MPCRS.ViewModels.MPLReportData>
+
+@{
+    Layout = null;
+}
+
+
+@{
+
+
+
+    try
+    {
+        foreach (var item1 in Model.Where(x => x.IsParent != "Yes" && x.ReportGroupIdentifier != null).Select(x => x.ReportGroupIdentifier).Distinct())
+        {
+            int reducer = 0;
+            int MaXlevel = Model.Where(x => x.ReportGroupIdentifier == item1).Select(x => x.Level).Max();
+            string PreviousGroup = "";
+            string PageHeading = "PW00000 - DIRECT PARTS";
+            string filterParents = "Yes";
+            string headingMainAssembly = "PW00000";
+
+            if (item1.Contains("Direct") == false)
+            {
+                MaXlevel = MaXlevel - 1;
+                reducer = 1;
+                filterParents = "No";
+                int AssemblyParentID = int.Parse(item1.Split('_')[item1.Split('_').Length - 1]);
+                PageHeading = Model.Where(x => x.Engine_Part_Dbkey == AssemblyParentID).Select(x => (x.Draw_part_no + " - " + x.Description)).FirstOrDefault();
+                headingMainAssembly = Model.Where(x => x.Engine_Part_Dbkey == AssemblyParentID).Select(x => (x.Draw_part_no)).FirstOrDefault();
+            }
+
+
+            <table class="table table-condensed table-sm @item1.Trim().Replace(' ', '_')" id="@headingMainAssembly" style="width:100%;font-size:12px!important;border:none">
+                <thead>
+                    <tr style="border:none">
+                        <th style="border:none" class="text-center text-capitalize" colspan="@(MaXlevel + 7)">
+                            <h3>@PageHeading</h3>
+                            <button class="btn btn-secondary writeaccess noPrint" onclick="SaveAssemblyDisplyOrder('@headingMainAssembly')">Save</button>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th colspan="@MaXlevel" class="text-center">Drawing No</th>
+                        <th>Description</th>
+                        <th>Part/Assy</th>
+                        <th>Rev</th>
+                        <th>Qty</th>
+                        <th>Material</th>
+                        <th>Module Resp</th>
+                        <th>Comments</th>
+                        <th class="noPrint writeaccess">Assy Disp Order</th>
+                        <th class="noPrint writeaccess">Part Disp Order</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int Counter = 0; 
+                        
+                        }
+
+                    @foreach (var item in Model.Where(x =>  x.ReportGroupIdentifier == item1).OrderBy(x => x.AssemblyDisplayOrder).ThenBy(x => x.PartPath).ThenBy(x => x.Reporting_Parent).ThenBy(x => x.ReportDisplayOrder).ThenBy(x => x.Draw_part_no))
+                    {
+
+                        if (PreviousGroup != item.PartPath)
+                        {
+                    <tr style="font-weight: bold; font-size: 12px !important">
+
+                        @for (int i = 1; i <= MaXlevel; i++)
+                        {
+                            if (item.Level - reducer - 1 == i)
+                            {
+                                <td>@item.ParentName</td>
+                            }
+                            else
+                            {
+                                <td></td>
+                            }
+                        }
+                        <td>@item.ParentDescription</td>
+                        <td>Assembly</td>
+                        <td class="text-center">@item.ParentRevision</td>
+                        <td class="text-center">@item.ParentQuantity</td>
+                        <td>@item.ParentMaterial_name</td>
+                        <td>@item.ParentModuleRes</td>
+                        <td>@item.Part_Remarks</td>
+                        <td class="noPrint writeaccess">
+                            @{
+                                if (Counter > 0)
+                                {
+                                    <input class="@headingMainAssembly" data-content="@item.Part_relation_dbkey" data-type="AssyDisplayOrder" id="@item.Parent_id" type="number" value="@item.AssemblyDisplayOrder" />
+                                }
+
+
+                            }
+                        </td>
+                        <td class="noPrint writeaccess"></td>
+                    </tr>
+                            PreviousGroup = item.PartPath;
+
+                        }
+
+                        if (item.IsParent != "Yes")
+                        {
+                                  <tr>
+                    @for (int i = 1; i <= MaXlevel; i++)
+                    {
+                        if (item.Level - reducer == i)
+                        {
+                            <td>@item.Draw_part_no</td>
+                        }
+                        else
+                        {
+                            <td></td>
+                        }
+                    }
+                    <td>@item.Description</td>
+                    <td>@item.Type_Part_Name</td>
+                    <td class="text-center">@item.Revision</td>
+                    <td class="text-center">@item.Qty_per_Engine</td>
+                    <td>@item.Material_name</td>
+                    <td>@item.PartModuleRes</td>
+                    <td>@item.Part_Remarks</td>
+                    <td class="noPrint writeaccess"></td>
+                    <td class="noPrint writeaccess"><input class="@headingMainAssembly" data-content="@item.Part_relation_dbkey" data-type="PartDisplayOrder" id="@item.Engine_Part_Dbkey" type="number" value="@item.ReportDisplayOrder" /></td>
+                </tr>
+                        }
+                        Counter++;
+                    }
+                </tbody>
+                <tfoot style="visibility: hidden;">
+                    <tr style="min-height:70px!important">
+                        <th colspan="@(MaXlevel+7)">
+                            <div style="min-height: 70px !important">
+                                <p style="visibility: hidden;">End of Table</p>
+                            </div>
+                        </th>
+
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="pagebreak @item1.Trim().Replace(' ', '_')"></div>
+
+        }
+    }
+    catch (Exception ex)
+    {
+
+        <span>@ex.Message</span>
+        <span>@ex.StackTrace</span>
+    }
+
+
+}
+

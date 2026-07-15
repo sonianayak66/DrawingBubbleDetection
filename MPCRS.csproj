@@ -1,0 +1,149 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+     
+    <Platforms>AnyCPU;x64</Platforms>
+    <UserSecretsId>75bb123f-2d7c-430e-b60d-b12f662fba27</UserSecretsId>
+    <Copyright>Last updated  $([System.DateTime]::Now)</Copyright>
+	</PropertyGroup>
+<ItemGroup>
+  <None Remove="Views\Shared\_Layout_old.cshtml.css" />
+</ItemGroup>
+ 
+
+ 
+  <ItemGroup>
+    <Compile Remove="Controllers\CastingController.cs" />
+    <Compile Remove="Utilities\WmlToHtmlConverter.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Remove="Views\PerformancePrediction\ManageExcelPerdiction.cshtml" />
+    <Content Remove="wwwroot\%2a%2a" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Views\ACSN\Status.cshtml~RF36b40888.TMP" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
+    <PackageReference Include="CsvHelper" Version="30.0.1" />
+    <PackageReference Include="Dapper" Version="2.0.143" />
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.0.1" />
+    <PackageReference Include="DocumentFormat.OpenXmlSDK" Version="2.0.0" />
+    <PackageReference Include="EPPlus" Version="6.2.9" />
+    <PackageReference Include="ExcelDataReader" Version="3.6.0" />
+    <PackageReference Include="ExcelDataReader.DataSet" Version="3.6.0" />
+    <PackageReference Include="IronSoftware.System.Drawing" Version="2024.9.11" />
+    <PackageReference Include="itextsharp" Version="5.5.13.3" />
+    <PackageReference Include="LigerShark.WebOptimizer.Core" Version="3.0.384" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="13.7.0" />
+    <PackageReference Include="Magick.NET.Core" Version="13.7.0" />
+    <PackageReference Include="MailKit" Version="4.13.0" />
+    <PackageReference Include="Markdig" Version="0.37.0" />
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
+    <PackageReference Include="Microsoft.AspNet.Web.Optimization" Version="1.1.3" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="7.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="7.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.ML" Version="2.0.1" />
+    <PackageReference Include="Microsoft.ML" Version="2.0.1" />
+    <PackageReference Include="Microsoft.ML.FastTree" Version="1.7.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="7.0.11" />
+    <PackageReference Include="MimeKit" Version="4.13.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="OpenXmlPowerTools" Version="4.5.3.2" />
+    <PackageReference Include="PdfiumViewer" Version="2.13.0" />
+    <PackageReference Include="PdfiumViewer.Native.x86_64.v8-xfa" Version="2018.4.8.256" />
+    <PackageReference Include="PdfPig" Version="0.1.8" />
+    <PackageReference Include="PdfSharpCore" Version="1.3.63" />
+    <PackageReference Include="QuickGraph" Version="3.6.61119.7" />
+    <PackageReference Include="SimMetrics.Net" Version="1.0.5" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
+    <PackageReference Include="Syn.WordNet" Version="1.0.5" />
+    <PackageReference Include="System.Data.OleDb" Version="6.0.0" />
+    <PackageReference Include="Tesseract" Version="5.2.0" />
+    <PackageReference Include="Tesseract.Drawing" Version="5.2.0" />
+    <PackageReference Include="UAParser" Version="3.1.47" />
+    <PackageReference Include="XAct.Core.PCL" Version="0.0.5014" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="web.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\ChatWithDoc\TestPy.py">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>TestPy.cs</LastGenOutput>
+    </Content>
+    <Content Update="wwwroot\ChatWithDoc\TestPy.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>TestPy.py</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ClientApp\taskmanager\src\hooks\" />
+    <Folder Include="ClientApp\taskmanager\src\utils\" />
+    <Folder Include="ClientApp\taskmanager\src\pages\" />
+    <Folder Include="DrawingBubbleService_M1\" />
+    <Folder Include="DrawingBubbleService_M2\" />
+  </ItemGroup>
+
+  <!-- Copy DrawingBubbleService_M1 Python app to publish output (exclude venvs, caches, IDE folders) -->
+  <ItemGroup>
+    <None Include="DrawingBubbleService_M1\**\*" Exclude="DrawingBubbleService_M1\**\__pycache__\**;DrawingBubbleService_M1\.venv\**;DrawingBubbleService_M1\venv312\**;DrawingBubbleService_M1\.mypy_cache\**;DrawingBubbleService_M1\.pytest_cache\**;DrawingBubbleService_M1\.ruff_cache\**;DrawingBubbleService_M1\.vscode\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="DrawingBubbleService_M2\**\*" Exclude="DrawingBubbleService_M2\**\__pycache__\**;DrawingBubbleService_M2\.venv\**;DrawingBubbleService_M2\.mypy_cache\**;DrawingBubbleService_M2\.pytest_cache\**;DrawingBubbleService_M2\.ruff_cache\**;DrawingBubbleService_M2\.vscode\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <Folder Include="wwwroot\Attachments\Downloads\" />
+    <Folder Include="wwwroot\Attachments\Downloads\" />
+    <Folder Include="wwwroot\Attachments\InspectionReportImports\" />
+    <Folder Include="wwwroot\Attachments\SOPReportSectionDocs\" />
+    <Folder Include="wwwroot\Bundle\" />
+    <Folder Include="wwwroot\ChromaDB\" />
+    <Folder Include="wwwroot\reaactBuildFiles\" />
+    <Folder Include="wwwroot\uploads\InspectionReportImports\" />
+  </ItemGroup>
+  
+  <ItemGroup Label="PredectiveEnginePerformance">
+    <None Include="PredectiveEnginePerformance.consumption.cs">
+      <DependentUpon>PredectiveEnginePerformance.mbconfig</DependentUpon>
+    </None>
+    <None Include="PredectiveEnginePerformance.training.cs">
+      <DependentUpon>PredectiveEnginePerformance.mbconfig</DependentUpon>
+    </None>
+    <None Include="PredectiveEnginePerformance.zip">
+      <DependentUpon>PredectiveEnginePerformance.mbconfig</DependentUpon>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="PerformancePredection\PredectiveEnginePerformance.zip">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Views\GenAI\ChatWithDocument.cshtml" />
+  </ItemGroup>
+ 
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Views\GenAI\DocumentDashboard.cshtml" />
+  </ItemGroup>
+  
+</Project>

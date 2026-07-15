@@ -1,0 +1,434 @@
+﻿@using MPCRS.Utilities;
+@using System.Data
+@{
+    ViewData["Title"] = "DOC Access Config";
+    var hasWritePermission = UserData.IsAuthorized(User, Constants.UserPermissions.DOC_Write);
+}
+<link href="~/css/style.min.css" rel="stylesheet" />
+<style>
+    .Notupdated {
+        color: black;
+    }
+    .accesscheckbox{
+        width:16px!important;
+        height:16px!important;
+    }
+
+    .jstree-default .jstree-anchor {
+        line-height: 27px;
+        height: 27px;
+    }
+
+/*    .jstree-table-wrapper {
+        border: 1px solid #ccc;
+    }*/
+
+    .jstree-table-column-1{
+        display:none;
+    }
+
+</style>
+<div class="row">
+    <div class="col-md-11">
+        <h4>Documents Access Config</h4>
+    </div>
+    <div class="col-md-1 pull-right">
+        <a href="#" class="btn btn-secondary pull-right">Back</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3" style="max-height:40px!important">
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title">
+                    <span class="panel-title"><b>Users</b></span>
+                    <input type="hidden" id="UserDbkey" />
+                </div>
+                <input id="myInput" oninput="filterthisTable()" class="form-control" type="text" placeholder="Search....">
+                <br />
+                <div style="max-height: 450px;overflow-y: scroll;">
+                    <table class="table table-sm">
+                        <tbody id="DeclarationTbl">
+                            @{
+                                DataTable dataTable = MPGlobals.GetDataForDatalist("dbo.UserList_SSP @Module='DocManager'");
+                                for (int i = 0; i < dataTable.Rows.Count; i++)
+                                {
+                                    <tr>
+                                        <td> <button type="button" class="btn btn-outline-primary me-1 mb-1 PaymentWindow" style="width:100%;text-align:left" onclick="LoadDocFolderTree(@dataTable.Rows[i]["UserDbkey"],'@dataTable.Rows[i]["UserName"].ToString()')">@dataTable.Rows[i]["UserName"].ToString()</button></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+              
+            </div>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title row">
+                    <div class="col-md-6">
+                        <span class="panel-title"><b>Folders and Access Rights - <span id="username"></span></b></span>
+                    </div>
+                    <div class="col-md-5">
+                        <button class="btn btn-sm btn-primary ml-5" onclick="SubmitFolderAccess()">Submit</button>
+                    </div>
+                  
+                 
+                </div>
+                <div id="treeview">
+                    Search<input type="text" id="search">
+                   
+                    <div id="jstree1">
+                        <div id="jstree"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts{
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+    <script src="~/js/jstree.min.js" asp-append-version="true"></script>
+    <script src="~/js/jstreetable.js" asp-append-version="true"></script>
+    <script>
+        $("button.PaymentWindow").click(function () {  // on click...
+            $("button.PaymentWindow").addClass("btn-outline");
+            $(this).removeClass("btn-outline");
+            $("div.payment").hide().eq($(this).index('.PaymentWindow')).toggle();
+        });
+
+        function filterthisTable() {
+            $("#myInput").on("keyup", function () {
+                var value = $(this).val().toLowerCase();
+                $("#DeclarationTbl tr").filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+        }
+
+        $(document).ready(function () {
+
+            $("#search").keyup(function () {
+                var searchString = $(this).val();
+                $('#jstree').jstree('search', searchString);
+            });
+
+            $("#wrapper").on('click', '.stopclick', function (event) {
+
+                if (event.preventDefault) {
+                    event.preventDefault();
+                }
+                if (event.stopPropagation) {
+                    event.stopPropagation();
+                }
+                if (event.stopImmediatePropagation) {
+                    event.stopImmediatePropagation();
+                }
+            });
+
+
+           LoadDocFolderTree(0,'Please select the user');
+        });
+
+        function LoadDocFolderTree(id,username) {
+            document.getElementById("username").innerHTML = username;
+            document.getElementById("UserDbkey").value = id;
+            $("#jstree").jstree('destroy');
+            $('div#jstree').jstree({
+                plugins: ["checkbox", "table", "search"],
+                'core': {
+                    'data': {
+                        'url': '/DocManager/GetUserFolderAccess?UserDbkey='+id,
+                        'data': function (node) {
+                            return { 'id': node.id };
+                        }
+                    },
+                    "check_callback": false
+                },
+                table: {
+                    //width: 1000,
+                    columns: [
+                        { width: "600", header: "Folder", title: "_DATA_" },
+                        { width: "600", value: "readAccesstree", header: "Read", valueClass: "spanclass", format: function (v) { if (v) { return GetCheckBoxElement(v) } } },
+                        { width: "600", value: "writeAccesstree", header: "Write", valueClass: "spanclass", format: function (v) { if (v) { return GetCheckBoxElement(v) } } },
+                        { width: "600", value: "downloadAccesstree", header: "Download", valueClass: "spanclass", format: function (v) { if (v) { return GetCheckBoxElement(v) } } }
+                    ],
+                    //resizable: true,
+                    contextmenu: false,
+                },
+                "search": {
+                    //"case_insensitive": true,
+                    "show_only_matches": true,
+                    //"show_only_matches_children": true
+                },
+                "checkbox": {
+                    "keep_selected_style": false,
+                    "visible": true,
+                    "three_state": true,
+                    "whole_node": false,
+                    "tie_selection": false
+                },
+            }).bind('ready.jstree', function (e, data) {
+                DisplayNoneReadAccess();
+            }).on('check_node.jstree uncheck_node.jstree', function (e, data) {   
+                // Actual Node Action
+                var instance = $('#jstree').jstree(true);
+              //  console.log(instance.get_node(data.node).children);
+
+
+
+                var selectedNodeId = data.node.id;
+                var selectedNodeCheckState = data.node.state;
+
+                var childrensNodesIds = getAllChildrenNodes(data.node.id);
+                for (var j = 0; j <= childrensNodesIds.length; j++) {
+                    // console.log(document.getElementsByClassName("Read_" + childrens[j])[0]);
+                    // document.getElementsByClassName("Read_" + childrens[j])[0].checked = selectedNodeCheckState;
+                    $('#jstree').jstree('select_node', childrensNodesIds[j]);
+                }
+
+
+
+
+
+                if(selectedNodeCheckState.checked){
+                    document.getElementsByClassName("Read_" + selectedNodeId)[0].checked = true;
+                }else{
+                    document.getElementsByClassName("Read_" + selectedNodeId)[0].checked = false;
+                }
+
+       
+                var childrens = $("#jstree").jstree("get_children_dom", data.node);
+                childrens.find('li').addBack().each(function (index, element) {
+                    if ($('#jstree').jstree(true).is_leaf(element)) {
+                        if (selectedNodeCheckState.checked) {
+                            document.getElementsByClassName("Read_" + element.id)[0].checked = true;
+                        } else {
+                            document.getElementsByClassName("Read_" + element.id)[0].checked = false;
+                        }
+                    } else {
+                        var nod = $('#jstree').jstree(true).get_node(element);
+                        if (selectedNodeCheckState.checked) {
+                            document.getElementsByClassName("Read_" + nod.id)[0].checked = true;
+                        } else {
+                            document.getElementsByClassName("Read_" + nod.id)[0].checked = false;
+                        }
+                    }
+                });
+
+         
+ 
+
+                // Parent Nodes Action
+                var loMainSelected = data;
+                var ParentsNodes = loMainSelected.node.parents; 
+                 for (var i = 0; i < ParentsNodes.length; i++) {
+                    var checkbxID = ParentsNodes[i];
+                    try {
+                        if (selectedNodeCheckState.checked) {
+                            document.getElementsByClassName("Read_" + checkbxID)[0].checked = true;
+                        } else {
+                           
+                            var li = document.getElementById(checkbxID);
+                            var ielement = li.getElementsByTagName('i')[1];
+                            //if(ielement.classList.contains('jstree-undetermined')==false){
+                              document.getElementsByClassName("Read_" + checkbxID)[0].checked = false;
+                            //};
+                        }
+                    }
+                    catch (err) {
+                      
+                    }  
+                 }
+            });
+            
+            //.on('open_node.jstree', function (e, data) {
+            //    $('#jstree').trigger('resize_column.jstree');
+            //});
+        }
+
+
+
+        function getAllChildrenNodes(parentNode, children = []) {
+            var node = $("#jstree").jstree("get_node", parentNode);
+            children.push(node.id);
+            if (node.children) {
+                for (var i = 0; i < node.children.length; i++) {
+                    getAllChildrenNodes(node.children[i], children);
+                }
+            } return children;
+        }
+ 
+
+        function DisplayNoneReadAccess(){
+                                     var t =  document.getElementsByClassName('jstree-table-header');
+                 for(var k=0;k<t.length;k++){
+                     var t1 = t[k].getAttribute('data-jstreetable-column');
+                            if(t1 == 'readAccesstree'){
+                            t[k].style.display = 'none';
+                        }   
+                 }               
+        }
+
+
+        function UpdateChildFolderAccess(checbox){
+
+            $('#loading').show();
+
+            if (checbox.checked) {
+                document.getElementsByClassName("Read_" + checbox.id)[0].checked = true;
+            }
+
+
+            var childrensNodesIds = getAllChildrenNodes(checbox.id);
+            for (var j = 0; j <= childrensNodesIds.length; j++) {
+                // console.log(document.getElementsByClassName("Read_" + childrens[j])[0]);
+                // document.getElementsByClassName("Read_" + childrens[j])[0].checked = selectedNodeCheckState;
+                $('#jstree').jstree('select_node', childrensNodesIds[j]);
+            }
+
+
+
+            if (checbox.classList.contains('Write')) {
+                var node = $('#jstree').jstree(true).get_node(checbox.id, true)
+                var childrens = $("#jstree").jstree("get_children_dom", node);
+                childrens.find('li').addBack().each(function (index, element) {
+                    if ($('#jstree').jstree(true).is_leaf(element)) {
+                        if (checbox.checked) {
+                            document.getElementsByClassName("Write_" + element.id)[0].checked = true;
+                            document.getElementsByClassName("Read_" + element.id)[0].checked = true;
+                        } else {
+                            document.getElementsByClassName("Write_" + element.id)[0].checked = false;
+                        }
+                    } else {
+                        var nod = $('#jstree').jstree(true).get_node(element);
+                        if (checbox.checked) {
+                            document.getElementsByClassName("Write_" + nod.id)[0].checked = true;
+                            document.getElementsByClassName("Read_" + element.id)[0].checked = true;
+                        } else {
+                            document.getElementsByClassName("Write_" + nod.id)[0].checked = false;
+                        }
+                    }
+                });
+            } else if (checbox.classList.contains('Download')) {
+                var node = $('#jstree').jstree(true).get_node(checbox.id, true)
+                //console.log(node.id);
+                $("#jstree").jstree("_open_to", node);
+                var childrens = $("#jstree").jstree("get_children_dom", node);
+
+       
+ 
+                childrens.find('li').addBack().each(function (index, element) {
+                    //console.log(index);
+                    if ($('#jstree').jstree(true).is_leaf(element)) {
+                        if (checbox.checked) {
+                            document.getElementsByClassName("Download_" + element.id)[0].checked = true;
+                            document.getElementsByClassName("Read_" + element.id)[0].checked = true;
+                        } else {
+                            document.getElementsByClassName("Download_" + element.id)[0].checked = false;
+                        }
+                    } else {
+                        var nod = $('#jstree').jstree(true).get_node(element);
+                        if (checbox.checked) {
+                            document.getElementsByClassName("Download_" + nod.id)[0].checked = true;
+                            document.getElementsByClassName("Read_" + element.id)[0].checked = true;
+                        } else {
+                            document.getElementsByClassName("Download_" + nod.id)[0].checked = false;
+                        }
+                    }
+                });
+            }
+            $('#loading').hide();
+        }
+
+
+        function GetCheckBoxElement(v) {
+           var accesstype = v.split('#')[0];
+           var Key = v.split('#')[1];
+           var access = v.split('#')[2];
+            var docConfigKey = v.split('#')[3];
+            var classv = accesstype + '_' + Key;
+            var element = '';
+            if(access == 0){
+                element = '<input type="checkbox"  onchange="UpdateChildFolderAccess(this)" value=' + docConfigKey + '  id=' + Key + ' class="stopclick accesscheckbox ' + accesstype + ' ' + classv + '" />' + accesstype;
+            }else{
+                element = '<input type="checkbox" onchange="UpdateChildFolderAccess(this)" value=' + docConfigKey + '   id=' + Key + ' class="stopclick accesscheckbox ' + accesstype + ' ' + classv + '"  checked/>' + accesstype;
+            }
+            return element;
+        }
+
+
+        function SubmitFolderAccess(){
+
+   
+            var checked_ids = [], checked_ids1 = [];
+            $("#jstree").find(".jstree-undetermined").each(
+                function (i, element) {
+                    var nodeId = $(element).closest('.jstree-node').attr("id");
+                    // alert(nodeId);
+                    checked_ids.push(nodeId);
+                    if (nodeId != -1) {
+                        document.getElementsByClassName("Read_" + nodeId)[0].checked = true;
+                    }
+                    checked_ids1.push($('#jstree').jstree().get_node(nodeId).text);
+
+                }
+            );
+      
+            var nodes = document.getElementsByClassName("Read");
+            var docAccessInfos = [];
+            for (var i = 0; i < nodes.length;i++) {
+                var accessitems = {};
+                accessitems.doc_config_dbkey = nodes[i].value;
+                accessitems.UserDbkey = document.getElementById("UserDbkey").value;
+                accessitems.Document_Dbkey = nodes[i].id;
+                var read = document.getElementsByClassName("Read_" + nodes[i].id)[0].checked;
+                var write = document.getElementsByClassName("Write_" + nodes[i].id)[0].checked;
+                var download = document.getElementsByClassName("Download_" + nodes[i].id)[0].checked;
+                accessitems.ReadAccess = read;
+                accessitems.WriteAccess = write;
+                accessitems.DownloadAccess = download;
+                docAccessInfos.push(accessitems);
+            }
+           
+            $.ajax({
+                type: "POST",
+                url: "/DocManager/SaveAccessConfiguration",
+                data: JSON.stringify(docAccessInfos),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    if (data.success) {
+                        bootbox.alert({
+                            message: "Submitted Sucessfully",
+                            callback: function () {
+
+                            }
+                        });
+                    } else {
+                        alert(data.msg);
+                    }
+                },
+                failure: function (response) {
+                    alert("Error Occured");
+                }
+            }); 
+        }
+
+
+
+    </script>
+
+
+
+}
+
+

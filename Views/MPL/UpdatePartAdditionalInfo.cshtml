@@ -1,0 +1,136 @@
+﻿@using System.Data
+@model MPCRS.ViewModels.MasterPartViewModel
+
+<style>
+    .select2-container--open {
+        z-index: 9999999;
+    }
+</style>
+
+<input type="hidden" asp-for="Engine_Part_Dbkey" />
+<input type="hidden" asp-for="Part_relation_dbkey" />
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Part Drawing No:</h4>
+    </div>
+    <div class="col-md-6">
+        <b>@Model.Draw_part_no  -   @Model.Description</b>
+    </div>
+</div>
+
+
+<div class="row mt-1" id="parentdpd">
+    <div class="col-md-4">
+        <strong>Execution Responsibility</strong>
+    </div>
+    <div class="col-md-5">
+        <select class="form-select" asp-for="Execution_Resp" asp-items="Model.Module_ResponsibilityList"></select>
+    </div>
+</div>
+<div class="row mt-1">
+    <div class="col-md-4">
+        <strong>Execution Resp Additional Level</strong>
+    </div>
+    <div class="col-md-5">
+        <select class="form-select" asp-for="Execution_Resp_additionalLevel" asp-items="Model.Module_ResponsibilityList"></select>    
+    </div>
+</div>
+<div class="row mt-1">
+    <div class="col-md-4">
+        <strong>Collaborators</strong>
+    </div>
+    <div class="col-md-5">
+        <select class="form-select" asp-for="CollaboratorArr" asp-items="Model.Module_ResponsibilityList"></select>
+    </div>
+</div>
+<div class="row mt-1">
+    <div class="col-md-4">
+        <strong>MPL Reporting Type</strong>
+    </div>
+    <div class="col-md-5">
+        <select class="form-select" asp-for="Reporting_Type" asp-items="Model.ReportingType"></select>
+    </div>
+</div>
+
+<div class="row mt-1">
+    <div class="col-md-4">
+        <strong>Assembly Reporting Type</strong>
+    </div>
+    <div class="col-md-5">
+        @{
+            var AssemblyReportingTypes = new List<SelectListItem>();
+            AssemblyReportingTypes.Add(new SelectListItem { Text = "Default", Value = "Default" });
+            AssemblyReportingTypes.Add(new SelectListItem { Text = "Direct Part", Value = "Direct Part" });
+            AssemblyReportingTypes.Add(new SelectListItem { Text = "Main Assembly", Value = "Main Assembly" });
+        }
+        <select class="form-select" asp-for="AssemblyReportingType" asp-items="AssemblyReportingTypes"></select>
+    </div>
+</div>
+
+<div class="row mt-1">
+    <div class="col-md-4">
+        <strong>Report Display Order</strong>
+    </div>
+    <div class="col-md-5">
+        <input asp-for="ReportDisplayOrder" class="form-control" />
+    </div>
+</div>
+
+<div class="row mt-1">
+    <div class="col-md-4">
+        <strong>Parent Part</strong>
+    </div>
+    <div class="col-md-5">
+        <select class="form-select" asp-for="Parent_id" asp-items="Model.ParentParts"></select>
+    </div>
+</div>
+
+
+<div class="row mt-1">
+    <div class="col-md-4">
+        <strong>Reporting Parent Part</strong>
+    </div>
+    <div class="col-md-5">
+        <select class="form-select" asp-for="Reporting_Parent" asp-items="Model.ParentParts"></select>
+    </div>
+</div>
+
+
+<div class="row mt-1">
+    <div class="col-md-4">
+        <strong>Parts Remarks</strong>
+    </div>
+    <div class="col-md-5">
+        <textarea asp-for="Part_Remarks" class="form-control"></textarea>
+        <span asp-validation-for="Part_Remarks" class="text-danger"></span> 
+    </div>
+</div>
+<div class="row mt-1">
+    <div class="col-md-4">
+        <strong>Manufacturing Comments</strong>
+    </div>
+    <div class="col-md-5">
+        <textarea asp-for="ManufacturingComments" class="form-control"></textarea>
+        <span asp-validation-for="ManufacturingComments" class="text-danger"></span>
+    </div>
+</div>
+<br />
+<div class="col-md-2">
+    <input type="button" class="btn btn-success writeaccess" value="Save" onclick="saveAdnlInfo()" />
+</div>
+
+<script>
+    $(document).ready(function () {
+        var Reporting_Type = document.getElementById("Reporting_Type").value;
+        $('#Parent_id').select2({
+            dropdownParent: $('#parentdpd')
+        });
+        $('#Reporting_Parent').select2({
+            dropdownParent: $('#parentdpd')
+        });
+        $('#CollaboratorArr').select2({
+            dropdownParent: $('#parentdpd')
+        });
+    });
+</script>

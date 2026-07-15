@@ -1,0 +1,82 @@
+﻿@model string
+@using System.Data
+@using MPCRS.Utilities
+
+@{
+    var dt = MPGlobals.GetDataForDatalist($"[dbo].[MasterSearch_MaterialIssued] @PartNumber = '{Model}'");
+}
+<label> Material Issued Detail </label>
+
+@functions {
+    // Safe display helper: shows "-" for null/empty/DBNULL
+    string Show(object o) =>
+        (o == null || o == DBNull.Value || string.IsNullOrWhiteSpace(o.ToString()))
+            ? "-" : o.ToString();
+}
+@if (dt != null && dt.Rows.Count > 0)
+{
+    <table class="table table-sm table-striped table-bordered">
+        <thead>
+            <tr>      
+                <th>Part Name</th>
+                <th>Mfg Qty</th>
+                <th>Material Name</th>
+                <th>Size</th>
+                <th>Qty Issued</th>
+                <th>Weight (Kg)</th>
+                <th>Amount</th>
+                <th>Demand No</th>
+                <th>Order Ref No</th>
+                <th>Vendor</th>
+                <th>Issue Purpose</th>
+                <th>Note Attachments</th>
+                <th>Job Card Files</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (DataRow row in dt.Rows)
+            {
+                var jcFileName = Show(row["JCFileName"]);
+                var jcFileLocation = Show(row["JCFileLocation"]);
+
+                <tr>
+                    <td>@Show(row["Part_Name"])</td>
+                    <td>@Show(row["Qty"])</td>
+                    <td>@Show(row["Raw_material_Name"])</td>
+                    <td>@Show(row["Size"])</td>
+                    <td>@Show(row["Qty_Issue"])</td>
+                    <td>@Show(row["Weight_Kg"])</td>
+                    <td>@Show(row["Amount"])</td>
+                    <td>@Show(row["Demand_No"])</td>
+                    <td>@Show(row["Order_Ref_No"])</td>
+                    <td>@Show(row["Vendor_Name"])</td>
+                    <td>@Show(row["Issue_Purpose_text"])</td>
+                    <td>
+                        @if (row["IssueNoteAttachments"] != DBNull.Value && !string.IsNullOrEmpty(row["IssueNoteAttachments"].ToString()))
+                        {
+                            @Html.Raw(row["IssueNoteAttachments"])
+                        }
+                        else
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                    </td>
+                    <td>
+                        @if (row["JobCardAttachment"] != DBNull.Value && !string.IsNullOrEmpty(row["JobCardAttachment"].ToString()))
+                        {
+                            @Html.Raw(row["JobCardAttachment"])
+                        }
+                        else
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No records found.</p>
+}

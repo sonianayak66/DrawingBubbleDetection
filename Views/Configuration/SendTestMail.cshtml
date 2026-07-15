@@ -1,0 +1,17 @@
+﻿@{
+	Layout = null;
+}
+<form>
+	<label>Enter Receiver Mail Address</label>
+	<input  class="form-control" type="email" id="mailId"/>
+	<br />
+	@{
+		if(ViewBag.Id == 1){
+			<a class="btn btn-success" onclick="submit1()">Send</a>
+		}
+		else{
+			<a class="btn btn-success" onclick="submit2()">Send</a>
+		}
+	}
+	
+</form>

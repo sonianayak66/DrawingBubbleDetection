@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find C:UsersAdarshsourcereposAdarshMPISHRAM_V2 -name *Enclosure* -type f)",
+      "Bash(grep -r sp_ION_Enclosures_Save C:UsersAdarshsourcereposAdarshMPISHRAM_V2 --include=*.sql)",
+      "Bash(grep -r ION_Notes C:UsersAdarshsourcereposAdarshMPISHRAM_V2 --include=*.sql -l)",
+      "Bash(find C:UsersAdarshsourcereposAdarshMPISHRAM_V2 -path *SQL* -o -path *stored_procedures* -o -path *Database*)",
+      "Bash(grep -r sp_ION_Enclosures C:UsersAdarshsourcereposAdarshMPISHRAM_V2 --include=*.cs --include=*.md)",
+      "Bash(grep -r IONGUID C:UsersAdarshsourcereposAdarshMPISHRAM_V2 --include=*.cs -l)",
+      "Bash(xargs grep:*)",
+      "Bash(npx vite:*)",
+      "Bash(grep -l \"SearchPermission\\\\|SubmitRolePermisions\\\\|SelectAll\" /c/Users/Adarsh/source/repos/AdarshMPI/SHRAM_V2/Views/Users/*.cshtml)",
+      "Bash(grep -v \"\\\\.cshtml$\")"
+    ]
+  }
+}

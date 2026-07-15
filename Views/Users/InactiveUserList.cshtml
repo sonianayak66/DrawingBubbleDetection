@@ -1,0 +1,80 @@
+﻿@model List<MPCRS.ViewModels.PersonVM>
+@using MPCRS.Utilities;
+@{
+    Layout = null;
+    var hasWritePermission = UserData.IsAuthorized(User, Constants.UserPermissions.User_Write);
+}
+
+
+<div class="card shadow-none border border-300 my-4" data-component-card="data-component-card">
+    <div class="card-header p-4 border-bottom border-300 bg-soft">
+        <div class="row g-3 justify-content-between">
+            <h4 class="text-900 mb-0 col-6 col-sm-3" data-anchor="data-anchor" id="sizing">Inactive Users </h4>
+           
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="p-4">
+            <table class="table table-sm fs--1 mb-2" id="userlist" cellspacing="0" style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>
+                            Name
+                        </th>
+                        <th>
+                            Email
+                        </th>
+                        <th>
+                            Roles
+                        </th>
+                        <th>
+                            Department
+                        </th>
+                        <th>
+                            User Type
+                        </th>
+                        <th>
+                            Is Active
+                        </th>
+                       
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @item.name
+                                </td>
+                                <td>
+                                    @item.email_address
+                                </td>
+                                <td>
+                                    @item.roles
+                                </td>
+                                <td>
+                                    @item.departmentName
+                                </td>
+                                <td>
+                                    @item.persontype
+                                </td>
+                                <td>
+                                    @(item.isactive == true ? "Yes" : "No")
+                                </td>
+                        
+                            </tr>
+                        }
+                    }
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+
+
+

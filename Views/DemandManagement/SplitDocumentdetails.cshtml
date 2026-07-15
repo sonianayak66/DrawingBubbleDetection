@@ -1,0 +1,78 @@
+﻿@using System.Data
+@using MPCRS.Utilities
+
+
+@{
+    Layout = null;
+    DataTable doctypes = MPGlobals.GetDataForDatalist("SELECT [Master_Dbkey],[Master_Name] FROM [dbo].[Master_General] where [Master_Type] = 'Procurement_Doument_Type'");
+    DataTable dataTable = MPGlobals.GetDataForDatalist("[dbo].[Get_Demand_Receipts_History] @Receipt_dbkey = " + @ViewBag.Receipt_dbkey + "");
+    DataTable docs = MPGlobals.GetDataForDatalist(@"SELECT * FROM [dbo].[Attachments] where [Source_table] = 'Procurement_Demand_Receipts' and [Source_table_key] = " + @ViewBag.SplitID+ "");
+
+}
+@*<div class="col-md-12">
+        <div class="col-md-3">
+            <label>Receipt No : @dataTable.Rows[0]["Receipt_No"].ToString()</label>
+        </div>
+        <div class="col-md-3">
+            <label>Item : @dataTable.Rows[0]["Material_name"].ToString()</label>
+        </div>
+    </div>*@
+
+
+<div class="col-md-12">
+
+    <table class="table table-bordered" style="width:100%">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Ref No.</th>
+                <th>File</th>
+
+            </tr>
+        </thead>
+        <tbody id="recptDocs_tblbody">
+                @foreach (DataRow dr in docs.Rows)
+                {
+                    <tr>
+                        <td>
+                            <select class="form-control" disabled>
+                                <option value="0">Select</option>
+                                @foreach (DataRow drtype in doctypes.Rows)
+                                {
+                                    if (@drtype["Master_Dbkey"].ToString() == @dr["File_DVD_Num"].ToString())
+                                    {
+                                                <option value="@drtype["Master_Dbkey"]" selected>@drtype["Master_Name"]</option>
+                                    }
+                                    else
+                                    {
+                                                <option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+                                    }
+
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" value="@dr["File_Revision"]" readonly />
+                        </td>
+
+                        <td>
+
+                            <a target="_blank" href="@(dr["Attachment_location"].ToString() + dr["Attachment_FileName"].ToString())">@dr["Orginal_File_Name"].ToString()</a>
+                        </td>
+                        <td>
+                            <a class="btn btn-default" target="_blank" href="@(dr["Attachment_location"].ToString() + dr["Attachment_FileName"].ToString())"><i class="fa fa-download" aria-hidden="true"></i> </a>
+                            @*<i class="fa fa-download" aria-hidden="true"></i></td>*@
+                        </td>
+                        <td>
+                            @*<i type="button" class="fa fa-trash fa-lg" style="color:red;text-align:center;cursor:pointer" onclick="RemoveAttachment(@dr["Attachment_Db_Key"])"></i>*@
+                            @* <i type="button" class="fa fa-trash fa-lg deleteAccessBtn" style="color:red;text-align:center;cursor:pointer" onclick="DeleteDocs(@dr["Attachment_Db_Key"])"></i> *@
+                        </td>
+                    </tr>
+                }
+
+
+
+        </tbody>
+
+    </table>
+</div>

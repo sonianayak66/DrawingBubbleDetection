@@ -1,0 +1,188 @@
+﻿@model List<MPCRS.ViewModels.DocumentsViewModel>
+@using MPCRS.Utilities;
+@using System.Data
+@{
+    var hasWritePermission = UserData.IsAuthorized(User, Constants.UserPermissions.DOC_Write);
+    var Download_WO_waterMark = UserData.IsAuthorized(User, Constants.UserPermissions.Download_WO_waterMark);
+}
+
+@{
+    <i><b>Search Result from - @ViewBag.foldername</b></i>
+    <table class="table table-bordered table-condensed table-sm" style="width:100%" id="tbl_files">
+        <thead>
+            <tr class="bg-light">
+
+                <th>File</th>
+                <th>Des</th>
+                @*<th>Type</th>*@
+                @* <th>Status</th>*@
+                <th>User</th>
+                <th>Date</th>
+                <th>Folder</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>                      
+                    <td>
+                    <div style="margin-left:10px!important">
+                            @{
+                                if (@item.File_type.Contains("pdf"))
+                                {
+                                    <i class="far fa-file-pdf text-danger fs-3"></i>
+                                }
+                                else if (@item.File_type.Contains("csv") || @item.File_type.Contains("xls") || @item.File_type.Contains("xlsx"))
+                                {
+                                    <i class="far fa-file-excel text-danger fs-3"></i>
+                                }
+                                else if (@item.File_type.Contains("doc") || @item.File_type.Contains("docx"))
+                                {
+                                    <i class="far fa-file-word text-danger fs-3"></i>
+                                }
+                                else if (@item.File_type.Contains("ppt") || @item.File_type.Contains("pptx"))
+                                {
+                                    <i class="far fa-file-powerpoint text-danger fs-3"></i>
+                                }
+                                else if (@item.File_type.Contains("jpg") || @item.File_type.Contains("jpeg") || @item.File_type.Contains("png"))
+                                {
+                                    <i class="far fa-file-image text-danger fs-3"></i>
+                                }
+                                else if (@item.File_type.Contains("txt"))
+                                {
+                                    <i class="far fa-file-alt text-danger fs-3"></i>
+                                }
+                                else if (@item.File_type.Contains("zip") || @item.File_type.Contains("rar"))
+                                {
+                                    <i class="far fa-file-archive text-danger fs-3"></i>
+                                }
+                                else
+                                {
+                                    <i class="far fa-file text-danger fs-3"></i>
+                                }
+
+                                string statusClass = item.Approved_Status_text == "Rejected" ? "text-danger"
+                                                   : item.Approved_Status_text == "Pending" ? "text-warning"
+                                                   : "text-primary";
+                                bool canView = item.File_type.Contains("pdf") || item.File_type.Contains("tiff") || item.File_type.Contains("tif");
+
+                                if (canView)
+                                {
+                                    <a style="cursor:pointer; text-decoration:none;" onclick="ViewDocument(@item.Document_Dbkey)">
+                                        <b class="@statusClass">@item.Refrence_Title</b>
+                                    </a>
+                                }
+                                else
+                                {
+                                    string dlUrl = "/DownloadFiles/DownloadRequest?fileKey=" + item.Document_Dbkey + "&SourceTable=Documentation";
+                                    <a style="cursor:pointer; text-decoration:none;" href="@dlUrl" target="_blank">
+                                        <b class="@statusClass">@item.Refrence_Title</b>
+                                    </a>
+                                }
+                            }
+                    </div>
+                       
+                              
+                        
+                        </td>
+                       <td>@item.Description</td>
+                        @*<td>@item.File_type</td>*@
+                        @* <td>@item.Approved_Status_text</td>*@
+                        <td>@item.Updated_By</td>
+                        <td>@item.Updated_On</td>
+                          <td>@item.FolderName</td>
+                         <td class="align-middle white-space-nowrap">
+                             <div class="font-sans-serif btn-reveal-trigger position-static">
+                                 <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs--2" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs--2"></span></button>
+                                 <div class="dropdown-menu dropdown-menu-end py-2">
+                                @{
+                                    if (@item.File_type.Contains("pdf") || @item.File_type.Contains("tiff") || @item.File_type.Contains("tif"))
+                                    {
+                                        <a class="dropdown-item" onclick="ViewDocument(@item.Document_Dbkey)">View</a>
+                                    }
+                                   
+
+                                    string SourceTbl = "Documentation";
+                                    if (item.SuperUser == 1)
+                                    {
+                                        // if (@item.File_type.Contains("pdf"))
+                                        // {
+                                        //     <a class="dropdown-item" target="_blank" href="/DownloadFiles/DownloadRequest?fileKey=@item.Document_Dbkey&SourceTable=@SourceTbl">Download</a>
+                                        // }
+                                        // else if (@item.File_type.Contains("tiff") || @item.File_type.Contains("tif"))
+                                        // {
+                                        //     <a class="dropdown-item" target="_blank" href="/DownloadFiles/DownloadRequest?fileKey=@item.Document_Dbkey&SourceTable=@SourceTbl">Download</a>
+                                        // }
+                                        <a class="dropdown-item" target="_blank" href="/DownloadFiles/DownloadRequest?fileKey=@item.Document_Dbkey&SourceTable=@SourceTbl">Download</a>
+                                        if (Download_WO_waterMark)
+                                        {
+                                            <a class="dropdown-item" target="_blank" href="/DownloadFiles/DownloadRequest?fileKey=@item.Document_Dbkey&SourceTable=@SourceTbl&withoutWatermark=true">Download w/o Water Mark</a>
+                                        }
+
+
+                                        if (item.Approved_Status == 0 || item.Approved_Status == -1)
+                                        {
+                                            <a class="dropdown-item" onclick="Approval(@item.Document_Dbkey)">Approve Document</a>
+                                        }
+                                        else{
+                                            <a class="dropdown-item" onclick="Rejection(@item.Document_Dbkey)">Reject Document</a>
+                                        }
+
+                                        <a class="dropdown-item" onclick="RenameDoc(@item.Document_Dbkey)">Rename</a>
+                                        <a class="dropdown-item" onclick="DocDeletion(@item.Document_Dbkey)">Delete</a>
+                                    }
+                                    else
+                                    {
+                                        if (item.DownloadAccess)
+                                        {
+                                            // if (@item.File_type.Contains("pdf"))
+                                            // {
+                                            //     <a class="dropdown-item" href="/DownloadFiles/DownloadRequest?fileKey=@item.Document_Dbkey&SourceTable=@SourceTbl">Download</a>
+                                            // }
+                                            // else if (@item.File_type.Contains("tiff") || @item.File_type.Contains("tif"))
+                                            // {
+                                            //     <a class="dropdown-item" href="/DownloadFiles/DownloadRequest?fileKey=@item.Document_Dbkey&SourceTable=@SourceTbl">Download</a>
+                                            // }
+                                            <a class="dropdown-item" target="_blank" href="/DownloadFiles/DownloadRequest?fileKey=@item.Document_Dbkey&SourceTable=@SourceTbl&withoutWatermark=false">Download</a>
+
+                                            if (Download_WO_waterMark)
+                                            {
+                                                <a class="dropdown-item" target="_blank" href="/DownloadFiles/DownloadRequest?fileKey=@item.Document_Dbkey&SourceTable=@SourceTbl&withoutWatermark=true">Download w/o WaterrMark</a>
+                                            }
+
+
+                                        }
+                                       
+                                        if (hasWritePermission)
+                                        {
+                                            if (item.Approved_Status == 0 || item.Approved_Status == -1)
+                                            {
+                                                <a class="dropdown-item" onclick="Approval(@item.Document_Dbkey)">Approve Document</a>
+                                            }
+                                            else
+                                            {
+                                                <a class="dropdown-item" onclick="Rejection(@item.Document_Dbkey)">Reject Document</a>
+                                            }
+                                            // <a class="dropdown-item" onclick="RenameDoc(@item.Document_Dbkey)">Rename</a>
+                                        }
+
+                                        if (item.WriteAccess)
+                                        {
+                                            <a class="dropdown-item" onclick="RenameDoc(@item.Document_Dbkey)">Rename</a>
+                                        }
+                                    }
+                                }
+                                 </div>
+                             </div>
+                         </td>
+
+
+ 
+                    </tr>
+                }            
+            </tbody>
+         </table>
+}
+
+

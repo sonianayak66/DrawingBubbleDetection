@@ -1,0 +1,133 @@
+﻿@model MPCRS.ViewModels.Vendors_VM
+@using MPCRS.Utilities
+@{
+    var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.Vendors_Write);
+   
+}
+
+<div class="col-12">
+    <form id="CreateVendor" class="needs-validation" novalidate="novalidate">
+        <div class="row">
+            <div class="col-6">
+                <h4>@(Model.Vendor_guid == null ? "Create " : "Edit ")Vendor </h4>
+               
+            </div>
+            <div class="col-6 pull-right">
+               
+                @{
+                    if (Permission_Write)
+                    {
+                        <button type="button" class="btn btn-primary float-end" style="margin-right:10px;" onclick="Save()">Save</button>
+                    }
+                }
+                
+            </div>
+        </div>
+        <hr />
+        <input asp-for="Vendor_guid" type="hidden" value="@Model.Vendor_guid" />
+        <input asp-for="Vendor_Dbkey" type="hidden" value="@Model.Vendor_Dbkey" />
+        <input asp-for="Vendor_ID_System" type="hidden" value="@Model.Vendor_ID_System" />
+
+        <div class="form-group row">
+            <div class="col-12">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Vendor_ID_User" type="text">
+                    <label asp-for="Vendor_ID_User"></label>
+                    <span asp-validation-for="Vendor_ID_User" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="form-group row">
+            <div class="col-12">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Vendor_Name" type="text">
+                    <label asp-for="Vendor_Name"></label>
+                    <span asp-validation-for="Vendor_Name" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-12">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Vendor_Email" type="text">
+                    <label asp-for="Vendor_Email"></label>
+                    <span asp-validation-for="Vendor_Email" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-12">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Vendor_Contact" type="text">
+                    <label asp-for="Vendor_Contact"></label>
+                    <span asp-validation-for="Vendor_Contact" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-12">
+                <div class="form-floating mb-3">                  
+                    <textarea class="form-control" asp-for="Vendor_Adress" type="text" rows="4" cols="50"></textarea>
+                    <label asp-for="Vendor_Adress"></label>
+                    <span asp-validation-for="Vendor_Adress" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-12">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Vendor_State" type="text">
+                    <label asp-for="Vendor_State"></label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-12">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Vendor_City" type="text">
+                    <label asp-for="Vendor_City"></label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-12">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Vendor_Pincode" type="text">
+                    <label asp-for="Vendor_Pincode"></label>
+                </div>
+            </div>
+        </div>
+       
+
+        </form></div>
+
+@{
+    await Html.RenderPartialAsync("_ValidationScriptsPartial");
+}
+
+<script>
+    function Save() {
+        if (!$('#CreateVendor').valid()) { return false }
+        var data = $("#CreateVendor").serialize();
+        $.ajax({
+            type: 'POST',
+            url: '/Vendor/CreateVendor',
+            data: data,
+            success: function (data) {
+  
+                bootbox.alert(data.msg,
+                    function () {
+                        window.location.href = "/Vendor/Vendors";
+                    });
+            },
+            error: function (data) { bootbox.alert(data.msg) }
+        });
+    }
+</script>

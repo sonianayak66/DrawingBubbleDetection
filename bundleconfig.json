@@ -1,0 +1,57 @@
+[
+  {
+    "outputFileName": "wwwroot/Bundle/BundledStyles.min.css",
+    "inputFiles": [
+
+      "wwwroot/lib/icon/unicons/unicons.min.css",
+      "wwwroot/assets/css/theme.min.css",
+      "wwwroot/assets/css/user.min.css",
+      "wwwroot/vendors/leaflet/leaflet.css",
+      "wwwroot/vendors/leaflet.markercluster/MarkerCluster.css",
+      "wwwroot/vendors/leaflet.markercluster/MarkerCluster.Default.css",
+      "wwwroot/css/datatable.min.css",
+      "wwwroot/css/select2.min.css",
+      "wwwroot/vendors/choices/choices.min.css",
+      "wwwroot/css/site.css",
+      "wwwroot/css/Select2CustomStyle.css",
+      "wwwroot/lib/jquery/dist/jquery-ui.css"
+     // "wwwroot/css/summernote.min.css"
+    ],
+    "minify": {
+      "enabled": false,
+      "renameLocals": false
+    },
+    "sourceMap": false,
+    "includeInProject": true
+  },
+
+  {
+    "outputFileName": "wwwroot/Bundle/bundledScripts.min.js",
+    "inputFiles": [
+      "wwwroot/lib/jquery/dist/jquery.min.js",
+      "wwwroot/lib/jquery-validation/dist/jquery.validate.js",
+      "wwwroot/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js",
+      "wwwroot/vendors/popper/popper.min.js",
+      "wwwroot/vendors/bootstrap/bootstrap.min.js",
+      "wwwroot/vendors/anchorjs/anchor.min.js",
+      "wwwroot/vendors/is/is.min.js",
+      "wwwroot/vendors/fontawesome/all.min.js",
+      "wwwroot/vendors/feather-icons/feather.min.js",
+      "wwwroot/js/datatables.min.js",
+      "wwwroot/js/bootbox.all.min.js",
+      "wwwroot/js/moment.min.js",
+      "wwwroot/js/select2.min.js",
+      "wwwroot/vendors/choices/choices.min.js",
+      "wwwroot/js/notify.js",
+      "wwwroot/lib/jquery/dist/jquery-ui.js"
+     // "wwwroot/js/summernote.min.js"
+
+    ],
+    "minify": {
+      "enabled": false,
+      "renameLocals": false
+    },
+    "sourceMap": false,
+    "includeInProject": true
+  }
+]

@@ -1,0 +1,144 @@
+﻿@model MPCRS.ViewModels.AuthenticateByEmailViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+
+<head>
+    <title>Sign In</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    <!-- ===============================================-->
+    <!--    Document Title-->
+    <!-- ===============================================-->
+     <title>@ViewData["Title"] - STFE - MPCRS</title>
+
+
+    <!-- ===============================================-->
+    <!--    Favicons-->
+    <!-- ===============================================-->
+    <link rel="apple-touch-icon" sizes="180x180" href="~/assets/img/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="~/assets/img/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="~/assets/img/favicons/favicon-16x16.png">
+    <link rel="shortcut icon" type="image/x-icon" href="~/assets/img/favicons/favicon.ico">
+    <link rel="manifest" href="~/assets/img/favicons/manifest.json">
+    <meta name="msapplication-TileImage" content="~/assets/img/favicons/mstile-150x150.png">
+    <meta name="theme-color" content="#ffffff">
+    <script src="~/vendors/imagesloaded/imagesloaded.pkgd.min.js"></script>
+    <script src="~/vendors/simplebar/simplebar.min.js"></script>
+    <script src="~/assets/js/config.js"></script>
+
+
+    <!-- ===============================================-->
+    <!--    Stylesheets-->
+    <!-- ===============================================-->
+    <link href="~/lib/icon/unicons/unicons.min.css" rel="stylesheet" />
+    <link href="~/fonts/gfonts/gfonts.css" rel="stylesheet" />
+    <link href="~/vendors/simplebar/simplebar.min.css" rel="stylesheet">
+ @*   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">*@
+    <link href="~/assets/css/theme.min.css" type="text/css" rel="stylesheet" id="style-default">
+    <link href="~/assets/css/user.min.css" type="text/css" rel="stylesheet" id="user-style-default">
+    <link href="~/vendors/leaflet/leaflet.css" rel="stylesheet">
+    <link href="~/vendors/leaflet.markercluster/MarkerCluster.css" rel="stylesheet">
+    <link href="~/vendors/leaflet.markercluster/MarkerCluster.Default.css" rel="stylesheet">
+ 
+</head>
+
+
+<body>
+
+    <!-- ===============================================-->
+    <!--    Main Content-->
+    <!-- ===============================================-->
+    <main class="main" id="top">
+        <div class="container">
+            <div class="text-end">
+                   <span>@ViewBag.LinkTimeLocal</span>
+             </div>
+         
+            <div class="row flex-center min-vh-100 py-5">
+                <div class="col-sm-10 col-md-8 col-lg-5 col-xl-5 col-xxl-3">
+                    <a class="d-flex flex-center text-decoration-none mb-4" href=#">
+                        <div class="d-flex align-items-center fw-bolder fs-5 d-inline-block">
+                            <img src="../../../assets/img/icons/logo.png" alt="phoenix" width="58" />
+                        </div>
+                    </a>
+                  <div class="text-center mb-7">
+                        <h3 class="text-1000">Sign In</h3>
+                        <p class="text-700">STFE - MPCRS</p>
+                    </div>
+                    <form method="post" asp-controller="Auth" asp-action="AuthenticateByEmail">
+                 <div class="mb-3 text-start">
+                            <input type="hidden" asp-for="ReturnUrl" />
+                     <label class="form-label" for="email">Email address</label>
+                     <div class="form-icon-container">
+                                <input asp-for="Email" type="text" autocomplete="username" class="form-control form-icon-input" placeholder="name@example.com" /> <span class="uil uil-user text-900 fs--1 form-icon"></span>
+                     </div>
+                            <small class="text-muted">If no domain is entered, <strong>@@mail.gtre.org</strong> will be added automatically.</small>
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                 </div>
+                 <div class="mb-3 text-start">
+                     <label class="form-label" for="password">Password</label>
+                     <div class="form-icon-container">
+                                <input asp-for="Password" type="password" class="form-control form-icon-input" placeholder="Password" /> <span class="uil uil-key-skeleton-alt text-900 fs--1 form-icon"></span>
+                     </div>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                 </div>
+                 <div class="row flex-between-center mb-7">
+                     <div class="col-auto">
+                         <div class="form-check mb-0">
+                               <input class="form-check-input" asp-for="RememberMe" type="checkbox" checked="checked" />
+                             <label class="form-check-label mb-0" for="basic-checkbox">Remember me</label>
+                         </div>
+                     </div>
+                     @*<div class="col-auto"><a class="fs--1 fw-semi-bold" href="../../../pages/authentication/simple/forgot-password.html">Forgot Password?</a></div>*@
+                 </div>
+                 <button type="submit" class="btn btn-primary w-100 mb-3">Sign In</button>
+                 @*<div class="text-center"><a class="fs--1 fw-bold" href="../../../pages/authentication/simple/sign-up.html">Create an account</a></div>*@
+          </form>
+        
+                        </div>
+            </div>
+        </div>
+ 
+    </main>
+    <!-- ===============================================-->
+    <!--    End of Main Content-->
+    <!-- ===============================================-->
+
+ 
+
+
+    <!-- ===============================================-->
+    <!--    JavaScripts-->
+    <!-- ===============================================-->
+    <script src="~/vendors/popper/popper.min.js"></script>
+    <script src="~/vendors/bootstrap/bootstrap.min.js"></script>
+    <script src="~/vendors/anchorjs/anchor.min.js"></script>
+    <script src="~/vendors/is/is.min.js"></script>
+    <script src="~/vendors/fontawesome/all.min.js"></script>
+    @* <script src="https://polyfill.io/v3/polyfill.min.js?features=window.scroll"></script>*@
+     <script src="~/vendors/feather-icons/feather.min.js"></script>
+     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        // Auto-append default domain if the user types only the prefix
+        (function () {
+            var form = document.querySelector('form[asp-action="AuthenticateByEmail"]') || document.querySelector('form');
+            if (!form) return;
+            form.addEventListener('submit', function () {
+                var emailInput = form.querySelector('input[name="Email"]');
+                if (emailInput && emailInput.value && emailInput.value.indexOf('@@') === -1) {
+                    emailInput.value = emailInput.value.trim() + '@@mail.gtre.org';
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>

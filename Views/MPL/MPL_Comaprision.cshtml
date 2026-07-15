@@ -1,0 +1,166 @@
+﻿@using System.Data
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "MPL Comparison";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.MPL_Report_Read);
+    var baselineEngines = MPGlobals.GetDataForDatalist("[dbo].[GetBaseLineEngines]");
+    var ExecResponse = MPGlobals.GetDataForDatalist("[dbo].[GetExecResp]");
+  }
+
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-sm-2">
+                <h4>MPL Comparison</h4>
+            </div>
+            <div class="col-md-2">
+                <b>Baseline Engine1</b>
+                <div class="input-group">
+                    <select class="form-control" id="baselineengine1">
+                        @{
+                            <option value="0">Select</option>
+                            foreach (DataRow item in baselineEngines.Rows)
+                            {
+                                <option value="@item["BL_Engine_Dbkey"]">@item["Engine_Title"]</option>
+                            }
+                        }
+                    </select>
+                     </div>
+            </div>
+            <div class="col-md-2">
+                <b>Baseline Engine2</b>
+                <div class="input-group">
+                    <select class="form-control" id="baselineengine2">
+                        @{
+                            <option value="0">Select</option>
+                            foreach (DataRow item in baselineEngines.Rows)
+                            {
+                                <option value="@item["BL_Engine_Dbkey"]">@item["Engine_Title"]</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <b>Exec Resp</b>
+                <div class="input-group">
+                    <select class="form-control" id="ExecResp">
+                    @{
+                        <option value="0">Select</option>
+                        foreach (DataRow item in ExecResponse.Rows)
+                        {
+                            <option value="@item["Master_Dbkey"]">@item["Master_Name"]</option>
+                        }
+                    }
+                    @* <span class="input-group-text" id="basic-addon2" style="cursor:pointer" onclick="CacheBaselineEngine()"><i class="uil uil-search"></i></span> *@
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2" style="margin-top:25px!important">
+                <input type="checkbox" id="changesOnly" checked style="height:18px!important;width:18px!important" />Show only changes
+            </div>
+            <div class="col-md-1" style="margin-top:25px!important">
+
+                <a onclick="GetMPL_Comaparision()" class="btn btn-primary" style="width:100%">Go</a>
+                
+
+            </div>
+            <div class="col-md-1" style="margin-top:25px!important">
+
+                <a class="btn btn-secondary" href="/SOPManagement/BaseLineEngines">Back</a>
+
+            </div>
+        </div>
+    </div>
+</div>
+<hr/>
+<div class="col-md-12 col-sm-12 col-lg-12 divc">
+    <label id="Comparsion_Label"></label>
+    <table class="table table-bordered table-sm fs--1 mb-2" id="demandstbl">
+        <thead>
+            <tr>
+               
+                <th data-sortable="true" scope="col">Sl No</th>
+                <th data-sortable="true" scope="col">Parent</th>
+                <th data-sortable="true" scope="col">MPL REV</th>
+                <th data-sortable="true" scope="col">Part No</th>
+                <th data-sortable="true" scope="col">Description</th>
+                <th data-sortable="true" scope="col">Old Rev</th>
+                <th data-sortable="true" scope="col">New Rev</th>
+                <th data-sortable="true" scope="col">Comments</th>
+                <th data-sortable="true" scope="col">System Log</th>
+                <th data-sortable="true" scope="col">Module</th>
+                <th data-sortable="true" scope="col">Exec Resp</th>
+
+            </tr>
+        </thead>
+    </table>
+</div>
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        var MPCData;
+        var MPCDataForList = [];
+
+        $(document).ready(function () {
+            //GetMPL_Comaparision();
+        });
+        function GetMPL_Comaparision() {
+            var E1 = document.getElementById("baselineengine1");
+            var E2 = document.getElementById("baselineengine2");
+            var IsChangeOnly = document.getElementById("changesOnly").checked;
+            var ExceResp = document.getElementById("ExecResp");
+            document.getElementById("Comparsion_Label").innerText = "MPL Comparison between " + E1.options[E1.selectedIndex].text + " and " + E2.options[E2.selectedIndex].text;
+
+            $.ajax({
+                type: "Get",
+                url: "/MPL/GetMPL_Comaparision?BL1=" + E1.value + "&BL2=" + E2.value + "&IsChangeOnly=" + IsChangeOnly + "&ExecResp=" + ExceResp.value,
+                success: function (data) {
+                    MPCDataForList = JSON.parse(data);
+                    GetMPL_Comaparisionlist();
+                }
+            })
+        }
+
+        function GetMPL_Comaparisionlist() {
+
+            try {
+                dataTable.destroy();
+            } catch (e) {
+            }
+
+            dataTable = $("#demandstbl").DataTable({
+                scrollY: 510,
+                data: MPCDataForList,
+               // responsive: true,
+                paging: false,
+                //"order": [[0, "asc"]],
+                dom: 'Bfrtip',
+                buttons: [{
+                    extend: 'excel',
+                    title: document.getElementById("Comparsion_Label").innerText,
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4,5,6,7,8,9,10] //Your Colume value those you want
+                    }
+                }],
+                "columns": [
+                    { "data": "SL_No_new" },
+                    { "data": "V2_Draw_part_no_parent" },
+                    { "data": "MPLREV" },
+                    { "data": "V2_Draw_part_no" },
+                    { "data": "V2_Description" },
+                    { "data": "V1_Revision" },
+                    { "data": "V2_Revision" },
+                    { "data": "V2_UserComment" },
+                    { "data": "System_Log" },
+                    { "data": "V2_Module_Responsibility" },
+                    { "data": "Execution_Resp" },
+                ]
+
+            });
+        }
+    </script>
+}

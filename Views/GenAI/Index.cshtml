@@ -1,0 +1,153 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+
+<style>
+	.chat-container {
+		width: 100%;
+		margin: 10px auto;
+		display: flex;
+		flex-direction: column;
+		border: 1px solid #ccc;
+		border-radius: 10px;
+		overflow: hidden;
+	}
+
+	.chat-box {
+		flex: 1;
+		padding: 10px;
+		overflow-y: auto;
+		height: 400px;
+		border-bottom: 1px solid #ccc;
+	}
+
+	.input-container {
+		display: flex;
+		padding: 10px;
+	}
+
+	#user-input {
+		flex: 1;
+		padding: 10px;
+		font-size: 16px;
+		border: 1px solid #ccc;
+		border-radius: 5px;
+	}
+
+	#send-button {
+		margin-left: 10px;
+		padding: 10px 20px;
+		font-size: 16px;
+		border: none;
+		border-radius: 5px;
+		background-color: #007bff;
+		color: white;
+		cursor: pointer;
+	}
+
+	#clear-button {
+		margin-left: 10px;
+		padding: 10px 20px;
+		font-size: 16px;
+		border: none;
+		border-radius: 5px;
+		background-color: #007bff;
+		color: white;
+		cursor: pointer;
+	}
+
+	#send-button:hover {
+		background-color: #0056b3;
+	}
+
+	.scrollable-div {
+		height: 500px; /* Set the height you want */
+		overflow-y: auto; /* Enable vertical scrolling */
+		border: 1px solid #ccc; /* Optional: Add a border for better visualization */
+		padding: 10px; /* Optional: Add some padding */
+		box-sizing: border-box; /* Ensure padding and border are included in the width and height */
+	}
+</style>
+
+<div class="row">
+	<div class="col-2">
+		<input type="radio" id="DomainQuesCheckBox" name="QuestionType" value="DomainSpecific" checked="checked" /><label for="DomainQuesCheckBox" class="p-1"> Domain Specific </label>
+		<br />
+		<input type="radio" id="GenerealQuesCheckBox" name="QuestionType" value="General" /><label for="GenerealQuesCheckBox" class="p-1"> General Questions </label>
+	</div>
+	<div class="col-2">
+
+		<label>Module</label>
+		<select class="form-control" id="domainModel">
+			<option>SOP</option>
+		@* 	<option>NCR/ACSN</option> *@
+		</select>
+	</div>
+	<div class="col-6">
+		<input type="text" class="form-control" id="user-input" placeholder="Type your message here..." />
+	</div>
+	<div class="col-2">
+		<button class="btn btn-sm" id="send-button">Send</button>
+		<button class="btn btn-sm" id="clear-button" onclick="Reload()">Clear</button>
+	</div>
+ 
+</div>
+ 
+ 
+
+
+ 
+
+<div class="scrollable-div" id="responsebody">
+</div>
+
+
+@section scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+
+
+
+	<script>
+
+
+		function Reload() {
+			window.location.reload();
+		}
+
+		document.getElementById('user-input').addEventListener('keydown', function (event) {
+			if (event.key === 'Enter') {
+				document.getElementById('send-button').click();
+			}
+		});
+
+		$('#send-button').on('click', function () {
+			var userInput = $('#user-input').val();
+			var domainmodel = $('#domainModel').val();
+			var checkedCheckBox = document.getElementById("DomainQuesCheckBox").checked;
+			QuesType = "General";
+			if (checkedCheckBox) {
+				QuesType = "Domain";
+			}
+			if (!userInput) return;
+			document.getElementById("responsebody").innerHTML = '';
+			$('#responsebody').append('<p>' + userInput + '</p>');
+			$.ajax({
+				url: '/GenAI/ExecuteQuery',
+				method: 'POST',
+				contentType: 'application/json',
+				data: JSON.stringify({ NaturalLanguageQuery: userInput, QuestionType: QuesType, DomainModel: domainmodel }),
+				success: function (data) {
+					$('#responsebody').append(data);
+					// $('#responsebody').scrollTop($('#responsebody')[0].scrollHeight);
+				},
+				error: function (xhr, status, error) {
+					console.error('Error:', error);
+				}
+			});
+		});
+	</script>
+
+
+}

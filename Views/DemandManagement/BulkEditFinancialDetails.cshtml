@@ -1,0 +1,660 @@
+﻿@model MPCRS.ViewModels.Procurement_Demand_FinancialBulkEditPage_VM
+@using MPCRS.Utilities
+@using System.Globalization
+@using System.Data
+
+@{
+    ViewData["Title"] = "Bulk Edit Financial Details";
+    //var financialDetails_Read = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Financial_Edit);
+    var canEditFinancial = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Financial_Edit);
+    var Procurement_StatusList = Masters.GetMaster_General_Text("Procurement_Status");
+    CultureInfo Indian = new CultureInfo("hi-IN");
+    var projects = ViewBag.Projects as DataTable;
+    var demandingOfficers = ViewBag.DemandingOfficers as DataTable;
+   
+}
+
+<link href="~/css/select2.min.css" rel="stylesheet" />
+
+<style>
+    html, body {
+        height: 100%;
+    }
+
+    .container-fluid.mt-3 {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .card {
+        width: 100%;
+    }
+
+    .table-responsive {
+        overflow: hidden;
+    }
+
+    #bulkFinancialEditTable {
+        width: 100% !important;
+        min-width: 1710px;
+        table-layout: auto;
+    }
+
+        #bulkFinancialEditTable th,
+        #bulkFinancialEditTable td {
+            vertical-align: top;
+            white-space: normal;
+        }
+
+        #bulkFinancialEditTable textarea,
+        #bulkFinancialEditTable input,
+        #bulkFinancialEditTable select {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+    .readonly-display {
+        display: block;
+        width: 100%;
+        min-height: 38px;
+        padding: .375rem .75rem;
+        border: 1px solid #ced4da;
+        border-radius: .25rem;
+        background-color: #e9ecef;
+        color: #495057;
+        line-height: 1.5;
+        cursor: not-allowed;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+        .readonly-display.multiline {
+            min-height: 76px;
+        }
+
+    div.dataTables_wrapper div.dataTables_filter {
+        text-align: right !important;
+        margin-bottom: 10px;
+    }
+
+        div.dataTables_wrapper div.dataTables_filter input {
+            width: 280px !important;
+            margin-left: 8px;
+        }
+
+    div.dataTables_wrapper div.dataTables_length {
+        text-align: left !important;
+        margin-bottom: 10px;
+    }
+
+    div.dataTables_wrapper {
+        width: 100%;
+    }
+
+    div.dataTables_scrollHead table,
+    div.dataTables_scrollBody table {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    div.dataTables_scrollBody {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .dt-center {
+        text-align: center;
+    }
+</style>
+
+<div class="container-fluid mt-3">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Bulk Edit Financial Details</h4>
+
+            <div>
+                @if (canEditFinancial)
+                {
+                    <button type="button" class="btn btn-primary" id="btnEditModeTop">Edit Financial Details</button>
+                }
+            </div>
+        </div>
+
+        <div class="card-body">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+            }
+
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label><b>Project</b></label>
+                    <select class="form-select" id="bulk-project-filter">
+                        <option value="0" selected="@(Model.ProjectDbkey == 0)">All</option>
+                        @if (projects != null)
+                        {
+                            foreach (DataRow row in projects.Rows)
+                            {
+                                var projectKey = Convert.ToInt32(row["Project_Dbkey"]);
+                                <option value="@projectKey" selected="@(projectKey == Model.ProjectDbkey)">
+                                    @row["Title"]
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label><b>Demanding Officer</b></label>
+                    <select class="form-select" id="bulk-demandingofficer-filter" name="DemandingOfficerKey">
+                        <option value="0">All</option>
+                        @if (demandingOfficers != null)
+                        {
+                            foreach (DataRow row in demandingOfficers.Rows)
+                            {
+                                var officerKey = Convert.ToInt32(row["UserDbkey"]);
+                                <option value="@officerKey" selected="@(officerKey == Model.DemandingOfficerKey)">
+                                    @row["UserName"]
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label><b>Current Status</b></label>
+                    <select class="form-select" id="bulk-currentstatus-filter">
+                        <option value="">All</option>
+                        @foreach (var item in Procurement_StatusList)
+                        {
+                            <option value="@item.Text">@item.Text</option>
+                        }
+                    </select>
+                </div>
+
+               
+            </div>
+
+            <form asp-action="BulkEditFinancialDetails" method="post" id="bulkFinancialForm">
+                <input type="hidden" name="ProjectDbkey" id="ProjectDbkey" value="@Model.ProjectDbkey" />
+                <input type="hidden" name="DemandingOfficerKey" value="@Model.DemandingOfficerKey" />
+                <input type="hidden" id="bulkEditJson" name="bulkEditJson" />
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm w-100" id="bulkFinancialEditTable">
+                        <thead>
+                            <tr>
+                                <th style="width:180px;">MMG Number</th>
+                                <th style="width:280px;">Description</th>
+                                <th style="width:160px;">Actual Cost</th>
+                                <th style="width:160px;">Advance Paid</th>
+                                <th style="width:180px;">Payment Made Till Date</th>
+                                <th style="width:180px;">Balance Order Value</th>
+                                <th style="width:170px;">Current Status</th>
+                                <th style="width:220px;">Remarks</th>
+                                <th style="width:160px;">Status Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Items.Count; i++)
+                            {
+                                <tr data-demanddbkey="@Model.Items[i].DemandDbKey"
+                                    data-projectdbkey="@Model.Items[i].Project_Dbkey"
+                                    data-demandingofficerkey="@Model.Items[i].DemandingOfficerKey">
+                                    <td>
+                                        <input type="hidden" class="demanddbkey" value="@Model.Items[i].DemandDbKey" />
+                                        <input type="hidden" class="projectdbkey" value="@Model.Items[i].Project_Dbkey" />
+                                        <span class="readonly-display mmg-input">@Model.Items[i].MMG_File_No</span>
+                                    </td>
+
+                                    <td>
+                                        <span class="readonly-display multiline desc-input">@Model.Items[i].Item_Description</span>
+                                    </td>
+
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm actual-cost" value="@Model.Items[i].ActualCost" />
+                                    </td>
+
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm advance-paid" value="@Model.Items[i].AdvancePaid" />
+                                    </td>
+
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm payment-made" value="@Model.Items[i].PaymentMadeTillDate" />
+                                    </td>
+
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm balance-order-value" value="@Model.Items[i].BalanceOrderValue" readonly />
+                                    </td>
+
+                                    <td>
+                                        <select class="form-select form-select-sm current-status">
+                                            @foreach (var item in Procurement_StatusList)
+                                            {
+                                                <option value="@item.Value" selected="@(item.Value == Model.Items[i].CurrentStatus)">
+                                                    @item.Text
+                                                </option>
+                                            }
+                                        </select>
+                                    </td>
+
+                                    <td>
+                                        <textarea class="form-control form-control-sm remarks-input" rows="2">@Model.Items[i].Remarks</textarea>
+                                    </td>
+
+                                    <td>
+                                        <input type="date"
+                                               class="form-control form-control-sm status-date"
+                                               value="@(Model.Items[i].StatusDate.HasValue ? Model.Items[i].StatusDate.Value.ToString("yyyy-MM-dd") : "")" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-3 d-flex justify-content-between">
+                    <a href="/DemandManagement/DemandTree" class="btn btn-secondary" id="btnBackToTree">Back</a>
+
+                    <div>
+                        @if (canEditFinancial)
+                        {
+                            <button type="submit" class="btn btn-success d-none" id="btnSaveAll">Save All</button>
+                        }
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script src="~/js/select2.min.js"></script>
+
+    <script>
+        let bulkTable = null;
+        let selectedProjectFilter = '@Model.ProjectDbkey';
+        let selectedDemandingOfficerFilter = '@Model.DemandingOfficerKey';
+        let selectedCurrentStatusFilter = '';
+        let editedRows = {};
+        let customSearchValue = '';
+        let isEditMode = false;
+        const canEdit = '@(canEditFinancial ? "true" : "false")' === 'true';
+        const editModeStorageKey = 'BulkFinancialDetails_EditMode';
+        const editedRowsStorageKey = 'BulkFinancialDetails_EditedRows';
+
+        function saveEditModeState() {
+            sessionStorage.setItem(editModeStorageKey, isEditMode ? 'true' : 'false');
+        }
+
+        function loadEditModeState() {
+            return sessionStorage.getItem(editModeStorageKey) === 'true';
+        }
+        function clearEditModeState() {
+            sessionStorage.removeItem(editModeStorageKey);
+        }
+
+        function clearEditedRowsState() {
+            sessionStorage.removeItem(editedRowsStorageKey);
+        }
+
+
+        function saveEditedRowsState() {
+            sessionStorage.setItem(editedRowsStorageKey, JSON.stringify(editedRows));
+        }
+
+        function loadEditedRowsState() {
+            const saved = sessionStorage.getItem(editedRowsStorageKey);
+            if (!saved) return {};
+
+            try {
+                return JSON.parse(saved) || {};
+            } catch {
+                return {};
+            }
+        }
+
+        
+        function calculateRowBalance(row) {
+            const actualCost = parseFloat($(row).find('.actual-cost').val()) || 0;
+            const paymentMade = parseFloat($(row).find('.payment-made').val()) || 0;
+            $(row).find('.balance-order-value').val((actualCost - paymentMade).toFixed(2));
+        }
+
+        function getRowKey(row) {
+            return parseInt($(row).find('.demanddbkey').val()) || 0;
+        }
+
+        function getProjectKey(row) {
+            return parseInt($(row).find('.projectdbkey').val()) || 0;
+        }
+
+        function getDemandingOfficerKey(row) {
+            return parseInt($(row).attr('data-demandingofficerkey')) || 0;
+        }
+
+        function getRowData(row) {
+            return {
+                DemandDbKey: parseInt($(row).find('.demanddbkey').val()) || 0,
+                Project_Dbkey: parseInt($(row).find('.projectdbkey').val()) || 0,
+                ActualCost: $(row).find('.actual-cost').val(),
+                AdvancePaid: $(row).find('.advance-paid').val(),
+                PaymentMadeTillDate: $(row).find('.payment-made').val(),
+                CurrentStatus: $(row).find('.current-status').val(),
+                Remarks: $(row).find('.remarks-input').val(),
+                StatusDate: $(row).find('.status-date').val()
+            };
+        }
+
+        function markRowAsEdited(row) {
+            const rowData = getRowData(row);
+            if (rowData.DemandDbKey > 0) {
+                editedRows[rowData.DemandDbKey] = rowData;
+                saveEditedRowsState();
+            }
+        }
+
+        function applyEditedDataToRow(row) {
+            const key = getRowKey(row);
+            if (!key || !editedRows[key]) return;
+
+            const data = editedRows[key];
+
+            $(row).find('.actual-cost').val(data.ActualCost);
+            $(row).find('.advance-paid').val(data.AdvancePaid);
+            $(row).find('.payment-made').val(data.PaymentMadeTillDate);
+            $(row).find('.current-status').val(data.CurrentStatus);
+            $(row).find('.remarks-input').val(data.Remarks);
+            $(row).find('.status-date').val(data.StatusDate);
+
+            calculateRowBalance(row);
+        }
+
+        function restoreEditedRows() {
+            $('#bulkFinancialEditTable tbody tr').each(function () {
+                applyEditedDataToRow(this);
+            });
+        }
+
+        function getRowSearchText(row) {
+            const mmg = ($(row).find('.mmg-input').text() || '').trim();
+            const desc = ($(row).find('.desc-input').text() || '').trim();
+            const actualCost = ($(row).find('.actual-cost').val() || '').trim();
+            const advancePaid = ($(row).find('.advance-paid').val() || '').trim();
+            const paymentMade = ($(row).find('.payment-made').val() || '').trim();
+            const balanceOrderValue = ($(row).find('.balance-order-value').val() || '').trim();
+            const currentStatus = ($(row).find('.current-status option:selected').text() || '').trim();
+            const remarks = ($(row).find('.remarks-input').val() || '').trim();
+            const statusDate = ($(row).find('.status-date').val() || '').trim();
+
+            return (
+                mmg + ' ' +
+                desc + ' ' +
+                actualCost + ' ' +
+                advancePaid + ' ' +
+                paymentMade + ' ' +
+                balanceOrderValue + ' ' +
+                currentStatus + ' ' +
+                remarks + ' ' +
+                statusDate
+            ).toLowerCase();
+        }
+
+        function getViewportTableHeight() {
+            const viewportHeight = window.innerHeight;
+            const tableTop = $('.table-responsive').offset()?.top || 0;
+            const bottomButtonsHeight = $('.mt-3.d-flex.justify-content-between').outerHeight(true) || 0;
+            const footerGap = 35;
+
+            let availableHeight = viewportHeight - tableTop - bottomButtonsHeight - footerGap;
+            if (availableHeight < 250) {
+                availableHeight = 250;
+            }
+
+            return availableHeight;
+        }
+
+        function applyBulkTableHeight() {
+            if (!bulkTable) return;
+
+            const height = getViewportTableHeight();
+            const $container = $(bulkTable.table().container());
+            const $scrollBody = $container.find('.dataTables_scrollBody');
+
+            $scrollBody.css({
+                height: height + 'px',
+                maxHeight: height + 'px'
+            });
+
+            bulkTable.columns.adjust();
+        }
+
+        function setEditMode(enable) {
+            isEditMode = enable;
+
+            $('#bulkFinancialEditTable').find('.actual-cost, .advance-paid, .payment-made, .current-status, .remarks-input, .status-date')
+                .prop('disabled', !enable);
+
+            if (enable) {
+                $('#btnEditModeTop').addClass('d-none');
+                $('#btnSaveAll').removeClass('d-none');
+            } else {
+                $('#btnEditModeTop').removeClass('d-none');
+                $('#btnSaveAll').addClass('d-none');
+            }
+        }
+
+        $(document).ready(function () {
+            editedRows = loadEditedRowsState();
+            $('#bulk-project-filter').select2();
+            $('#bulk-demandingofficer-filter').select2();
+            $('#bulk-currentstatus-filter').select2();
+
+            $.fn.dataTable.ext.search.push(function (settings, searchData, dataIndex) {
+                if (settings.nTable.id !== 'bulkFinancialEditTable') {
+                    return true;
+                }
+
+                const rowNode = settings.aoData[dataIndex] ? settings.aoData[dataIndex].nTr : null;
+                if (!rowNode) {
+                    return true;
+                }
+
+                applyEditedDataToRow(rowNode);
+
+                const projectKey = getProjectKey(rowNode);
+                if (selectedProjectFilter && selectedProjectFilter !== '0') {
+                    if (projectKey !== parseInt(selectedProjectFilter, 10)) {
+                        return false;
+                    }
+                }
+
+                const currentStatusValue = ($(rowNode).find('.current-status').val() || '').toString().toLowerCase();
+                if (selectedCurrentStatusFilter && currentStatusValue !== selectedCurrentStatusFilter) {
+                    return false;
+                }
+
+                if (!customSearchValue) {
+                    return true;
+                }
+
+                const rowText = getRowSearchText(rowNode);
+                return rowText.indexOf(customSearchValue) !== -1;
+            });
+
+            $('#btnBackToTree').on('click', function () {
+                clearEditModeState();
+                clearEditedRowsState();
+            });
+
+            $('#bulkFinancialForm').on('keydown', 'input, textarea, select', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
+            bulkTable = $('#bulkFinancialEditTable').DataTable({
+                paging: true,
+                pageLength: 10,
+                lengthMenu: [10, 25, 50, 100],
+                ordering: false,
+                searching: true,
+                info: true,
+                autoWidth: false,
+                scrollX: true,
+                scrollY: 300,
+                scrollCollapse: false,
+                responsive: false,
+                fixedHeader: false,
+                dom: '<"row mb-2"<"col-md-6"l><"col-md-6 text-end"f>>rt<"row mt-2"<"col-md-6"i><"col-md-6 text-end"p>>',
+                language: {
+                    search: "Search:",
+                    searchPlaceholder: "Search Here"
+                },
+                columnDefs: [
+                    { targets: 0, width: "180px" },
+                    { targets: 1, width: "280px" },
+                    { targets: 2, width: "160px" },
+                    { targets: 3, width: "160px" },
+                    { targets: 4, width: "180px" },
+                    { targets: 5, width: "180px" },
+                    { targets: 6, width: "170px" },
+                    { targets: 7, width: "220px" },
+                    { targets: 8, width: "160px" }
+                ],
+                initComplete: function () {
+                    const api = this.api();
+                    const $searchInput = $('div.dataTables_filter input[type="search"]');
+
+                    $searchInput
+                        .addClass('form-control form-control-sm d-inline-block')
+                        .attr('autocomplete', 'off');
+
+                    $searchInput.off('.DT');
+
+                    $searchInput.on('input', function () {
+                        customSearchValue = ($(this).val() || '').toLowerCase().trim();
+                        api.search('');
+                        api.draw();
+                    });
+
+                    $('#bulk-project-filter').on('change', function () {
+                        const projectKey = $(this).val() || '0';
+                        const officerKey = $('#bulk-demandingofficer-filter').val() || '0';
+                        $('#ProjectDbkey').val(projectKey);
+
+                        saveEditModeState();
+
+                        const url = '/DemandManagement/BulkEditFinancialDetails?ProjectDbkey=' + projectKey + '&DemandingOfficerKey=' + officerKey;
+                        window.location.href = url;
+                    });
+
+                    $('#bulk-currentstatus-filter').on('change', function () {
+                        selectedCurrentStatusFilter = ($(this).val() || '').toLowerCase();
+                        api.page('first').draw(false);
+                    });
+
+                    $('#bulk-demandingofficer-filter').on('change', function () {
+                        const officerKey = $(this).val() || '0';
+                        const projectKey = $('#bulk-project-filter').val() || '0';
+
+                        saveEditModeState();
+
+                        const url = '/DemandManagement/BulkEditFinancialDetails?ProjectDbkey=' + projectKey + '&DemandingOfficerKey=' + officerKey;
+                        window.location.href = url;
+                    });
+
+                    $('#btnEditModeTop').on('click', function () {
+                        if (!canEdit) {
+                            alert('You do not have edit permission.');
+                            return;
+                        }
+                        setEditMode(true);
+                        saveEditModeState();
+                    });
+
+                    restoreEditedRows();
+
+                    setTimeout(function () {
+                        api.columns.adjust().draw(false);
+                        applyBulkTableHeight();
+                    }, 200);
+                },
+                drawCallback: function () {
+                    restoreEditedRows();
+                    setEditMode(isEditMode);
+
+                    setTimeout(function () {
+                        if (bulkTable) {
+                            bulkTable.columns.adjust();
+                            applyBulkTableHeight();
+                        }
+                    }, 50);
+                }
+            });
+
+            setTimeout(function () {
+                restoreEditedRows();
+                if (bulkTable) {
+                    bulkTable.columns.adjust().draw(false);
+                    applyBulkTableHeight();
+                }
+            }, 500);
+
+            $(window)
+                .off('resize.bulkFinancialEditTable')
+                .on('resize.bulkFinancialEditTable', function () {
+                    if (bulkTable) {
+                        bulkTable.columns.adjust();
+                        applyBulkTableHeight();
+                    }
+                });
+
+            $('#bulkFinancialEditTable').on('input change', '.actual-cost, .advance-paid, .payment-made, .current-status, .remarks-input, .status-date', function () {
+                if (!isEditMode) return;
+
+                const row = $(this).closest('tr');
+                calculateRowBalance(row);
+                markRowAsEdited(row);
+            });
+
+            $('#bulkFinancialForm').on('submit', function () {
+                if (!isEditMode) {
+                    alert('Click Edit before saving.');
+                    return false;
+                }
+
+                restoreEditedRows();
+
+                const changedRows = Object.values(editedRows);
+
+                if (changedRows.length === 0) {
+                    alert('No changes found to save.');
+                    return false;
+                }
+
+                $('#bulkEditJson').val(JSON.stringify(changedRows));
+                clearEditModeState();
+                clearEditedRowsState();
+                
+            });
+
+            if (canEdit && loadEditModeState()) {
+                setEditMode(true);
+            } else {
+                setEditMode(false);
+            }
+        });
+    </script>
+}

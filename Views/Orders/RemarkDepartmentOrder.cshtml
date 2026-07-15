@@ -1,0 +1,44 @@
+﻿@model List<MPCRS.ViewModels.DepartmentOrderVM>
+@using MPCRS.Utilities
+@{
+	var departmentList = Masters.GetDepartmentList();
+}
+<table id="departmentTable" class="table table-bordered table-responseive ">
+		<thead>
+			<tr>
+				<td style="max-width:25%;">Display Order</td>
+				<td>Department</td>
+			</tr>
+		</thead>
+		<tbody>
+		<tr style="display:none;" class="template-row">
+			
+			<td style="max-width:25%;">
+				<input style="display:none;" class="DptOrderId" />
+				<input class="form-control form-control-square DisplayOrder" /></td>
+			<td><select class="form-select Department" asp-items="@departmentList"></select></td>
+			</tr>
+			@{
+				foreach(var item in Model)
+				{
+					<tr>
+					
+					<td style="max-width:25%;">
+						<input style="display:none;" asp-for="@item.Id" class="DptOrderId" />
+					<input asp-for="@item.DisplayOrder" data-id="@item.Id" class="form-control form-control-square DisplayOrder"></td>
+					<td> <select asp-items="@departmentList" asp-for="@item.DepartmentID" class="form-select form-select-square  Department"> </select></td>
+					</tr>
+				}
+			}
+		</tbody>
+	<tfoot>
+		<tr>
+			<td>
+				<span class="btn btn-primary btn-small" onclick="addDepartmentRow()">Add Department</span>
+			</td>
+			<td>
+				<span class="btn btn-success btn-small" onclick="saveDepartmentData()">Save</span>
+			</td>
+		</tr>
+	</tfoot>
+	</table>

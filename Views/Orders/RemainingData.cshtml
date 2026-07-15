@@ -1,0 +1,69 @@
+﻿@model List<MPCRS.ViewModels.GenericIssuesViewModel>
+@using MPCRS.Utilities;
+
+
+
+@if (Model != null && Model.Count > 0)
+{
+
+	<table class="table table-bordered table-hover" id="remaining-generic-material-issue">
+		<thead>
+			<tr>
+				<th>MMG OrderNo.</th>
+				<th>Order Refrence No./Receipt No.</th>
+				@* <th>Receipt No.</th> *@
+				<th>PartName</th>
+				<th>Batch No./Heat No.</th>
+				@* <th>Heat No.</th> *@
+				<th>Qty Available</th>
+				<th> serial No</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+
+			@foreach (var item in Model)
+			{
+				<tr>
+					<td class="p-2">
+						<input type="hidden" asp-for="@item.CastingDbkey" />
+						<input class="qtySplitKey" type="hidden" asp-for="@item.QtySplitKey" />
+						<input class="issueItemKey" type="hidden" asp-for="@item.IssueItemKey" />
+						@item.MMGOrderNumber
+					</td>
+					<td>
+						@item.OrderNumber /
+						<p>@item.ReceiptNumber</p>
+					</td>
+					<td>
+						@item.PartNumber - @item.PartDescription
+					</td>
+					<td>
+						@item.BatchNumber /
+						<p>@item.HeatNumber</p>
+					</td>
+					<td class="qtyAvailable">@item.SplitQty</td>
+					<td style="word-wrap: break-word;">
+						@{
+							var remainingSerialNos = item.SerialNos?
+							.Split(',')
+							.Except(item.GlobalIssuedSerialNos?.Split(',') ?? new string[0])
+							.ToArray() ?? new string[0];
+							string remainingSerialNosString = string.Join(",", remainingSerialNos);
+							<input type="hidden" class="hiddenSerialNos" value="@remainingSerialNosString" />
+							@foreach (var slno in remainingSerialNos)
+								{
+									<span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark ">@slno</span>
+								}
+						}
+					</td>
+					<td>
+						<a style="cursor:pointer;color:green;" title="Add row to current material issue" onclick="addRow_GenericMaterialIssue(this,'@ViewBag.OrderType')"><i class="fa fa-add"></i></a>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+

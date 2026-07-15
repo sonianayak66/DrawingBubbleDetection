@@ -1,0 +1,471 @@
+﻿@model MPCRS.ViewModels.AssignedNCRvm
+@using MPCRS.ViewModels;
+@using MPCRS.Utilities;
+
+
+@{
+    var NCR_Assignments_Admin = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Assignments_Admin);
+    bool MarkedForRework = Model.NcrItems.Any(x => x.Rework_Status == 1);
+    var moduleUsers = Model.ncrAssigneeName.Where(x => x.ModuleID != "TAS" && x.ModuleID != "STRESS" && x.ModuleID != "CHAIR").Select(x => x.AssigneeUserGUID).ToList();
+    var tasUsers = Model.ncrAssigneeName.Where(x => x.ModuleID == "TAS").Select(x => x.AssigneeUserGUID).ToList();
+    var stressUsers = Model.ncrAssigneeName.Where(x => x.ModuleID == "STRESS").Select(x => x.AssigneeUserGUID).ToList();
+    var chairUsers = Model.ncrAssigneeName.Where(x => x.ModuleID == "CHAIR").Select(x => x.AssigneeUserGUID).ToList();
+    // Helper function to check if item is marked for rework at ANY stage
+    Func<NonConformanceReport_ItemVM, bool> IsMarkedForRework = (item) =>
+        item.Module_ReworkType == 1 || item.TAS_ReworkType == 1 ||
+        item.STRESS_ReworkType == 1 || item.PO_ReworkType == 1;
+
+    // Helper function to check if item is marked for trial assembly at ANY stage
+    Func<NonConformanceReport_ItemVM, bool> IsMarkedForTrialAssembly = (item) =>
+        item.Module_ReworkType == 2 || item.TAS_ReworkType == 2 ||
+        item.STRESS_ReworkType == 2 || item.PO_ReworkType == 2;
+}
+
+<style>
+    .table > :not(caption) > * > * {
+        padding: .15rem .15rem;
+        background-color: var(--phoenix-table-bg);
+        border-bottom-width: 1px;
+        -webkit-box-shadow: inset 0 0 0 9999px var(--phoenix-table-accent-bg);
+        box-shadow: inset 0 0 0 9999px var(--phoenix-table-accent-bg);
+    }
+
+    .center-Align {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0.5rem;
+        padding: 0.2rem;
+    }
+
+        .center-Align h4,
+        .center-Align p {
+            margin: 0; /* Remove default margins */
+        }
+
+        .center-Align p {
+            margin-top: 4px; /* Add a small top margin for spacing if needed */
+        }
+</style>
+
+<div class="row">
+    <div class="col-4">
+        <h4>Non-Conformance Report</h4>
+    </div>
+</div>
+<div class="row">
+    <div class="col-12 pull-right  no-print " id="buttons-area">
+        <input type="button" class="btn btn-primary  btn-sm float-end" style="margin-right:10px;" onclick="printTables()" value="Print Report" />
+    </div>
+</div>
+<div id="heading" class="p-0 m-0">
+    <h4 class="center-Align">GAS TURBINE RESEARCH ESTABLISHMENT : QA/INSPN/F/28</h4>
+    <p class="center-Align">Quality Assurance Group Material Review Board</p>
+    <p class="center-Align"><u>Deviation Analysis for Its Effects on Assembly and Performance</u></p>
+
+</div>
+<div class="row">
+
+    <div class="col-12">
+        <table class="table table-bordered table-condensed" id="ncrDetailsTbl">
+            <tbody>
+                <tr>
+                    <th colspan="2"><strong>Component Details:</strong></th>
+                    <th><strong>Material</strong></th>
+                    <td>@Model.AssignmentData.Raw_material_Name</td>
+                </tr>
+                <tr>
+                    <th><strong>Drawing No</strong></th>
+                    <td>@Model.AssignmentData.Draw_part_no</td>
+                    <td ><strong>JobCard/Contract No</strong></td>
+                    <td>@Model.AssignmentData.JobCard</td>
+                </tr>
+                <tr>
+                    <th><strong>Revision</strong></th>
+                    <td>@Model.AssignmentData.Revision</td>
+                    <th><strong>Contractor</strong></th>
+                    <td>@Model.AssignmentData.ReceivedFromString</td>
+                </tr>
+                <tr>
+                    <th><strong>Nomenclature</strong></th>
+                    <td>@Model.AssignmentData.PartDescription</td>
+                    <th><strong>Stage/Final</strong></th>
+                    <td>@Model.AssignmentData.Stage_Final</td>
+                </tr>
+                <tr>
+                    <th><strong>Serial Number</strong></th>
+                    <td>@Model.AssignmentData.SerialNumber</td>
+                    <th><strong>Inspection Report No</strong></th>
+                    <td>@Model.AssignmentData.Inspection_Report_No</td>
+                </tr>
+                <tr>
+                    <th rowspan="2"><strong>Quantity</strong></th>
+                    <td rowspan="2">@Model.AssignmentData.Qty</td>
+                    <th><strong>NCR No</strong></th>
+                    <td>@Model.AssignmentData.ReferenceNumber</td>
+                </tr>
+                <tr>
+                    <th><strong>No of Pages</strong></th>
+                    <td id="nofpages">-</td>
+
+                </tr>
+                <tr>
+                    <th><strong>DAR No.</strong></th>
+                    <td>@Model.AssignmentData.DARno</td>
+                    <th><strong>Module</strong></th>
+                    <td>@Model.AssignmentData.ModuleName</td>
+                </tr>
+
+                @*
+                <tr>
+                <td><strong>Received From</strong></td>
+                <td>@Model.AssignmentData.ReceivedFromString</td>
+                </tr>
+                <tr>
+                <td><strong>Remarks</strong></td>
+                <td>@Model.AssignmentData.Remarks</td>
+                </tr> *@
+            </tbody>
+        </table>
+    </div>
+    <div class="mb-3">
+        <table class="table table-bordered" id="itemsTbl">
+            <thead class="no-word-break">
+                <tr>
+                    <th>Sl No.</th>
+                    <th style="width:5%">Serial No in Insp Rep</th>
+                    <th>Drg Zone</th>
+                    <th style="width:5%">Serial Number</th>
+                    <th class="no-format" style="width:15%">Drawing Dimension</th>
+                    <th class="no-format" style="width:15%">Actual Dimension</th>
+                    <th class="no-format" style="width:5%">Reason/Analysis</th>
+                    @if (MarkedForRework)
+                    {
+                        <th class="no-format" style="width:15%">Rework Dimension</th>
+                    } 
+                    <th style="width:10%"> Effect of Deviation on Assembly Aero-thermal Design Performance </th>
+                    <th style="width:10%">Effect of Deviation on Assembly</th>
+                    <th style="width:10%">Effect of Deviation on Structural Integrity</th>
+                    <th style="width:10%">CHAIR Remarks </th>
+                    <th style="width:10%">Remarks (PO)</th>
+                </tr>
+            </thead>
+            <tbody id="tblbody">
+                @{
+                    foreach (var item in Model.NcrItems.OrderBy(x => x.SerialNumber))
+                    {
+                        // <tr style="color: @(item.Rework_Status == 1 ? "#EE4B2B" : item.Rework_Status == 2 ? "#BF40BF" : "");">
+                        <tr style="color: @(item.Module_ReworkType == 1 || item.TAS_ReworkType == 1 || item.STRESS_ReworkType == 1 || item.PO_ReworkType == 1 ? "#EE4B2B" :
+                                                 item.Module_ReworkType == 2 || item.TAS_ReworkType == 2 || item.STRESS_ReworkType == 2 || item.PO_ReworkType == 2 ? "#BF40BF" : "");">
+                            
+                            <td style ="padding-left:5px">@item.SlNo</td>
+                            <td style ="padding-left:5px">@item.Serial_No_in_Inspection_Rep</td>
+                            <td style="padding-left:5px">@item.DrgZone </td>
+                            <td style="padding-left:5px">@item.SerialNumber </td>
+                            <td class="no-format">@Html.Raw(@item.DrawingDimension)</td>
+                            <td class="no-format">@Html.Raw(@item.ActualDimension)</td>
+                            <td class="no-format">@item.Deviation_Reason_Analysis</td>
+                            @if (MarkedForRework)
+                            {
+                                if (item.Rework_Dimension != null)
+                                {
+                                    <td class="no-format">@Html.Raw(@item.Rework_Dimension)</td>
+                                }
+                                else
+                                {
+                                    <td><label class="d-flex justify-content-center align-item-center" style="font-size:xx-large">-</label></td>
+                                }
+
+                            }
+                            <td>
+                                <label>@Html.Raw(@item.Module_Remarks)</label>
+                                @if (!string.IsNullOrEmpty(item.Module_Rework_Remarks))
+                                {
+                                    <br />
+                                    if (IsMarkedForRework(item))
+                                    {
+                                        <i>Rework Remark:</i>
+                                    }
+                                    else if (IsMarkedForTrialAssembly(item))
+                                    {
+                                        <i>Trial Assembly Remark:</i>
+                                    }
+                                    <br />
+                                    <label>@Html.Raw(item.Module_Rework_Remarks)</label>
+                                }
+                            </td>
+                            <td>
+                                <label>@Html.Raw(@item.TAS_Remarks)</label>
+                                @if (!string.IsNullOrEmpty(item.TAS_Rework_Remarks))
+                                {
+                                    <br />
+                                    if (IsMarkedForRework(item))
+                                    {
+                                        <i>Rework Remark:</i>
+                                    }
+                                    else if (IsMarkedForTrialAssembly(item))
+                                    {
+                                        <i>Trial Assembly Remark:</i>
+                                    }
+                                    <br />
+                                    <label>@Html.Raw(item.TAS_Rework_Remarks)</label>
+                                }
+                            </td>
+                            <td>
+                                <label>@Html.Raw(@item.Stress_Remarks)</label>
+                                @if (!string.IsNullOrEmpty(item.STRESS_Rework_Remarks))
+                                {
+                                    <br />
+                                    if (IsMarkedForRework(item))
+                                    {
+                                        <i>Rework Remark:</i>
+                                    }
+                                    else if (IsMarkedForTrialAssembly(item))
+                                    {
+                                        <i>Trial Assembly Remark:</i>
+                                    }
+                                    <br />
+                                    <label>@Html.Raw(item.STRESS_Rework_Remarks)</label>
+                                }
+                            </td>
+                            <td>
+                                <label>@Html.Raw(item.Chair_Remarks)</label>
+                                @if (!string.IsNullOrEmpty(item.CHAIR_Rework_Remarks))
+                                { 
+                                    <br />
+                                    <label>@Html.Raw(item.CHAIR_Rework_Remarks)</label>
+                                }
+                            </td>
+                            <td><label>@Html.Raw(@item.STFE_PO_Remark)</label></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div style="display: grid;grid-auto-flow: column;" id="assignedUsr">
+        @{
+            foreach (var assigneeUserName in Model.ncrAssigneeName)
+            {
+                <div>
+                    <p><strong style="width:50%">@assigneeUserName.AssigneeUserGUID</strong></p>
+                </div>
+            }
+        }
+    </div>
+    <div id="footer">
+        <p> <strong> Prepared By: NanduMurukan(TPOA) </strong></p>
+        <p>  <strong>Date: @MPGlobals.GetFormattedDate(Model.AssignmentData.ReceivedDate) </strong></p>
+    </div>
+
+
+
+</div>
+
+@section Scripts {
+
+    
+    <script>
+        $(document).ready(function () {
+             printTables();
+        });
+
+        function printTables() {
+            var ncrDetailsTblContent = document.getElementById('ncrDetailsTbl').outerHTML;
+            var itemsTblContent = document.getElementById('itemsTbl').outerHTML;
+            var heading = document.getElementById('heading').outerHTML;
+            var assignedUsr = document.getElementById('assignedUsr').outerHTML;
+            var footer = document.getElementById('footer').outerHTML;
+
+            var pageHeight = 1122; // Adjust this based on the pixel height of an A4 page (landscape)
+            let totalPages = 1;
+
+            // Function to check if there's space for the next element
+            function checkIfFits(currentHeight, elementHeight) {
+                return (currentHeight + elementHeight) <= pageHeight;
+            }
+
+            // Create a new window for printing
+            const printWindow = window.open('', '', 'width=800,height=600');
+
+            if (!printWindow) {
+                alert('Please allow popups to print the report');
+                return;
+            }
+
+            // Style block for printing
+            printWindow.document.write(`
+                        <style>
+                            @@page {
+                                size: A4 landscape;
+                                margin: 20mm;
+                            }
+                            div
+                            {
+                                text:nowrap;
+                            }
+
+                            @@page {
+                              @@bottom-left {
+                                content: counter(page) ' of ' counter(pages);
+                              }
+                            }
+                            @@media.print{
+
+                                    body {
+                                        font-family: Arial, sans-serif;
+                                        margin: 0 !important;
+                                        padding: 0 !important;
+                                    }
+
+                                               #content{
+                                                margin: 0 !important; /* Remove margin from your element */
+                                                        padding: 0 !important; /* Remove padding from your element */
+                                            }
+                                            #heading{
+                                                margin-top:0px !important;
+                                            }
+
+                            }
+                            
+
+                                        table {
+                                           width: 100%; /* Full width */
+                                           border-collapse: collapse; /* Removes spacing */
+                                           page-break-inside: auto; /* Allow breaking between tables */
+                                                    border: 2px solid #ddd !important; /* Cell borders */
+                                       }
+
+                                       th, td {
+                                           padding: 2px; /* Padding for cells */
+                                           border: 2px solid #ddd !important; /* Cell borders */
+                                           max-width: 200px; /* Set a max width for cells */
+                                           word-wrap: break-word; /* Breaks long words */
+                                           overflow-wrap: break-word; /* Ensures long text wraps */
+                                           page-break-inside: avoid; /* Prevent page breaks inside rows */
+                                       }
+
+
+                                       tr {
+                                                    border: 2px solid #ddd !important; /* Cell borders */
+                                           page-break-inside: avoid; /* Prevent breaking inside rows */
+                                           page-break-after: auto; /* Ensure rows move to the next page if needed */
+                                       }
+                                    .center-Align {
+                                    text-align: center;                                   
+                                    margin: 0.2rem !important;
+                                    padding: 0.2rem !important;
+                                      }
+
+                            .page-break {
+                                page-break-before: always;
+                            }
+
+                                        .center-Align h4,
+                .center-Align p {
+                    margin: 0; /* Remove default margins */
+                }
+
+                .center-Align p {
+                    margin-top: 4px; /* Add a small top margin for spacing if needed */
+                }   
+                        </style>
+                        <div id="content"></div>
+                    `);
+
+            const contentDiv = printWindow.document.getElementById('content');
+
+            // Helper to measure content height
+            function measureHeight(html) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                document.body.appendChild(tempDiv);
+                const height = tempDiv.offsetHeight;
+                document.body.removeChild(tempDiv);
+                return height;
+            }
+
+           
+            // Start calculating
+            let currentHeight = 0;  
+
+            // Add header
+            contentDiv.innerHTML += heading;
+            currentHeight += measureHeight(heading);
+
+
+            // Add Table 1 (ncrDetailsTbl)
+            const ncrTableHeight = measureHeight(ncrDetailsTblContent);
+            if (checkIfFits(currentHeight, ncrTableHeight)) {
+                contentDiv.innerHTML += ncrDetailsTblContent;
+                currentHeight += ncrTableHeight;
+            } else {
+                totalPages++;
+                contentDiv.innerHTML += '<div class="page-break"></div>'; 
+                currentHeight = 0;  // Reset current height for the new page
+                contentDiv.innerHTML += ncrDetailsTblContent;
+                currentHeight += ncrTableHeight;
+            }
+
+            // Add space between tables
+            const spaceHeight = 30; // Adjust as needed
+            if (checkIfFits(currentHeight, spaceHeight)) {
+                contentDiv.innerHTML += `<div style="height: ${spaceHeight}px;"></div>`;
+                currentHeight += spaceHeight;
+            } else {
+                totalPages++;
+                contentDiv.innerHTML += '<div class="page-break"></div>'; 
+                currentHeight = 0;
+            }
+
+            // Add Table 2 (itemsTbl)
+            const itemsTableHeight = measureHeight(itemsTblContent);
+            if (checkIfFits(currentHeight, itemsTableHeight)) {
+                contentDiv.innerHTML += itemsTblContent;
+                currentHeight += itemsTableHeight;
+            } else {
+                totalPages++;
+                contentDiv.innerHTML += '<div class="page-break"></div>'; 
+                currentHeight = 0;
+                contentDiv.innerHTML += itemsTblContent;
+                currentHeight += itemsTableHeight;
+            }
+
+            // Add Assigneed User
+            var assignUsrHeight = measureHeight(assignedUsr);
+            if (checkIfFits(currentHeight, assignUsrHeight)) {
+                contentDiv.innerHTML += assignedUsr;
+                currentHeight += assignUsrHeight;
+            } else {
+                totalPages++;
+                contentDiv.innerHTML += '<div class="page-break"></div>'; 
+                currentHeight = 0;
+                contentDiv.innerHTML += assignedUsr;
+                currentHeight += assignUsrHeight;
+            }
+
+            // Add footer
+             const footerHeight = measureHeight(footer);
+            if (checkIfFits(currentHeight, footerHeight)) {
+                contentDiv.innerHTML += footer;
+                currentHeight += footerHeight;
+            } else {
+                totalPages++;
+                contentDiv.innerHTML += '<div class="page-break"></div>'; 
+                currentHeight = 0;
+                contentDiv.innerHTML += footer;
+                currentHeight += footerHeight;
+            }
+
+            printWindow.document.close();
+
+            printWindow.onload = function () {
+               
+                printWindow.print();
+                printWindow.close();
+            };
+        }
+
+      
+    </script>
+}

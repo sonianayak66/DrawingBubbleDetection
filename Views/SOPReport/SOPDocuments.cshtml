@@ -1,0 +1,278 @@
+﻿@using System.Data
+@using MPCRS.Utilities
+@{
+	ViewData["Title"] = "Builds";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+	var buildsList = MPGlobals.GetDataForDatalist("SELECT  [BuildGuid] ,[BuildName] + ' - ' + [Description] as BuildName  FROM  [dbo].[EngineBuilds] order by ID desc");
+	var Permission_Buid_Write = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Write);
+}
+
+
+
+
+<div class="page-header">
+	<div class="row">
+		<div class="col-md-3">
+			<h3>SOP Documents</h3>
+		</div>
+		<div class="col-md-1 text-right">
+			<b class="float-end">Build</b>
+		</div>
+
+		<div class="col-md-3">
+			<div class="input-group">
+				<select class="form-control" id="BuildGUID">
+					@{
+						foreach (DataRow item in buildsList.Rows)
+						{
+							<option value="@item["BuildGuid"]">@item["BuildName"]</option>
+						}
+					}
+				</select>
+				<span class="input-group-text" id="basic-addon2" style="cursor:pointer" onclick="GetSOPDocumentsdata()"><i class="uil uil-search"></i></span>
+			</div>
+		</div>
+		@* <div class="col-md-5 d-flex align-item-center justify-content-around">
+            <div>
+                <span class="badge badge-phoenix fs--2 badge-phoenix-warning" onclick="filterSerailNo('Possible Duplicate')" id="filter-warning" style="cursor:pointer;">
+                   Possible Duplicate
+                </span>
+                <br />
+                <span class="badge badge-phoenix fs--2 badge-phoenix-success" onclick="filterSerailNo('Shared')" id="filter-shared" style="cursor:pointer;">
+                    Shared
+                 </span>
+        </div> *@
+		<div class="col-md-5 d-flex align-items-center justify-content-around">
+			<div class="d-flex gap-3 align-items-center">
+				<span class="badge badge-phoenix fs--2 badge-phoenix-warning"
+					  onclick="filterSerailNo('Possible Duplicate')"
+					  id="filter-warning"
+					  style="cursor:pointer;"
+					  data-bs-toggle="tooltip"
+					  data-bs-placement="bottom"
+					  data-bs-html="true"
+					  title="<strong>⚠️ Possible Duplicate</strong><br/>Same part + serial number was <u>manually added/updated</u> in multiple builds.<br/><small>Click on serial number to check its usage</small>">
+					Possible Duplicate
+				</span>
+
+				<span class="badge badge-phoenix fs--2 badge-phoenix-success"
+					  onclick="filterSerailNo('Shared')"
+					  id="filter-shared"
+					  style="cursor:pointer;"
+					  data-bs-toggle="tooltip"
+					  data-bs-placement="bottom"
+					  data-bs-html="true"
+					  title="<strong>✅ Shared</strong><br/>Same part + serial number is used across multiple builds.<br/><small>This is intentional - inherited from cloning or original design.</small></br><small>Click on serial number to check its usage</small>">
+					Shared
+				</span>
+			</div>
+			@* <div class="d-flex align-items-center justify-content-center">
+				@if (Permission_Buid_Write)
+				{
+					<a class="float-end" href="/SOPManagement/BuildsSerialNoCorrection">Correct Serial Numbers</a>
+				}
+			</div> *@
+		</div>
+	</div>
+
+</div>
+ 
+
+<hr />
+
+
+
+<div class="col-md-12">
+	<table id="datatables" class="table table-bordered table-condensed" cellspacing="0" style="width:100%;">
+		<thead>
+			<tr>
+				<th>Drawing #</th>
+				<th>Desc</th>
+				<th style="max-width:20%">Mfg Responsibility</th>
+				<th>Serial Number</th>
+				<th style="max-width:20%">Serial Number</th>
+				<th>File Type</th>
+				<th>File Name</th>
+			</tr>
+		</thead>
+	</table>
+</div>
+
+
+@section scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+
+	<script>
+
+
+		$(function () {
+			GetSOPDocumentsdata();
+				// Initialize Bootstrap tooltips
+		var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+		var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+			return new bootstrap.Tooltip(tooltipTriggerEl);
+		});
+		});
+
+		var dataTable;
+		function GetSOPDocumentsdata(filter) {
+			try {
+				dataTable.destroy();  // Destroy any existing instance of the DataTable
+			} catch (e) { }
+
+			var BuildGUID = document.getElementById("BuildGUID").value;
+
+			dataTable = $("#datatables").DataTable({
+				"ajax": {
+					"url": "/SOPReport/SOPDocumentsStatus?BuildGUID=" + BuildGUID + "&filter=" + filter,
+					"type": "GET",
+					"dataSrc": "",
+					"datatype": "json"
+				},
+				"fixedHeader": {
+					"headerOffset": getNavBarHeight()
+				},
+				scrollY: 510,
+				stateSave: true,
+				stateSaveCallback: function (settings, data) {
+					localStorage.setItem('DataTables_' + settings.sInstance, JSON.stringify(data));
+				},
+				stateLoadCallback: function (settings) {
+					return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+				},
+				columnDefs: [
+					{
+						targets: 3,
+						visible: false
+
+					}
+				],
+
+				responsive: true,
+				paging: false,
+				order: false,
+			   // order: [[0, "asc"]],
+
+				dom: 'Bfrtip',
+				buttons: [{
+					extend: 'excel',
+					title: 'SOP Document Status',
+					exportOptions: {
+						columns: [0, 1, 2, 3, 5, 6],  // Include the hidden column in the Excel export
+					}
+				}],
+
+				columns: [
+					{ "data": "DrawingNumber" },
+					{ "data": "Description" },
+					{ "data": "Collaborators" },
+					{
+						"data": "ModifiedSerialDetails",  // The data for this column
+						"render": function (data, type, row) {
+							// Replace any sequence of one or more '#' characters with a comma
+							return data.replace(/#+/g, ',');
+						}
+					},
+					{
+						"data": null,
+						render: function (data, type, row) {
+
+							var splittedSlno = row.ModifiedSerialDetails.split(",");
+							var badge = '';
+							var html = '';
+							splittedSlno.forEach(function (item) {
+								var extractedSlno = item.split('[');
+								if (item.includes('Possible Duplicate')) {
+									badge = 'badge badge-phoenix fs--2 badge-phoenix-warning';
+								}
+								else if (item.includes('Shared')) {
+									badge = 'badge badge-phoenix fs--2 badge-phoenix-success';
+								}
+								else if (item.trim() === '' || item.trim() === ' ') { // Check if item is not an empty string
+									badge = '';
+								}
+								else  {
+									badge = 'badge badge-phoenix fs--2 badge-phoenix-primary text-dark';
+								}
+								html += '<span class="' + badge + '" style="cursor:pointer;" onclick="serialNoUsage(\'' + encodeURIComponent(extractedSlno[0]) + '\', \'' + row.DrawingNumber + '\')">' + extractedSlno[0] + '</span>';
+							});
+							return html;
+						}
+					},
+					{ "data": "Attachment_type" },
+					{ "data": "FileDownloadAnchor" }
+				]
+			});
+		}
+
+		function serialNoUsage(slno, drawingNo) {
+			var decodeSerialNo = decodeURIComponent(slno);
+			//console.log(decodeSerialNo, drawingNo);
+			var url = '/SOPReport/SerialNoUsage?serialNo=' + decodeSerialNo.trim() + '&DrawingNo=' + drawingNo;
+			$.get(url)
+				.done(function (response) {
+					bootbox.dialog({
+						title: "Serial Numbers Usage",
+						message: response,
+						size: 'large',
+						closeButton: true,
+					   // className: 'custom-modal',
+					});
+				});
+		}
+
+		// $('#filter-warning').on('click', function () {
+		//     dataTable.rows().every(function () {
+		//         var row = this.node();
+		//         var rowHasWarningBadge = false;
+
+		//         // Check each cell in the row for the class 'badge-phoenix-warning'
+		//         $(row).find('td').each(function () {
+		//             if ($(this).find('.badge-phoenix-warning').length > 0) {
+		//                 rowHasWarningBadge = true;
+		//                 return false; // Exit loop if class is found
+		//             }
+		//         });
+
+		//         // Show or hide row based on the presence of the warning badge
+		//         if (rowHasWarningBadge) {
+		//             $(row).show();
+		//         } else {
+		//             $(row).hide();
+		//         }
+		//     });
+		// });
+
+
+		// $('#filter-shared').on('click', function () {
+		//     dataTable.rows().every(function () {
+		//         var row = this.node();
+		//         var rowHasWarningBadge = false;
+
+		//         // Check each cell in the row for the class 'badge-phoenix-warning'
+		//         $(row).find('td').each(function () {
+		//             if ($(this).find('.badge-phoenix-success').length > 0) {
+		//                 rowHasWarningBadge = true;
+		//                 return false; // Exit loop if class is found
+		//             }
+		//         });
+
+		//         // Show or hide row based on the presence of the warning badge
+		//         if (rowHasWarningBadge) {
+		//             $(row).show();
+		//         } else {
+		//             $(row).hide();
+		//         }
+		//     });
+		// });
+
+		function filterSerailNo(filter){
+			var BuildGUID = document.getElementById("BuildGUID").value;
+			GetSOPDocumentsdata(filter);
+
+		}
+	</script>
+
+}

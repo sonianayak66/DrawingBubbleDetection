@@ -1,0 +1,27 @@
+﻿@model MPCRS.ViewModels.DeletionManagementVM
+@{
+    Layout = null;
+}
+
+<form id="frmRecordDeletionRequest" >
+    <input type="hidden" asp-for="DeletionKey" />
+    <input type="hidden" asp-for="SourceTableKey" />
+    <input type="hidden" asp-for="SourceTableName" />
+    <input type="hidden" asp-for="SourceDisplayName" />
+    <div class="row col-12 p-2">  
+
+        <div class="col-12">
+            <b>Reason for Deletion</b>
+        </div>
+
+        <div class="col-12 mb-4">
+            <textarea rows="3" asp-for="ReasonForDeletion" class="form-control"></textarea>
+        </div>
+
+        <div class="col-12">
+            <input type="button" onclick="SubmitRecordDeletionRequest(this)" value="Submit Request" class="btn btn-success" />
+        </div>
+    </div>
+</form>
+
+

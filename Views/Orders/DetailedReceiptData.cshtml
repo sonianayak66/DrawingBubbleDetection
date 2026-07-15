@@ -1,0 +1,144 @@
+﻿@model List<MPCRS.ViewModels.DetailedCastingDataVM>
+@using MPCRS.Utilities;
+<style>
+    table {
+        table-layout: fixed;
+    }
+
+        table td {
+            word-wrap: break-word;
+            max-width: 400px;
+        }
+
+    #castinglisttbl td {
+        white-space: inherit;
+    }
+
+    p {
+        margin-bottom: 5px !important;
+    }
+
+    .modal-body {
+        padding: 0px !important;
+    }
+
+    .modal-content {
+        width: 120% !important;
+    }
+
+    .datecol {
+        width: 7% !important;
+    }
+</style>
+
+@{
+    if (ViewBag.tableOnly)
+    {
+        Layout = null;
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-8">
+                <h4>Detailed @ViewBag.orderType Orders & Receipt Data</h4>
+            </div>
+            <div class="col-md-4">
+                <a href="/Orders/OrdersList?OrderType=@ViewBag.orderType" class="btn btn-sm btn-secondary float-end">Back</a>
+            </div>
+        </div>
+        <hr />
+    }
+        
+}
+
+
+<div class="row col-12">
+    <table class="table table-hover table-bordered table-sm" style="width:100%" id="castinglisttbl">
+        <thead>
+            <tr>
+                <th style="max-width:70px">Order Date & Number </th> 
+                <th style="max-width:70px">Batch No & Heat No </th>
+                <th class="datecol">Receipt Date & Number</th>
+                @* <th style="max-width:100px">Part & Vendor</th> *@
+                <th style="max-width:100px">Part</th>
+                <th style="max-width:100px">Vendor</th>
+                <th style="max-width:100px">Raw Material</th>
+                <th style="max-width:12%;">Receipt Qty</th>
+                <th style="max-width:10%;">Documents</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                //foreach (var item in Model.Select(x => new { x.CastingDbkey, x.OrderNumber, x.ItemVendor, x.OrderStatus }).Distinct().ToList())
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td> <p class="m-0 p-0" ><b>@MPGlobals.GetFormattedDate(@item.OrderDate)</b></p> @item.OrderNumber</td>
+                        <td> <p class="m-0 p-0" >@item.BatchNumber</p> @item.HeatNumber</td>
+                         
+                        <td>
+                            <p class="m-0 p-0"><b>@MPGlobals.GetFormattedDate(@item.ReceiptDate)</b></p> @item.ReceiptNumber 
+                        </td>  
+                        <td>
+                            <p><b>@item.Draw_part_no</b>  -  @item.Description</p>
+                           
+                        </td>
+                        <td>
+                            <p>@item.ItemVendor</p>
+                        </td>
+                        <td>
+                             @item.RawMaterialName
+                        </td>
+                        <td><partial name="../Casting/CastingQtySplit.cshtml" model="@item.SplitId.ToString()" >
+                                @{
+                                    if (string.IsNullOrEmpty(@item.remarks) == false)
+                                    {
+                                         <p class="m-0 p-0" ><b>Remarks:</b> @item.remarks </p> 
+                                    }
+                                }
+                        </td>
+                        <td><partial name="../Casting/CastingSplitDocChecklist.cshtml" model="item"></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+
+
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/mpi/casting.js" asp-append-version="true"></script>
+    <script>
+        $(function () {
+            $('#castinglisttbl').DataTable({
+                paging: false,
+                dom: 'Bfrtip',
+                language: {
+                    searchPanes: {
+                        button: 'Advanced Filter'
+                    }
+                },
+                buttons: [
+                    {
+                        extend: 'searchPanes',
+                        text: 'Advanced Filter',
+                        config: {
+                            columns: [3,4],  // Adjust these indexes according to the columns you want to filter
+                            cascadePanes: true
+                        }
+                    }
+                ],
+               
+            });
+            $('#castinglisttbl').DataTable().searchPanes.rebuildPane();
+
+
+        });
+    </script>
+
+}
+

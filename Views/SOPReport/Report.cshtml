@@ -1,0 +1,469 @@
+﻿@model MPCRS.ViewModels.SOPReportVM
+@using System.IO;
+@{
+    Layout=null;
+}
+<style>
+    .bg-mp {
+        background-color: #343b70 !important;
+    }   
+</style>
+
+<head>
+ 
+    <link rel="apple-touch-icon" sizes="180x180" href="~/assets/img/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="~/assets/img/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="~/assets/img/favicons/favicon-16x16.png">
+    <link rel="shortcut icon" type="image/x-icon" href="~/assets/img/favicons/favicon.ico">
+    <link rel="manifest" href="~/assets/img/favicons/manifest.json">
+    <script src="~/assets/js/config.js"></script>
+    <link href="~/fonts/gfonts/gfonts.css" rel="stylesheet" />
+    <link href="~/bundle/bundledstyles.min.css" asp-append-version="true" rel="stylesheet" />
+
+ @* <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>*@
+<script src="~/js/pdf.min.js"></script>
+
+<style type="text/css" id="basicStyles">
+    input.larger {
+        width: 20px;
+        height: 20px;
+    }
+
+</style>
+<style id="style_A4" media="print">
+    @@page {
+        /* size: A4 potrait; */
+        size: A4 @ViewBag.orientation;
+        margin: 6mm 6mm 15mm 6mm;
+        bottom-left {
+            content: counter(page) ' of ' counter(pages);
+        }
+    }
+
+    table-condensed .dropdown-menu {
+        position: relative; /* Sometimes needs !important */
+    }
+
+    a[href]:after {
+        content: none !important;
+    }
+
+    img[src]:after {
+        content: none !important;
+    }
+ 
+    input.larger {
+        width: 25px;
+        height: 25px;
+    }
+
+    .table-condensed > tfoot > tr > td {
+        border: none;
+    }
+
+    .table-condensed > thead > tr > th, .table-condensed > tbody > tr > th, .table-condensed > thead > tr > td, .table-condensed > tbody > tr > td {
+        padding: 1.5px;
+        border: 1px solid #000000 !important;
+    }
+
+    .table-condensed {
+        border: none;
+    }
+
+    .footer {
+    padding: 10px;
+    background-color: #f1f1f1;
+    text-align: center;
+    position: relative;
+    border-top: 1px solid #ddd;
+  }
+
+    @@media print {
+        .noPrint {
+            display: none;
+        }
+        
+            .footer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 30px;  
+               
+            
+            }
+
+        a[href]:after {
+            content: none !important;
+        }
+
+        img[src]:after {
+            content: none !important;
+        }
+
+        .pagebreak {
+            clear: both;
+            page-break-before: always;
+        }
+        
+           
+         .table-condensed > thead > tr > th, .table-condensed > tbody > tr > th, .table-condensed > thead > tr > td, .table-condensed > tbody > tr > td {
+            padding: 1.5px;
+            border: 1px solid #000000 !important;
+        }
+ 
+        .table-condensed > tfoot > tr > td {
+            border: none;
+        }
+
+        .table-condensed {
+            border: none;
+        }
+
+        tr {
+            max-height: 40px !important;
+        }
+
+            table {
+                page-break-inside: auto;
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+
+            thead {
+                display: table-header-group; /* Ensures table headers repeat on new pages */
+            }
+
+            tfoot {
+                display: table-footer-group; /* Ensures table footers repeat on new pages */
+            }
+
+            body {
+                margin: 0;
+                /*    width: 297mm;
+                height: 210mm; */
+                
+            }
+    }
+
+ 
+
+
+</style>
+<style>
+
+    .revdeviation{
+        border-bottom:red;
+    }
+
+    .tblMfg > tbody > tr > td, .tblMfg > tbody > tr > th, .tblMfg > tfoot > tr > td, .tblMfg > tfoot > tr > th, .tblMfg > thead > tr > td, .tblMfg > thead > tr > th {
+        padding: 2px;
+        line-height: 0.95;
+        vertical-align: top;
+        border-top: 0.5px solid rgba(0, 0, 0, .05);
+        font-size: small;
+        margin: 2px !important;
+        margin-bottom: 2px !important;
+    }
+
+        .navbar-brand{
+           font-size: 1.5rem;
+        }
+
+        .navbar-top{
+            min-height:40px!important;
+        }
+        
+        .modal-body{
+           min-height: 300px;
+        }
+
+        </style>
+</head>
+<body>
+    <input type="hidden" id="build-guid"  value="@ViewBag.buildguid" />
+
+    <nav class="navbar navbar-expand-lg bg-mp navbar-dark light navbar-top fixed-top noPrint">
+        <div class="container-fluid">
+            <a class="navbar-brand text-white" href="#">Standard of Prepartion</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSuccessExample" aria-controls="navbarSuccessExample" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarSuccessExample">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 text-white">
+                    <li style="margin-right:8px"  class="nav-item"><input onchange="SetOrientation()" style="margin-top:8px"  @(ViewBag.orientation == "portrait" ? "checked" : "")  type="checkbox"   id="IsPotrait" /> Portrait </li>
+                     <li style="margin-right:8px"  class="nav-item"><input onchange="ShowOnlyChanges()" style="margin-top:8px" @(ViewBag.minimalComponents == 1 ? "checked" : "")  type="checkbox"   id="MinimalComp" /> Show changes only </li>
+         @*            <li style="margin-right:8px" class="nav-item">
+                        <select id="CompFilter"  style="margin-top:6px">
+                            <option value="Updated">Updated</option>
+                            <option value="NewlyAdded">Newly added</option>
+                            <option value="Replaced">Replaced</option>
+                            <option value="Removed">Removed</option>
+                        </select>
+                     </li> *@
+                    <li style="margin-right:8px"  class="nav-item"><a class="nav-link active" aria-current="page" onclick="printDiv()" style="cursor:pointer">Print</a></li>
+                    <li style="margin-right:8px"  class="nav-item"><a class="nav-link active" aria-current="page" onclick="ExcelDownload('@Model.engineBuildsVM.BuildGuid')" style="cursor:pointer">Excel</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="col-md-12 col-sm-12 col-lg-12" id="PrintArea">
+   @*     <div class="align-items-center">
+            @Html.Partial("_SOPReportHeader.cshtml", Model.engineBuildsVM)
+        </div>*@
+        <div class="pagebreak displayTitle"></div>
+        @{
+
+                  <div class="pagebreak displayTitle"></div>
+                                 <div class="text-center">
+                                     <h3>List of components of @Model.engineBuildsVM.BuildName</h3>
+                                     <br />
+                                     <br />
+                                 </div>
+                                 <div class="align-items-center">
+                            @{
+                                if (@ViewBag.minimalComponents == 0)
+                                {
+                                    @Html.Partial("_SOPReportBuilComponents.cshtml", Model.engineBuildComponents)
+                                }
+                                else
+                                {
+                                     @Html.Partial("_SOPReportBuildComponents_Minimal.cshtml", Model.engineBuildComponents)
+                                }
+                            }
+                            </div>
+
+
+
+
+           @* foreach (var item in Model.sOPReportTemplate.OrderBy(x=>x.DisplayOrder))
+            {
+                var reportSectionData = Model.SOP_BuildReportSections.Where(x => x.ReportTemplateSectionGUID == item.TemplateSectionGuid).FirstOrDefault();
+           
+                if(reportSectionData != null)
+                {
+                         var docextention = "";
+                         if (!string.IsNullOrEmpty(reportSectionData.Attachment_FileName))
+                         {
+                             docextention = reportSectionData.Attachment_FileName.Split(".")[1];
+                         }
+
+
+
+                    if (item.SectionHeader.ToUpper().Contains("MPL_TABLE"))
+                    {
+                                 <div class="pagebreak displayTitle"></div>
+                                 <div class="text-center">
+                                     <h3>List of components of @Model.engineBuildsVM.BuildName</h3>
+                                     <br />
+                                     <br />
+                                 </div>
+                                 <div class="align-items-center">
+                            @{
+                                if (@ViewBag.minimalComponents == 0)
+                                {
+                                    @Html.Partial("_SOPReportBuilComponents.cshtml", Model.engineBuildComponents)
+                                }
+                                else
+                                {
+                                     @Html.Partial("_SOPReportBuildComponents_Minimal.cshtml", Model.engineBuildComponents)
+                                }
+                            }
+                            </div>
+                    }
+                    else if(docextention == "pdf")
+                    {
+                       if (item.PageBreakBefore == true)
+                        {
+                            <div class="pagebreak displayTitle"></div>
+                        }
+
+                  <div style="margin:35px!important">       
+    <div  class="pdfviews" id="@item.TemplateSectionGuid" data-filelocation="@reportSectionData.Attachment_location" data-attachmentfilename="@reportSectionData.Attachment_FileName">
+        </div>
+                             
+                        </div> 
+                        
+                 
+                       if (item.PageBreakAfter == true)
+                        {
+                            <div class="pagebreak displayTitle"></div>
+                        }
+                    }
+                    else if(!string.IsNullOrEmpty(reportSectionData.Body))
+                    {
+                        if (item.PageBreakBefore == true)
+                        {
+                            <div class="pagebreak displayTitle"></div>
+                        }
+
+                         <div style="margin:35px!important">                           
+                                @Html.Raw(reportSectionData.Body)
+                        </div>  
+
+                        if (item.PageBreakAfter == true)
+                        {
+                            <div class="pagebreak displayTitle"></div>
+                        }
+                    }
+                }
+               
+               
+            }*@
+        }
+
+
+      
+
+    </div>
+  
+
+    <script src="~/bundle/bundledScripts.min.js" asp-append-version="true"></script>
+    <script src="~/mpi/common.js" asp-append-version="true"></script>
+    <script src="~/mpi/attachment.js" asp-append-version="true"></script>
+    <script>
+
+        $( document ).ready(function() {
+
+             var pdfviews = document.getElementsByClassName("pdfviews");
+             console.log(pdfviews.length)
+             for (var i = 0; i < pdfviews.length; i++) 
+             {
+               var fileLocation = pdfviews[i].getAttribute("data-filelocation");
+               var attachmentFilename = pdfviews[i].getAttribute("data-attachmentfilename");
+               var divid = pdfviews[i].id;
+               var filepath = fileLocation+attachmentFilename;
+              loadPDF(filepath,divid);
+             
+             }
+
+            // setSelectedValue("CompFilter", "@ViewBag.filter");
+
+});
+
+        // function setSelectedValue(selectId, valueToSelect) {
+        //     var selectElement = document.getElementById(selectId);
+        //     selectElement.value = valueToSelect;
+        // }
+
+        function printDiv() {
+            window.print();
+        }
+        function ExcelDownload(buildguid) {
+             var dnlink = "/SOPReport/ExcelExport?buildguid=" + buildguid
+             window.open(dnlink, '_blank');
+        }
+
+
+        function ShowOnlyChanges() {
+    
+            var SelectedCollabs = ["Updated", "Replaced", "Removed", "NewlyAdded"];
+            let rows = document.getElementsByClassName("Collabs");
+            if (SelectedCollabs.length == 0) {
+                for (var j = 0; j < rows.length; j++) {
+                    rows[j].style.display = "";
+                }
+
+            } else {
+                for (var j = 0; j < rows.length; j++) {
+                    rows[j].style.display = "none";
+                }
+            }
+
+            for (var k in SelectedCollabs) {
+                let cls = SelectedCollabs[k];
+ 
+                let rowss = document.getElementsByClassName(cls);
+                for (var y = 0; y < rowss.length; y++) {
+                    console.log(rowss[y]);
+                    rowss[y].style.display = "";
+                }
+            }
+        }
+
+
+
+
+        function SetOrientation(){
+             var buildguid = document.getElementById("build-guid").value;
+            var currentURL = "/SOPReport/Report?buildguid="+ buildguid;
+           
+             if(document.getElementById("IsPotrait").checked){
+                 currentURL = currentURL + "&orientation=portrait"
+             } else{
+                 currentURL = currentURL + "&orientation=landscape"
+             }
+             window.location.href = currentURL;            
+        }
+
+    
+
+
+
+        function ViewDocuments(componentid,drawingno){
+                var url = '/Attachment/GetAttachmentsForSOP?itemKey=' + componentid;
+                $.get(url).done(function (response) {
+                  bootbox.alert({
+                      message: response,
+                      title: "SOP & MPL Documents - " + drawingno,
+                      size: 'large',
+                      buttons: {
+                          ok: {
+                              className: 'd-none'
+                          }
+                      }
+                  });
+             });
+        }
+
+           function loadPDF(pdfUrl,divid) {
+            // Asynchronously load PDF
+            pdfjsLib.getDocument(pdfUrl).promise.then(function (pdf) {
+                // Loop through all pages
+                var pagesPromises = [];
+                for (var pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    pagesPromises.push(renderPage(pdf, pageNum,divid));
+                }
+                return Promise.all(pagesPromises);
+            }).then(function () {
+                console.log("All pages rendered successfully.");
+            }).catch(function (error) {
+                console.error("Error rendering PDF:", error);
+            });
+        }
+
+        // Function to render a single page
+        function renderPage(pdf, pageNum,divid) {
+            return pdf.getPage(pageNum).then(function (page) {
+                // Set up canvas for rendering
+                var canvas = document.createElement('canvas');
+                var context = canvas.getContext('2d');
+                var viewport = page.getViewport({ scale: 1.9 });
+
+                // Set canvas dimensions
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                // Append canvas to pdfContent
+                document.getElementById(divid).appendChild(canvas);
+
+                // Render PDF page to canvas
+                var renderTask = page.render({ canvasContext: context, viewport: viewport });
+                return renderTask.promise;
+            });
+        }
+
+
+    </script>
+
+</body>
+
+
+
+ 
+
+

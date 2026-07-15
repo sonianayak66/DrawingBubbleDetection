@@ -1,0 +1,48 @@
+﻿@model MPCRS.ViewModels.ProcurementMilestoneVM
+@using MPCRS.Utilities
+@{
+    Layout = null;
+}
+ 
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Milestone</th>
+            <th>Components</th>
+            <th>Description</th>
+            <th>Due Date</th>
+            <th>Completion Date</th>
+            <th>Comments</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            foreach (var item in Model.ProcurementMilestoneVMs)
+            {
+                <tr>
+                    <td>@item.MilestoneName</td>
+                    <td>@item.Components</td>
+                    <td>@item.Description</td>
+                    <td>
+                        @{
+                            if (item.DueDate != null)
+                            {
+                                @item.DueDate.Value.ToString("dd/MM/yyy")
+                            }
+                        }
+                        
+                    </td>
+                    <td>
+                        @{
+                            if (item.CompletionDate != null)
+                            {
+                                @item.CompletionDate.Value.ToString("dd/MM/yyy")
+                            }
+                        }
+                    </td>
+                    <td>@item.Comments</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

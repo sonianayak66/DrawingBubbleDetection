@@ -1,0 +1,274 @@
+﻿@model List<MPCRS.ViewModels.DataEntryTrackingConfigVM>
+@{
+    ViewData["Title"] = "Data Entry Tracking - Configuration";
+}
+
+<style>
+    .config-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+        .config-header h4 {
+            margin: 0;
+            font-weight: 600;
+            color: #333;
+        }
+
+    .config-card {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    .config-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 18px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+    }
+
+        .config-card-header h6 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 15px;
+            color: #333;
+        }
+
+    .config-active-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .badge-active {
+        background: #e6f4ea;
+        color: #1e7e34;
+    }
+
+    .badge-inactive {
+        background: #fdecea;
+        color: #c62828;
+    }
+
+    .config-card-body {
+        padding: 15px 18px;
+    }
+
+    .config-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 30px;
+    }
+
+    .config-field {
+        margin-bottom: 6px;
+    }
+
+    .config-field-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+
+    .config-field-value {
+        font-size: 13px;
+        color: #333;
+        word-break: break-word;
+    }
+
+        .config-field-value code {
+            background: #f1f3f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            color: #d63384;
+        }
+
+    .display-col-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+        .display-col-list li {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+    .exclusion-box {
+        background: #fff8e1;
+        border: 1px solid #ffe082;
+        border-radius: 4px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-family: 'Courier New', monospace;
+        color: #6d4c00;
+        margin-top: 4px;
+    }
+
+    .freq-highlight {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+        .freq-highlight i {
+            color: #ffc107;
+        }
+
+    @@media (max-width: 768px) {
+        .config-detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="config-header">
+    <h4><i class="fas fa-cogs me-2"></i>Data Entry Tracking — Configuration</h4>
+    <a href="/DataEntryTracking/Dashboard" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+    </a>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <p class="text-muted" style="font-size:13px; margin-bottom:15px;">
+        <i class="fas fa-info-circle me-1"></i>
+        @Model.Count module(s) configured. @Model.Count(c => c.IsActive) active, @Model.Count(c => !c.IsActive) inactive.
+    </p>
+
+    @foreach (var config in Model)
+    {
+        // Parse display columns JSON
+        List<dynamic> displayCols = new List<dynamic>();
+        try
+        {
+            if (!string.IsNullOrEmpty(config.DisplayColumns))
+            {
+                displayCols = Newtonsoft.Json.JsonConvert.DeserializeObject<List<dynamic>>(config.DisplayColumns);
+            }
+        }
+        catch { }
+
+        <div class="config-card">
+            <div class="config-card-header">
+                <h6>
+                    <i class="fas fa-database me-2" style="color:#6c757d;"></i>
+                    @config.ModuleName
+                </h6>
+                <span class="config-active-badge @(config.IsActive ? "badge-active" : "badge-inactive")">
+                    @(config.IsActive ? "Active" : "Inactive")
+                </span>
+            </div>
+            <div class="config-card-body">
+                <div class="config-detail-grid">
+                    <!-- Left Column -->
+                    <div>
+                        <div class="config-field">
+                            <div class="config-field-label">Source Table</div>
+                            <div class="config-field-value"><code>@config.SourceTable</code></div>
+                        </div>
+                        <div class="config-field">
+                            <div class="config-field-label">Primary Key Column</div>
+                            <div class="config-field-value"><code>@config.PrimaryKeyColumn</code></div>
+                        </div>
+                        <div class="config-field">
+                            <div class="config-field-label">Updated On Column</div>
+                            <div class="config-field-value"><code>@config.UpdatedOnColumn</code></div>
+                        </div>
+                        <div class="config-field">
+                            <div class="config-field-label">Display Columns</div>
+                            <div class="config-field-value">
+                                @if (displayCols.Any())
+                                {
+                                    <ul class="display-col-list">
+                                        @foreach (var col in displayCols)
+                                        {
+                                            <li>@col.label <small>(@col.column)</small></li>
+                                        }
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">None configured</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div>
+                        <div class="config-field">
+                            <div class="config-field-label">Update Frequency</div>
+                            <div class="config-field-value">
+                                <span class="freq-highlight">
+                                    <i class="fas fa-clock"></i> Every @config.UpdateFrequencyDays days
+                                </span>
+                            </div>
+                        </div>
+                        <div class="config-field">
+                            <div class="config-field-label">Amber Warning At</div>
+                            <div class="config-field-value">
+                                @if (config.AmberThresholdDays.HasValue)
+                                {
+                                    <span>@config.AmberThresholdDays days</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Default (Frequency - 2)</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="config-field">
+                            <div class="config-field-label">Exclusion Condition</div>
+                            <div class="config-field-value">
+                                @if (!string.IsNullOrEmpty(config.ExclusionCondition))
+                                {
+                                    <div class="exclusion-box">@config.ExclusionCondition</div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">None — all records tracked</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="config-field">
+                            <div class="config-field-label">Last Modified</div>
+                            <div class="config-field-value">
+                                @(config.UpdatedOn.HasValue? config.UpdatedOn.Value.ToString("dd-MMM-yyyy HH:mm") : "-")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-1"></i> No tracking configurations found.
+    </div>
+}

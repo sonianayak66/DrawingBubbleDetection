@@ -1,0 +1,56 @@
+﻿
+@{
+    Layout = null;
+}
+
+<style>
+    .clsred {
+        color: red !important;
+    }
+</style>
+
+<div class="col-md-12 col-sm-12 col-lg-12" >
+    <label>Event : @ViewBag.Event</label>
+    <div style="max-height:550px; overflow:scroll">
+        <table class="table table-striped table-bordered table-condensed text-left" cellspacing="0" style="width:100%">
+            <thead>
+                <tr>
+                    <th>
+                        Parameter
+                    </th>
+                    <th>
+                        New Value 
+                    </th>
+                    <th>
+                        Previous Value
+                    </th>
+
+                </tr>
+            </thead>
+            <tbody id="ChangeLogBody">
+            </tbody>
+        </table>
+    </div>
+    
+</div>
+
+<div class="col-md-12 col-sm-12 col-lg-12 writeaccess">
+    @{
+
+        if (ViewBag.Status == 8)
+        {
+            <input type="button" value="Approve Changes" class="btn btn-success" onclick="UpdateStatus('Approve')" />
+            <input type="button" value="Reject Changes" class="btn btn-danger" onclick="UpdateStatus('Reject')" />
+        }
+    }
+
+</div>
+
+
+
+
+
+
+
+
+

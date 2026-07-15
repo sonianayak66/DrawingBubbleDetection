@@ -1,0 +1,46 @@
+﻿@model IEnumerable<MPCRS.ViewModels.MPLReportData>
+@{
+    Layout = null;
+}
+
+<div class="text-center">
+    <img style="border:none" src="~/assets/img/drdologo.png" />
+</div>
+<div class="row">
+    <div class="col offset-1 text-start">
+        <h2>Master Part List</h2>
+    </div>
+    <div class="col offset-1 text-centre">
+        <h2 class="mt-1">@Model.FirstOrDefault().engineDescription</h2>
+    </div>
+</div>
+ 
+<div class="text-center">
+    <img class="img img-thumbnail" style="border:none" src="~/assets/img/stfe_logo.jpg" />
+</div>
+
+<div style="min-height:100px!important; margin-top:40px; font-weight:bold;">
+    <div class="col-md-12">
+        <div class="text-center">
+            <b>
+                Configuration Controll Cell
+                <br />
+                Project Office
+                <br />
+                Small Turbo Fan Engine
+                <br />
+                Gas Turbine Research Establishment
+                <br />
+                Defence Research & Development Organisation
+                <br />
+                C V Raman Nagar, Banglore
+            </b>
+        </div>
+
+    </div>
+
+
+</div>
+<div class="text-center">
+    <b>@Model.FirstOrDefault().EngineRevisionDate.ToString("dd-MM-yyyy")</b>
+</div>

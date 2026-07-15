@@ -1,0 +1,66 @@
+﻿@model string 
+@using System.Data
+@using MPCRS.Utilities
+@{
+    var dt = MPGlobals.GetDataForDatalist($"[dbo].[MasterSearch_RevisionHistory_SSP] @PartNumber = '{Model}'");
+}
+
+<style>
+    .revhist {
+       color: hsl(27deg 83.86% 44.54%) !important;
+    }
+    .odditems{
+       background-color: white;
+ 
+    }
+        .evenitems{
+          background-color: lightgrey;
+    }
+</style>
+@{
+    if (dt.Rows.Count > 0)
+    {
+         <table class="table table-sm">
+        <thead>
+                 <tr>
+                         <th colspan="5" class="revhist">REVISION HISTORY</th>
+                 <tr>
+                <th class="revhist">ENGINE TITLE</th>
+                <th class="revhist">ASSY/SUBASSY</th>
+                 <th class="revhist">PART</th>
+                <th class="revhist">PART REVISION</th>
+                <th class="revhist">COUNT</th>
+                    <th class="revhist">ATTACHMENTS</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (DataRow row in dt.Rows)
+            {
+              
+                <tr >
+                    <td>@row["Engine_Title"]</td>
+                    <td>@row["ParentPart"]-@row["Description"]</td>
+                    <th>@row["PartNumber"]</th>
+                    <th>@row["PartRevision"]</th>
+                    <td>@row["CountofPart"]</td>
+                        <td>
+                            @if (row["AttachmentFiles"] != DBNull.Value && !string.IsNullOrEmpty(row["AttachmentFiles"].ToString()))
+                            {
+                                @Html.Raw(row["AttachmentFiles"])
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                </tr>
+            }   
+        </tbody>
+        </table>
+    }
+    else
+    {
+        <h4>No data available</h4>
+    }
+}
+   

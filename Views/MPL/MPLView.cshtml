@@ -1,0 +1,60 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@{
+    ViewData["Title"] = "MPL";
+    var MPL_read = UserData.IsAuthorized(User, Constants.UserPermissions.MPL_Read);
+    var MPL_write = UserData.IsAuthorized(User, Constants.UserPermissions.MPL_Write);
+    DataTable dataTable = MPGlobals.GetDataForDatalist(@"dbo.Get_MPL_Summary ");
+}
+<link href="~/css/style.min.css" rel="stylesheet" />
+<style>
+
+    #jstree-container {
+        height: 500px; /* Set a fixed height */
+        overflow-y: auto; /* Enable vertical scrolling */
+    }
+    .jstree-node {
+        font-size: 10pt;
+    }
+
+    .jstree-anchor, .nav-link {
+        color: black;
+        font-size: 12pt;
+    }
+</style>
+
+<input type="hidden" value="@ViewBag.BaselineEngineKey" id="BaseLineEngineDbkey" />
+
+<div class="card">
+    <div class="col-md-12">
+        <div class="col-md-12">
+            <div>
+                <b id="totalCompCount"></b>
+                <input class="search-input form-control" placeholder="Search......." />
+            </div>
+            <div style="max-height:60vh!important;overflow-y:scroll" class="card" id="jstree-container">
+                <div id="mplJSTreeTbl">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/js/jstree.min.js" asp-append-version="true"></script>
+    <script src="~/js/jstreetable.js" asp-append-version="true"></script>
+    <script src="~/mpi/MPL.js" asp-append-version="true"></script>
+
+
+    <script type="text/javascript">
+        $(function () {
+            LoadMPLJSTreeTbl();
+            // GetMplDataTable(document.getElementById("BaseLineEngineDbkey").value, 0)
+        });
+       
+    </script>
+
+}

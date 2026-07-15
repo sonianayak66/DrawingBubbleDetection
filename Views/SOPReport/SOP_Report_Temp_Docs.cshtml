@@ -1,0 +1,101 @@
+﻿@model List<MPCRS.Models.SOP_ReportTemplate_Document>
+@using MPCRS.Utilities
+@using System.Data
+@{
+	var BuildGuid = ViewBag.buildGuid;
+	var Permission_Buid_Write = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Write);
+	var Permission_Buid_Delete = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Delete);
+
+}
+<form>
+	<input hidden value="@BuildGuid" id="BuildGuid" />
+	<table class="table table-bordered table-hover">
+		<thead>
+		<th>Document</th>
+		<th></th>
+		</thead>
+		<tbody>
+			@{
+				foreach (var file in Model)
+				{
+						<tr>
+							<td style="display:none"><input hidden id="Id" value="@file.Id" /></td>
+							<td><a href="~/Attachments/SOPReportSectionDocs/@file.FileName" target="_blank">@file.FileName</a></td>
+							@if (Permission_Buid_Delete)
+						{
+								<td><a style="color:red;cursor:pointer" onclick="deleteFile(@file.Id)"><i class="fa-solid fa-trash-can"></i></a></td>
+						}
+							 	
+						</tr>
+				}
+
+			}
+
+		</tbody>
+
+	</table>
+	<tfoot>
+		@if (Permission_Buid_Write)
+		{
+			<input type="file" onchange="saveFile()" id="fileInput" />
+		}
+
+	</tfoot>
+</form>
+
+<script>
+	function saveFile() {
+
+		var buildGuid = document.getElementById("BuildGuid").value;
+		var file = document.getElementById("fileInput").files[0];
+		var sopData = new FormData();
+		sopData.append("BuildGuid", buildGuid);
+		sopData.append("File", file);
+		// sopData.BuildGuid = buildGuid;
+		// sopData.File = file;
+		console.log(sopData);
+
+		$.ajax({
+			type: "POST",
+			url: '/SOPReport/SOP_Report_Temp_Docs',
+			data: sopData,
+			processData: false,
+			contentType: false,
+			success: function (data) {
+				console.log(data);
+				if (data.success === true) {
+					//bootbox.alert("File uploaded successfully");
+					//alert("File uploaded successfully");
+				//	window.location.href = '/SOPReport/SOP_Report_Temp_Docs?buildGuid=' + data.buildGuid;
+					bootbox.hideAll();
+					sopReportDocs(data.buildGuid);
+				}
+				else
+					alert("Failed");
+			},
+			error: function (error) {
+				console.log(error);
+			}
+		});
+	}
+
+	function deleteFile(id) {
+		$.ajax({
+			url: "/SOPReport/DeleteFile/?Id=" + id,
+			success: function (data) {
+				console.log(data);
+				if (data.success === true) {
+					//bootbox.alert("File deleted successfully");
+					bootbox.hideAll();
+					sopReportDocs(data.buildGuid);
+				}
+				else
+					alert("Failed");
+			},
+			error: function (error) {
+				console.log(error);
+			}
+		});
+	}
+
+</script>

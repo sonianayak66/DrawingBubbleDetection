@@ -1,0 +1,106 @@
+﻿@model List<MPCRS.Models.WatermarkConfiguration>
+
+
+<div>
+	<form>
+		<table class="table table-bordered" style="width:60%">
+			<thead>
+			<th hidden>Id</th>
+			<th>Configuration For</th>
+			<th>FontSize</th>
+			<th>Transparancy</th>
+			<th>Rotation</th>
+			<th>Compression</th>
+			</thead>
+			<tbody id="watermarkInfoTableBody">
+				@{
+					foreach (var item in Model)
+					{
+						var Fontsize = item.FontSize * 100;
+						<tr>
+							<td hidden><input class="WatermarkConfigurationID" value="@item.WatermarkConfigurationID" /></td>
+							<td class="p-2 ConfigurationFor">@item.ConfigurationFor</td>
+							@{
+								if (item.ConfigurationFor == "Drawings")
+								{
+									<td class="d-flex"><input class="form-control FontSize" value="@Fontsize" />%</td>
+									
+								}
+								else
+								{
+									<td class="d-flex"><input class="form-control FontSize" value="@item.FontSize" />pt</td>
+								}
+							}
+							
+							<td><input class="form-control FontOpacity" value="@item.FontOpacity" /></td>
+							<td><input class="form-control Rotation" value="@item.Rotation" /></td>
+							<td><input class="form-control Compression" value="@item.Compression" /></td>
+						</tr>
+					}
+				}
+			</tbody>
+		</table>
+	</form>
+</div>
+<div class="row">
+	<div class="col-6 col-sm-4 pull-right">
+		<button class="btn btn-success pull-right" onclick="SaveWatermarkConfigurationChanges()">Save</button>
+	</div>
+
+</div>
+<div>
+	<p>
+	Note* :
+	</p>
+	<b>1.For Documents -</b>
+	<p>Font Size - in normal points, font size increases as value increases</p>
+	<p>Transparancy - Lower value indicates higher transparancy (decimal value range between 0.0 to 1.0; Zero meaning 100% transperant).</p>
+	<p>Rotation - in degrees, higher value indicates more tilt of watermark  </p>
+	<b>2.For Drawings -</b>
+	<p>Font Size - in percentage, font size increases as value increases</p>
+	<p>Transparancy - Higher value indicates higher transparancy.</p>
+	<p>Rotation - in degrees, higher value indicates more tilt of watermark  </p>
+	
+</div>
+
+
+<script>
+	function SaveWatermarkConfigurationChanges() {
+		var table = document.getElementById("watermarkInfoTableBody");
+		var rows = table.getElementsByTagName("tr");
+		var displayArray = new Array();
+		var watermarkConfigurationID = document.getElementsByClassName('WatermarkConfigurationID');
+		var configurationFor = document.getElementsByClassName('ConfigurationFor');
+		var fontSize = document.getElementsByClassName('FontSize');
+		var fontOpacity = document.getElementsByClassName('FontOpacity');
+		var rotation = document.getElementsByClassName('Rotation');
+		var compression = document.getElementsByClassName('Compression');
+		for (var i = 0; i < rows.length; i++) {
+			var items = {};
+			items.WatermarkConfigurationID = watermarkConfigurationID[i].value;
+			items.ConfigurationFor = configurationFor[i].innerText;
+			items.FontSize = fontSize[i].value;
+			items.FontOpacity = fontOpacity[i].value;
+			items.Rotation = rotation[i].value;
+			items.Compression = compression[i].value;
+			displayArray.push(items);
+		}
+		console.log(displayArray);
+		//return false;
+
+		$.ajax({
+			type: "POST",
+			url: '/Configuration/SaveWatermarkConfiguration',
+			contentType: 'application/json',
+			data: JSON.stringify(displayArray),
+			cache: false,
+			success: function (data) {
+				if (data.success) {
+					bootbox.alert('Updated Successfully');
+				} else {
+					bootbox.alert('Encountered an error!');
+				}
+			}
+		});
+	}
+</script>

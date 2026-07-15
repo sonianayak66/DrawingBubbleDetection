@@ -1,0 +1,61 @@
+﻿@model MPCRS.ViewModels.NCRSerialNoDataVM
+@using MPCRS.ViewModels
+@using Newtonsoft.Json;
+@using MPCRS.Utilities;
+
+<style>
+  /*   table td{
+        width:50px;
+    } */
+</style>
+@{
+    Layout = null;
+
+    List<NonConformanceReport_ItemVM> nonConformanceReport_Items = new List<NonConformanceReport_ItemVM>();
+
+    string cmdStr = $"dbo.NCRStatusTable_SSP @NCRGuid='{Model.NCRGUID}', @NCRWorkFlowGUID='{Model.NCRWorkflowGUID}'";
+    System.Data.DataTable dt = MPGlobals.GetDataForDatalist(cmdStr);
+    
+    if (dt.Rows.Count > 0)
+    {
+        string json = JsonConvert.SerializeObject(dt);
+        nonConformanceReport_Items = JsonConvert.DeserializeObject<List<NonConformanceReport_ItemVM>>(json);
+    }
+
+    if (nonConformanceReport_Items.Count > 0)
+    {
+        <div style="max-height:200px;max-width:350px;overflow:hidden;" class="serialNoDiv">
+            <table class="table table-bordered m-0" >
+            <thead>
+                <tr>
+                    <th>Sl No in Insp Rep</th>
+                    <th>Idn No</th>
+                    <th>Action Holder</th>
+                </tr>
+            </thead>
+                <tbody>
+
+                    @foreach (var item in nonConformanceReport_Items.OrderBy(x => x.SerialNumber))
+                    {
+                        <tr style="color: @(item.Rework_Status == 1 ? "#EE4B2B" : item.Rework_Status == 2 ? "#BF40BF" : "");">
+                            <td>@item.Serial_No_in_Inspection_Rep</td>
+                            <td>@item.SerialNumber</td>
+                           @* <td style="padding:0px">@Html.Raw(item.DrawingDimension)</td>
+                            //
+                            <td style="padding:0px">@Html.Raw(item.ActualDimension)</td>    *@
+                            <td>@item.Module_Responsibilty_String</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (nonConformanceReport_Items.Count > 2)
+        {
+            <i class="fas fa-angle-down fa-1x" style="cursor:pointer" onclick="viewMoreNCRItems(this,'serialNoDiv')"></i>
+        }
+    }
+    else
+    {
+        <p></p>
+    }
+}

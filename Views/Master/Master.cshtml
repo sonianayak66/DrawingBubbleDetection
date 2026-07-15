@@ -1,0 +1,256 @@
+﻿@model MPCRS.ViewModels.MetaMasterVM
+
+
+<link href="~/lib/jquery/dist/jquery-ui.css" rel="stylesheet" />
+<form method="post" id="Master" class="needs-validation" novalidate="novalidate">
+
+    <h3>Master Definition</h3>
+    <hr />
+    <input type="hidden" asp-for="IsActive" />
+    <input type="hidden" asp-for="MasterGUID" />
+    <input type="hidden" id="hdnMasterType" value="@Model.MasterType" />
+    <div class="row">
+        <div class="col-5 offset-1">
+            <div class="row mb-3">
+                <label asp-for="MasterType" class="col-sm-4 col-form-label"></label>
+                <div class="col-sm-8">
+                    @*  <input class="form-control form-control-sm" asp-for="MasterType" type="text" />  *@
+                    <select class="form-control form-control-sm" asp-for="MasterType" id="SelectMasterType" onchange="ManageSelectChange()"></select>
+                    <span asp-validation-for="MasterType" class="text-danger"></span>
+                    <small id="emailHelp" class="form-text text-muted"></small>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label asp-for="DisplayText" class="col-sm-4 col-form-label"></label>
+                <div class="col-sm-8">
+                    <input class="form-control form-control-sm" asp-for="DisplayText" type="text" />
+                    <span asp-validation-for="DisplayText" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label asp-for="UseValue" class="col-sm-4 col-form-label"></label>
+                <div class="col-sm-8">
+                    <div class="form-check form-switch text-center">
+                        @{
+                            if(Model.Id == 0)
+                            {
+                                <input class="form-check-input" asp-for="UseValue" type="checkbox">
+                            }
+                            else
+                            {
+                                <input class="form-check-input" asp-for="UseValue" type="checkbox" disabled>
+                            }
+                        }
+                    
+                    </div>
+                    <span asp-validation-for="UseValue" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label asp-for="IsActive" class="col-sm-4 col-form-label"></label>
+                <div class="col-sm-8">
+                    <div class="form-check form-switch text-center">
+                        <input class="form-check-input" asp-for="IsActive" type="checkbox">
+                    </div>
+                    <span asp-validation-for="IsActive" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label asp-for="DisplayOrder" class="col-sm-4 col-form-label"></label>
+                <div class="col-sm-8">
+                    <input class="form-control form-control-sm" asp-for="DisplayOrder" type="number" />
+                    <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label"></label>
+                <div class="col-sm-8">
+                    <input type="button" class="btn btn-primary btn-sm" value="Submit" onclick="SubmitMaster()" />
+                    <input type="button" onclick="Redirect('/Master/Index')" class="btn btn-secondary btn-sm" value="Back" />
+                    <input type="button" onclick="Redirect('/Master/Master')" class="btn btn-danger btn-sm" value="New" />
+                </div>
+            </div>
+        </div>
+        <div class="col-5 offset-1">
+            <div class="table-responsive">
+                <table id="datatables" class="table table-sm fs--1 mb-2" cellspacing="0" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Text</th>
+                            <th>Order</th>
+                            <th>Use Value</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+</form>
+
+
+@section Scripts{
+    <script src="~/lib/jquery/dist/jquery-ui.js"></script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+
+    <script type="text/javascript">
+        var masterData;
+
+        $(document).ready(function () {
+            getTable();
+        });
+
+
+        function getTable() {
+            $.ajax({
+                url: '/Master/GetAllMasters',
+                type: 'GET',
+                success: function (data) {
+                    masterData = data.data;
+                    // ApplyAutocomplete(masterData);
+                    applyDatatable(masterData);
+                    populateSelect(masterData);
+                }
+            });
+        }
+
+        function ManageSelectChange() {
+            document.getElementById("hdnMasterType").value = document.getElementById("SelectMasterType").value;
+            applyDatatable(masterData);
+           var data =  $('#datatables').DataTable().rows().data();
+            //console.log(data[0].useValue);
+            document.getElementById("UseValue").Checked = data[0].useValue;
+        }
+
+
+        // function ApplyAutocomplete(data) {
+        //     var lookup = {};
+        //     var result = [];
+        //     for (var item, i = 0; item = data[i++];) {
+        //         var name = item.masterType;
+        //         if (!(name in lookup)) {
+        //             lookup[name] = 1;
+        //             result.push(name);
+        //         }
+        //     }
+
+        //     $("#MasterType").autocomplete({
+        //         source: result
+        //     });
+        // }
+
+        function SubmitMaster() {
+            if (!$('#Master').valid()) { return false }
+            //Submitform("Master", '/Master/Master', Redirect, '/Master/Index');
+
+            var data = $("#Master").serialize();
+            $.ajax({
+                type: 'POST',
+                url: '/Master/Master',
+                data: data,
+                success: function (data) {
+                    bootbox.alert(data.msg
+                        , function () {
+                            window.location.href = "/Master/Index";
+                        });
+                },
+                error: function (data) {
+                    bootbox.alert(data.msg
+                        , function () {
+                            window.location.href = "/Master/Index";
+                        });
+                }
+            });
+        }
+
+        function applyDatatable(master) {
+            var filteredMaster = master;
+            var Windowheight = window.innerHeight;
+            var x = $("#datatables").position();
+            var tableHeight = (Windowheight - x.top) * 0.75;
+            try {
+                dataTable.destroy();
+            } catch (e) {
+            }
+
+            var SelectedMaster = document.getElementById("hdnMasterType").value;
+
+            if (SelectedMaster != "") {
+                var filteredMaster = master.filter(function (item) {
+                    return item.masterType == SelectedMaster;
+                });
+            }
+
+            dataTable = $("#datatables").DataTable({
+                ajax: function (dataSent, callback, settings) {
+                    callback({ data: filteredMaster });
+                },
+                responsive: true,
+                paging: false,
+                searching: false,
+                order: [
+                    0, 'asc'
+                ],
+                "columns": [
+                    { "data": "masterType" },
+                    { "data": "displayText" },
+                    { "data": "displayOrder" },
+                    { "data": "useValue" },
+                    { "data": "isActive" },
+                    { "data": null }],
+
+                columnDefs: [{
+                    targets: [-1], render: function (a, b, data, d) {
+                        return "<a style='cursor:pointer' onclick=EditMaster('" + data.masterGUID + "')> <svg class='svg-inline--fa fa-pen-to-square float-end' aria-hidden='true' focusable='false' data-prefix='far' data-icon='pen-to-square' role='img' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' data-fa-i2svg=''><path fill='currentColor' d='M373.1 24.97C401.2-3.147 446.8-3.147 474.9 24.97L487 37.09C515.1 65.21 515.1 110.8 487 138.9L289.8 336.2C281.1 344.8 270.4 351.1 258.6 354.5L158.6 383.1C150.2 385.5 141.2 383.1 135 376.1C128.9 370.8 126.5 361.8 128.9 353.4L157.5 253.4C160.9 241.6 167.2 230.9 175.8 222.2L373.1 24.97zM440.1 58.91C431.6 49.54 416.4 49.54 407 58.91L377.9 88L424 134.1L453.1 104.1C462.5 95.6 462.5 80.4 453.1 71.03L440.1 58.91zM203.7 266.6L186.9 325.1L245.4 308.3C249.4 307.2 252.9 305.1 255.8 302.2L390.1 168L344 121.9L209.8 256.2C206.9 259.1 204.8 262.6 203.7 266.6zM200 64C213.3 64 224 74.75 224 88C224 101.3 213.3 112 200 112H88C65.91 112 48 129.9 48 152V424C48 446.1 65.91 464 88 464H360C382.1 464 400 446.1 400 424V312C400 298.7 410.7 288 424 288C437.3 288 448 298.7 448 312V424C448 472.6 408.6 512 360 512H88C39.4 512 0 472.6 0 424V152C0 103.4 39.4 64 88 64H200z'></path></svg> </a>"
+                    },
+                    "orderable": false,
+                    "paging": false,
+                    "ordering": false,
+                },
+                ],
+                buttons: [
+                    {
+                        extend: 'searchPanes',
+                        // className: 'btn btn-primary btn-sm',
+                        text: 'Filter',
+                        config: {
+                            columns: [0, 1],
+                            cascadePanes: true
+                        }
+                    }
+                ]
+            });
+
+        }
+
+        function EditMaster(guid) {
+            window.location.href = "/Master/Master?ID=" + guid;
+        }
+
+        function populateSelect(data) {
+            var selectElement = $("#SelectMasterType");
+            selectElement.empty();
+            var lookup = {};
+            var result = [];
+            for (var item, i = 0; item = data[i++];) {
+                var name = item.masterType;
+                if (!(name in lookup)) {
+                    lookup[name] = 1;
+                    selectElement.append("<option value='" + item.masterType + "'>" + item.masterType + "</option>");
+                }
+            }
+            document.getElementById("SelectMasterType").value = document.getElementById("hdnMasterType").value;
+        }
+
+    </script>
+
+
+}

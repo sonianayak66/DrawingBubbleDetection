@@ -1,0 +1,106 @@
+﻿@model string
+@using System.Data
+@using System.Data.SqlClient
+@using MPCRS.Utilities
+@{
+
+    DataSet ds = MPGlobals.GetDataForDataset($"Exec [dbo].[MasterSearch_OrderDetails] @PartNumber = '{Model}',@ordertype = 'Casting'");
+}
+
+@if (ds != null && ds.Tables.Count > 0)
+{
+    var OrderSummary = ds.Tables[0];
+    var Orders = ds.Tables[1];
+
+    if (OrderSummary.Rows.Count > 0)
+    {
+        <label>Casting Summary</label>
+        DataView dv = new DataView(OrderSummary);
+        dv.RowFilter = $"Draw_part_no = '{Model}'";
+        if (dv.Count > 0)
+        {
+            <table class="table table-bordered table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>Part No</th>
+                        <th>Description</th>
+                        <th>Qty/Engine</th>
+                        <th>Accepted</th>
+                        <th>Rejected</th>
+                        <th>Other</th>
+                        <th>Order Qty</th>
+                        <th>Total Received</th>
+                        <th>Issued</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (DataRowView r in dv)
+                    {
+                        <tr>
+                            <td>@r["Draw_part_no"]</td>
+                            <td>@r["Description"]</td>
+                            <td>@r["QuantityPerEngine"]</td>
+                            <td>@r["AcceptedQty"]</td>
+                            <td>@r["RejectedQty"]</td>
+                            <td>@r["OtherQty"]</td>
+                            <td>@r["OrderQty"]</td>
+                            <td>@r["TotalRecievedQty"]</td>
+                            <td>@r["IssuedQty"]</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No records found.</p>
+        }
+    }
+
+    @* Show Order Items with Attachments *@
+    if (Orders.Rows.Count > 0)
+    {
+        <br />
+        <label>Order Items</label>
+        <table class="table table-bordered table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>Order Number</th>
+                    <th>Vendor</th>
+                    <th>Raw Material</th>
+                    <th>Order Qty</th>
+                    <th>Received</th>
+                    <th>Accepted</th>
+                    <th>Rejected</th>
+                    <th>Order Status</th>
+                    <th>Attachments</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (DataRow item in Orders.Rows)
+                {
+                    <tr>
+                        <td>@item["OrderNumber"]</td>
+                        <td>@item["Vendor_Name"]</td>
+                        <td>@item["Raw_material_Name"]</td>
+                        <td>@item["OrderQty"]</td>
+                        <td>@item["SumReceivedQty"]</td>
+                        <td>@item["AcceptedQty"]</td>
+                        <td>@item["RejectedQty"]</td>
+                        <td>@item["OrderStatus"]</td>
+                        <td>
+                            @if (item["AttachmentFiles"] != DBNull.Value && !string.IsNullOrEmpty(item["AttachmentFiles"].ToString()))
+                            {
+                                @Html.Raw(item["AttachmentFiles"])
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}

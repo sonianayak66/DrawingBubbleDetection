@@ -1,0 +1,183 @@
+﻿@model List<MPCRS.ViewModels.BuildReportSectionList>
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "TemplateSections";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Write);
+    var Permission_read = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Read);
+}
+
+
+<div class="page-header">
+    <div class="row">
+        <div class="col-md-11">
+            <h3>SOP Report Sections for @ViewBag.BuildName</h3>
+        </div>
+        @*<div class="col-md-1 pull-right">
+            @{
+                if (Permission_Write)
+                {
+                    <a class="btn btn-primary" href="/SOPReport/CreateReportSection/?buildguid=@ViewBag.buildguid">Create</a>
+                }
+            }
+        </div>*@
+        <div class="col-md-1">
+            <a class="btn btn-secondary float-end" href="/SOPManagement/Builds">Back</a>
+        </div>
+    </div>
+</div>
+
+<hr />
+
+<div class="col-md-12 col-sm-12 col-lg-12 divc">
+    <input type="hidden" value="@ViewBag.buildguid" />
+    
+    <table class="table table-bordered table-sm fs--1 mb-2" id="EngineBuildtbl">
+        <thead>
+            <tr>
+                <th data-sortable="true" scope="col">Section Header</th>
+                <th data-sortable="true" scope="col">Display Order </th>
+                <th data-sortable="true" scope="col">Accessible Users</th>
+                <th data-sortable="true" scope="col">Completed</th>
+                <th data-sortable="true" scope="col">Reviewed</th>
+                <th data-sortable="true" scope="col">Active</th>
+                <th> Action </th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.SectionHeader</td>
+                        <td>@item.DisplayOrder</td>
+                        <td>
+                            @{
+                                if (@item.UsersList != null)
+                                {
+                                    foreach (var user in @item.UsersList.Split(","))
+                                    {
+                                        <span class="badge badge-phoenix fs--2 badge-phoenix-github bg-700 #6d7a8a">
+                                            <span class="badge-label">@user</span>
+                                        </span>
+                                        <br />
+                                    }
+                                }
+                            }
+                        </td>
+                        <td>
+                            @{
+                                if (@item.IsCompleted == true)
+                                {
+                                    <span>Yes</span>
+                                }
+                                else
+                                {
+                                    <span>No</span>
+                                }
+                            }
+                        
+                        <td>
+                            @{
+                                if (@item.IsReviewed == true)
+                                {
+                                    <span>Yes</span>
+                                }
+                                else
+                                {
+                                    <span>No</span>
+                                }
+                            }
+                        </td>
+                        <td>
+                            @{
+                                if (@item.IsActive == true)
+                                {
+                                    <span>Yes</span>
+                                }
+                                else
+                                {
+                                    <span>No</span>
+                                }
+                            }
+                        </td>
+                        <td>
+                            <a style="align-content:center"href="/SOPReport/CreateReportSection?TempSecGuid=@item.TemplateSectionGuid&BuildGuid=@Model.FirstOrDefault().BuildGuid">
+                            @(Permission_Write == true ? "Edit" : "View")
+                            </a>|
+                                @{
+                                    if (Permission_Write == true)
+                                    {
+                                    <a style="cursor:pointer" class="text-danger" onclick="DeleteReportSection('@item.SopReportSectionGUID','@item.BuildGuid')">Delete</a>
+                                    }
+                                }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+
+    <script>
+        $(document).ready(function () {
+            $('#EngineBuildtbl').DataTable({
+                fixedHeader: true,
+                paging: false,
+                ordering:false
+            });
+        });
+
+
+        function DeleteReportSection(reportsectionguid,buildguid){
+
+            bootbox.confirm({
+                message: "Are you sure you want to delete this item?",
+                buttons: {
+                    confirm: {
+                        label: "Yes",
+                        className: "btn-danger"
+                    },
+                    cancel: {
+                        label: "No",
+                        className: "btn-secondary"
+                    }
+                },
+                callback: function (result) {
+                    if (result) {
+                        $.ajax({
+                            url: '/SOPReport/DeleteSOPReportSection?reportsectionguid=' + reportsectionguid + '&buildguid=' + buildguid,  // Replace 'My' with your controller name
+                            type: 'GET',
+                            success: function (data) {
+                                bootbox.alert({
+                                    message: "Deleted Successfully",
+                                    callback: function () {
+
+                                    }
+                                });
+                            },
+                            error: function () {
+                                console.log('Error occurred');
+                            }
+                        });
+                    } else {
+                        // User clicked "No" or closed the dialog.
+                        console.log("User clicked 'No' or closed the dialog.");
+                    }
+                }
+            });
+ 
+        }
+
+
+
+    </script>
+
+    }

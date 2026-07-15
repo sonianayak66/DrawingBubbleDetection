@@ -1,0 +1,110 @@
+﻿
+<style>
+   
+
+    .card {
+        height: 80vh;
+    }
+
+    textarea {
+        overflow-y: scroll;
+        height: 120px;
+        resize: none; /* Remove this if you want the user to resize the textarea */
+    }
+
+    .ResponseBody{
+        overflow-y: scroll;
+        resize: none;
+        height: 53vh;
+    }
+</style>
+<div>
+    <div class="ApiResponseHistory">
+    </div>
+    <div>
+        <div class="card">
+            <div class="card-header ">
+                <div class="row">
+                    <div class="col-2">
+                        <select id="apiType" class="form-select">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="PATCH">PATCH</option>
+                            @* <option value="DELETE">DELETE</option> *@
+                        </select>
+                    </div>
+                    <div class="col-9">
+                        <input id="apiURL" class="form form-control" placeholder="url" />
+                    </div>
+                    <div class="col-1">
+                        <button id="SendResponse" class="btn btn-primary btn-sm" onclick="CallResponse()">Submit</button>
+                    </div>
+                </div>
+                <br />
+                <div>
+                    <textarea id="ApiPara" placeholder="Body" style="width:100%"></textarea>
+                </div>
+            </div>
+            <div>
+                <div class="card-body ResponseBody" id="ResponseData">
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            //UpdateNavHeading("Email Logs");
+        });
+
+        function CallResponse() {
+            var apiURL = document.getElementById("apiURL").value;
+            var apiType = document.getElementById("apiType").value;
+            var responseBody = document.getElementById("ResponseData");
+            var ApiParaBody = document.getElementById("ApiPara");
+
+            // Correcting the variable in console.log
+            console.log("URL : " + apiURL + " api type = " + apiType);
+
+            // Correcting object declaration syntax
+            var ContentData = {
+                url: apiURL,
+                type: apiType,
+                Content: ApiParaBody.value
+            };
+
+            console.log(ContentData);
+
+            // Sending data via AJAX
+            $.ajax({
+                type: 'GET',
+                url: '/ApiResponse/CallResponse',
+                data: ContentData,  // Correctly stringify the object
+                contentType: 'application/json',
+                success: function (data) {
+                    console.log("Success", data);                   
+                    responseBody.innerHTML = `<pre>${data.response}</pre>`;
+                    //responseBody.innerHTML = `<pre>${prettyJson}</pre>`;
+
+
+
+                },
+                error: function (error) {
+                    console.log("Error", error);
+                }
+            });
+        }
+
+
+
+    </script>
+}

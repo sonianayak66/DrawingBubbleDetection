@@ -1,0 +1,135 @@
+﻿@using MPCRS.Utilities
+@using Newtonsoft.Json
+@using System.Data
+@model List<MPCRS.ViewModels.NCRAssignmentsVM>
+
+@{
+    ViewData["Title"] = "NCR View - Read Only";
+
+    DataTable dt = MPGlobals.GetDataForDatatable($" select * from NonConformanceReport_Items");
+    var NCR_Items = JsonConvert.DeserializeObject<List<NonConformanceReport_Item>>(JsonConvert.SerializeObject(dt));
+}
+
+<div class="row">
+    <div class="col-12">
+        <h4>
+            NCR Assignments
+        </h4>
+    </div>
+</div>
+<hr />
+
+<table class="table table-bordered" id="assignmnetListTbl">
+    <thead>
+        <tr>
+            <th>NCR Number</th>
+            <th>Part No </th>
+            <th>Rev</th>
+            <th>Received From/On</th>
+            <th>Committee</th>
+            <th>Status of Deviations</th>
+            <th>Module</th>
+            <th>Current Status</th>
+            <th>Remarks</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.GroupBy(x => x.ReferenceNumber).Select(x => x.First()).OrderByDescending(x => x.AssignedOn))
+        {
+            var filteredItems = NCR_Items.Where(x => x.NCRGuid == item.NCRGUID);
+            bool forwardedToModule = filteredItems.All(item => !string.IsNullOrEmpty(item.Module_Status));
+            bool forwardedToTAS = filteredItems.All(item => item.Module_Status == "Ended");
+            bool forwardedToSTRESS = filteredItems.All(item => item.TAS_Status == "Ended");
+            bool forwardedToCHAIR = filteredItems.All(item => item.Stress_Status == "Ended" && !string.IsNullOrEmpty(item.Chair_Status));
+            bool forwardedToModule_Rework = filteredItems.Any(item => item.Module_Rework_Status == "Forwarded To Module");
+            bool forwardedToTAS_Rework = filteredItems.Any(item => item.TAS_Rework_Status == "Forwarded To TAS");
+            bool forwardedToSTRESS_Rework = filteredItems.Any(item => item.STRESS_Rework_Status == "Forwarded To STRESS");
+            bool closeNCR = item.CloseNCR == 1;
+
+            <tr>
+                <td class="p-2"><b>@item.ReferenceNumber</b></td>
+                <td>
+                    <b>@item.Draw_part_no/@item.PartDescription</b>
+                </td>
+                <td>@item.Revision</td>
+                <td>
+                    @item.ReceivedFromString
+                    <br />
+                    <i>@(MPCRS.Utilities.MPGlobals.GetFormattedDate(item.ReceivedDate))</i>
+                </td>
+                <td>@item.ComitteeReferred</td>
+                <td style="max-width:25%;">
+                    @{
+                        MPCRS.ViewModels.NCRSerialNoDataVM nCRSerialNo = new();
+                        nCRSerialNo.NCRGUID = item.NCRGUID;
+                        nCRSerialNo.NCRWorkflowGUID = item.NCRWorkflowGUID;
+                    }
+                    <partial name="../Ncr/ncritemstatus" model="@nCRSerialNo">
+                </td>
+                <td class="p-2">@item.Module_Responsibilty_String</td>
+                <td style="max-width:10%">
+                    @{
+                        if (closeNCR)
+                        {
+                            <p>Closed</p>
+                        }
+                        else if (forwardedToCHAIR)
+                        {
+                            <p>Forwarded To CHAIR</p>
+                        }
+                        else if (forwardedToSTRESS_Rework)
+                        {
+                            <p>Forwarded To STRESS for <br /> Rework/Trial Assembly remarks</p>
+                        }
+                        else if (forwardedToTAS_Rework)
+                        {
+                            <p>Forwarded To TAS for <br /> Rework/Trial Assembly remarks</p>
+                        }
+                        else if (forwardedToModule_Rework)
+                        {
+                            <p>Forwarded To Module for <br /> Rework/Trial Assembly remarks</p>
+                        }
+                        else if (forwardedToSTRESS)
+                        {
+                            <p>Forwarded To STRESS</p>
+                        }
+                        else if (forwardedToTAS)
+                        {
+                            <p>Forwarded To TAS</p>
+                        }
+                        else if (forwardedToModule)
+                        {
+                            <p>Forwarded To Module</p>
+                        }
+                        else
+                        {
+                            <p></p>
+                        }
+                    }
+                </td>
+                <td>@item.NCRRemarks</td>
+                <td>
+                    <a class="btn btn-sm btn-primary" href="/NCR/ViewReadOnlyNCR?id=@item.NCRWorkflowGUID&NCRGuid=@item.NCRGUID">View</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section scripts {
+    <script src="~/mpi/ncr.js" asp-append-version="true"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#assignmnetListTbl').DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excel'
+                ],
+                pageLength: 25,
+                order: [[0, 'desc']]
+            });
+        });
+    </script>
+}

@@ -1,0 +1,84 @@
+﻿@model List<MPCRS.ViewModels.Procurement_Demand_MileStoneViewModel>
+@using MPCRS.ViewModels;
+@using Newtonsoft.Json;
+@{
+	Layout = null;
+}
+
+@{
+	List<milestoneStatusData> milestoneStatusList = new();
+	try
+	{
+		System.Data.DataTable dt = MPCRS.Utilities.MPGlobals.GetDataForDatatable($"[dbo].[GetMilestoneStatus] @demandKey = 0");
+		milestoneStatusList = JsonConvert.DeserializeObject<List<milestoneStatusData>>(JsonConvert.SerializeObject(dt));
+	}
+	catch (Exception)
+	{
+		milestoneStatusList = new List<milestoneStatusData>();
+	}
+
+}
+
+<style>
+	.qtyCols {
+		text-align: right;
+		padding-right: 9px !important;
+	}
+	.textCols {
+		width: 15%;
+	}
+
+</style>
+
+<table class="table table-bordered table-primary">
+	<thead>
+		<tr> 
+			<th>Items</th>
+			<th class="qtyCols">Milestone Qty</th> 
+			<th class="qtyCols">Receipt Qty</th> 
+			<th class="qtyCols">Balance</th>
+		</tr>
+	</thead>
+	<tbody>
+		@{
+			foreach (var item in Model.Select(x => new { x.DemandItemName, x.ItemDescription, x.MilestoneQty, x.MilestoneID, x.DemandItemDbKey }).Where(x => x.MilestoneID == ViewBag.MilestoneId))
+			{
+				var ReceiptQty = milestoneStatusList.Select(x => new { x.RunningReceiptQty, x.MilestoneID, x.DemandItemDbKey, x.RunningMilestoneQty ,x.DeliveryDate,x.Status})
+										.Where(x => x.MilestoneID == item.MilestoneID && x.DemandItemDbKey == item.DemandItemDbKey ).FirstOrDefault();
+				double? BalanceQty = 0.0;
+				var RunningRptQty = 0.0;
+				double? RptQty = 0.0;
+				var Status = "";
+				if (ReceiptQty != null)
+				{
+					BalanceQty = (ReceiptQty.RunningMilestoneQty - ReceiptQty.RunningReceiptQty) < 0.0 ? 0.0 : (ReceiptQty.RunningMilestoneQty - ReceiptQty.RunningReceiptQty);
+
+					BalanceQty = BalanceQty > item.MilestoneQty ? item.MilestoneQty : BalanceQty;
+					RunningRptQty = ReceiptQty.RunningReceiptQty;
+					RptQty = item.MilestoneQty - BalanceQty;
+					Status = ReceiptQty.Status;
+
+
+				}
+				else
+				{
+					BalanceQty = item.MilestoneQty;
+				}
+
+				//if (BalanceQty > 0 || (BalanceQty == 0 && Status == "On-time"))
+				if (item.MilestoneQty > 0)
+				{
+
+					<tr>
+						<td class="p-1">@item.DemandItemName @item.ItemDescription</td>
+						<td class="qtyCols p-1">@string.Format("{0:F2}", item.MilestoneQty)</td>
+						<td class="qtyCols p-1">@string.Format("{0:F2}", RptQty)</td>
+						<td class="qtyCols p-1">@string.Format("{0:F2}", BalanceQty)</td>
+					</tr>
+				}
+			
+			}
+		}
+	</tbody>
+</table>
+

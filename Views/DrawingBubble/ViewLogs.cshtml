@@ -1,0 +1,282 @@
+@{
+    ViewData["Title"] = "Detection Logs";
+    var enginePartDbkey = (int)(ViewBag.EnginePartDbkey ?? 0);
+    var requestId = (string)(ViewBag.RequestId ?? "");
+}
+
+<style>
+    /* Print styles for the "Download Page" action — saving via the
+       browser print dialog ("Save as PDF") produces a pixel-perfect,
+       vector copy of the page with the buttons + nav chrome stripped
+       out and the dark log pane preserved. */
+    @@media print {
+        nav, header, footer, .navbar, .sidebar,
+        #logsToolbar, .page-header .btn-group { display: none !important; }
+        body { background: #fff !important; }
+        /* Force the dark log pane to keep its colours when printed —
+           Chrome and Edge respect print-color-adjust. */
+        #logBody, .card-header.bg-dark {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+        /* Show every step row and log line — no scrollbars in print. */
+        #stepList { max-height: none !important; overflow: visible !important; }
+        #logBody  { max-height: none !important; overflow: visible !important; }
+        .card { break-inside: avoid; page-break-inside: avoid; box-shadow: none !important; }
+        .step { break-inside: avoid; page-break-inside: avoid; }
+        @@page { margin: 12mm; }
+    }
+</style>
+
+<div class="page-header d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+        <i class="fas fa-stream me-2"></i>Detection Logs
+        <small class="text-muted ms-2 font-monospace" id="rid-display">@requestId</small>
+    </h4>
+    <div class="btn-group btn-group-sm" role="group" id="logsToolbar">
+        <button type="button" onclick="downloadAsPdf()" class="btn btn-outline-secondary"
+                title="Save the page exactly as shown (use 'Save as PDF' in the print dialog)">
+            <i class="fas fa-download me-1"></i> Download Page
+        </button>
+        <a asp-action="History" asp-controller="DrawingBubble" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Records
+        </a>
+    </div>
+</div>
+
+<!-- Pipeline Steps panel — replays the same per-step timings the live
+     UI shows, parsed from the saved [STEP] log lines. -->
+<div class="card shadow-sm border-0 mb-3">
+    <div class="card-header bg-light d-flex align-items-center">
+        <strong><i class="fas fa-tasks me-2"></i>Pipeline Steps</strong>
+        <span id="stepSummary" class="text-muted small ms-2">—</span>
+    </div>
+    <div class="card-body p-0">
+        <div id="stepList" style="background:#f8f9fa; max-height:420px; overflow-y:auto;">
+            <div class="text-muted small p-2">No step records in this snapshot.</div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-dark text-white d-flex align-items-center">
+        <span id="logMeta" class="small opacity-75">Loading…</span>
+        <span class="ms-auto small opacity-75" id="logCount">0 entries</span>
+    </div>
+    <div class="card-body p-0">
+        <div id="logBody"
+             style="background:#0d1117; color:#c9d1d9;
+                    font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;
+                    padding:12px 16px; min-height:320px; max-height:60vh;
+                    overflow-y:auto;">
+            <div class="text-muted">Loading saved log snapshot…</div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    (function() {
+        var enginePartDbkey = @enginePartDbkey;
+        var requestId = '@Html.Raw(requestId)';
+        var meta = document.getElementById('logMeta');
+        var body = document.getElementById('logBody');
+        var countEl = document.getElementById('logCount');
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+                return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+            });
+        }
+
+        function renderRaw(rec) {
+            var lvlColors = {
+                INFO:    '#58a6ff',
+                WARNING: '#d29922',
+                ERROR:   '#f85149',
+                DEBUG:   '#8b949e',
+            };
+            var lvl = (rec.level || 'INFO').toUpperCase();
+            var color = lvlColors[lvl] || '#c9d1d9';
+            var div = document.createElement('div');
+            div.style.padding = '1px 0';
+            div.style.wordBreak = 'break-word';
+            div.innerHTML =
+                '<span style="color:#6e7681">' + escapeHtml(rec.ts_human || '') + '</span> ' +
+                '<span style="color:' + color + '; font-weight:600">' + escapeHtml(lvl) + '</span> ' +
+                '<span>' + escapeHtml(rec.message || '') + '</span>';
+            return div;
+        }
+
+        // ── Step parsing — same shape as the live page ──────────────
+        var steps = { order: [], state: {} };
+
+        function processStep(message) {
+            var m = /^\[STEP\]\s+(start|done|skip|fail):\s+(.+?)(?:\s+\|\s+(.*))?$/.exec(message || '');
+            if (!m) return false;
+            var kind = m[1], name = m[2].trim(), tail = m[3] || '';
+            if (!steps.state[name]) {
+                steps.order.push(name);
+                steps.state[name] = { status: 'pending', ms: null, reason: null };
+            }
+            var s = steps.state[name];
+            if (kind === 'start') {
+                // In a saved snapshot, "start" without a matching "done"
+                // means the run was killed mid-step. Mark as running so
+                // the user can see where it stalled.
+                if (s.status === 'pending') s.status = 'running';
+            } else if (kind === 'done') {
+                s.status = 'done';
+                var ms = /ms=([\d.]+)/.exec(tail);
+                if (ms) s.ms = parseFloat(ms[1]);
+            } else if (kind === 'fail') {
+                s.status = 'failed';
+                var ms2 = /ms=([\d.]+)/.exec(tail);
+                if (ms2) s.ms = parseFloat(ms2[1]);
+            } else if (kind === 'skip') {
+                s.status = 'skipped';
+                var r = /reason=(.+)$/.exec(tail);
+                if (r) s.reason = r[1].trim();
+            }
+            return true;
+        }
+
+        function stepIcon(status) {
+            if (status === 'running') return '<i class="fas fa-circle-notch fa-spin text-primary"></i>';
+            if (status === 'done')    return '<i class="fas fa-check-circle text-success"></i>';
+            if (status === 'failed')  return '<i class="fas fa-times-circle text-danger"></i>';
+            if (status === 'skipped') return '<i class="far fa-circle text-muted"></i>';
+            return '<i class="far fa-circle text-muted"></i>';
+        }
+
+        function fmtMs(ms) {
+            if (ms == null || isNaN(ms)) return '';
+            if (ms < 1000) return ms.toFixed(0) + ' ms';
+            return (ms / 1000).toFixed(2) + ' s';
+        }
+
+        function renderSteps() {
+            var listEl = document.getElementById('stepList');
+            var summaryEl = document.getElementById('stepSummary');
+            if (!steps.order.length) {
+                listEl.innerHTML = '<div class="text-muted small p-2">No step records in this snapshot.</div>';
+                summaryEl.textContent = '—';
+                return;
+            }
+            var maxMs = 0;
+            for (var i = 0; i < steps.order.length; i++) {
+                var s = steps.state[steps.order[i]];
+                if (s.ms && s.ms > maxMs) maxMs = s.ms;
+            }
+            var html = '';
+            var done = 0, skipped = 0, running = 0, failed = 0, totalMs = 0;
+            for (var j = 0; j < steps.order.length; j++) {
+                var name = steps.order[j];
+                var s = steps.state[name];
+                var barColor = s.status === 'failed'  ? 'bg-danger'
+                             : s.status === 'skipped' ? 'bg-secondary'
+                             : s.status === 'running' ? 'bg-warning'
+                             : 'bg-success';
+                var barWidth = (s.ms && maxMs)
+                    ? Math.max(2, Math.min(100, (s.ms / maxMs) * 100))
+                    : (s.status === 'running' ? 100 : 0);
+                var right = s.status === 'running'
+                    ? '<span class="text-warning small">interrupted</span>'
+                    : s.status === 'skipped'
+                        ? '<span class="text-muted small">skipped' +
+                            (s.reason ? ' (' + escapeHtml(s.reason) + ')' : '') + '</span>'
+                        : s.status === 'failed'
+                            ? '<span class="text-danger small">failed at ' + fmtMs(s.ms) + '</span>'
+                            : (s.ms != null
+                                ? '<span class="text-success small fw-semibold">' + fmtMs(s.ms) + '</span>'
+                                : '<span class="text-muted small">—</span>');
+
+                html +=
+                    '<div class="px-2 py-1 border-bottom" style="font-size:13px;">' +
+                        '<div class="d-flex align-items-center">' +
+                            '<span class="me-2" style="width:18px; text-align:center;">' +
+                                stepIcon(s.status) + '</span>' +
+                            '<span class="flex-grow-1">' + escapeHtml(name) + '</span>' +
+                            right +
+                        '</div>' +
+                        '<div class="progress mt-1" style="height:4px; background:#e9ecef;">' +
+                            '<div class="progress-bar ' + barColor + '" style="width:' + barWidth + '%"></div>' +
+                        '</div>' +
+                    '</div>';
+
+                if (s.status === 'done')    { done++; totalMs += (s.ms || 0); }
+                if (s.status === 'skipped') skipped++;
+                if (s.status === 'running') running++;
+                if (s.status === 'failed')  failed++;
+            }
+            listEl.innerHTML = html;
+
+            var bits = [done + ' done'];
+            if (skipped) bits.push(skipped + ' skipped');
+            if (running) bits.push(running + ' interrupted');
+            if (failed)  bits.push(failed + ' failed');
+            if (totalMs) bits.push('total ' + fmtMs(totalMs));
+            summaryEl.textContent = bits.join(' · ');
+        }
+
+        // ── Load + render ───────────────────────────────────────────
+        var url = '@Url.Action("SavedLogs", "DrawingBubble")?enginePartDbkey=' +
+                  encodeURIComponent(enginePartDbkey) +
+                  '&requestId=' + encodeURIComponent(requestId);
+
+        fetch(url, { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    body.innerHTML = '<div class="text-danger">' + escapeHtml(data.error) + '</div>';
+                    return;
+                }
+                var entries = data.entries || [];
+                body.innerHTML = '';
+                if (!entries.length) {
+                    body.innerHTML = '<div class="text-muted">No log entries in this snapshot.</div>';
+                } else {
+                    for (var i = 0; i < entries.length; i++) {
+                        var rec = entries[i];
+                        // Step lines feed the panel above AND stay in the
+                        // raw pane below so nothing is lost — the panel
+                        // is just a structured summary on top of the log.
+                        processStep(rec.message || '');
+                        body.appendChild(renderRaw(rec));
+                    }
+                }
+                renderSteps();
+                countEl.textContent = entries.length +
+                    ' entr' + (entries.length === 1 ? 'y' : 'ies') +
+                    ' · ' + steps.order.length + ' steps';
+
+                var bits = [];
+                if (data.draw_part_no) bits.push('Part: ' + data.draw_part_no);
+                if (data.revision)     bits.push('Rev: ' + data.revision);
+                if (data.page_number)  bits.push('Page ' + data.page_number);
+                if (data.captured_at)  bits.push('Captured: ' + data.captured_at);
+                meta.textContent = bits.join('  •  ');
+            })
+            .catch(function(e) {
+                body.innerHTML = '<div class="text-danger">Failed to load logs: ' + escapeHtml(e.message) + '</div>';
+            });
+    })();
+
+    // "Download Page" → open the browser print dialog. Most modern
+    // browsers default the destination to "Save as PDF", which gives a
+    // vector-quality copy of exactly what's on screen. The page title
+    // is set so the suggested filename is meaningful.
+    function downloadAsPdf() {
+        var rid = '@Html.Raw(requestId)';
+        var prevTitle = document.title;
+        document.title = 'detection-' + rid;
+        try {
+            window.print();
+        } finally {
+            // Restore the title after the print dialog closes.
+            setTimeout(function() { document.title = prevTitle; }, 500);
+        }
+    }
+</script>
+}

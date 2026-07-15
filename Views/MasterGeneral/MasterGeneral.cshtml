@@ -1,0 +1,54 @@
+﻿@model MPCRS.ViewModels.Master_GeneralVM
+@using MPCRS.Utilities
+
+<div class="col-md-12 col-sm-12 col-lg-12">
+    <div class="page-header">
+        <div class="col-12">
+          
+                    <button onclick="AddMasterPromt('@ViewBag.mastertype')" class="btn btn-sm btn-success float-end">Create New</button>
+          
+        </div>
+    </div>
+ <hr />
+    <div class="panel">
+        <div class="panel-body">
+            <table id="editable-table" class="table table-striped" style="cursor: pointer;width:80%">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Order</th>
+                        <th></th>
+                        <th>Active</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="display:none">
+                        <td tabindex="1"></td>
+                    </tr>
+                    @{
+                        foreach (var item in Model.master_Generals)
+                        {
+                            <tr>
+                                <td id="@item.Master_Dbkey">@item.Master_Name</td>
+                                    <td>
+                                        <label>@item.Misc</label>
+                                    </td>
+                                    <td>
+                                        <a onclick="EditMasterPromt(@item.Master_Dbkey,'@ViewBag.mastertype', '@item.Master_Name','@item.Misc')" class="btn btn-info btn-xs">Edit</a>
+                                    </td>
+                                    <td>
+                                        <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="@item.Master_Dbkey" @(item.is_active == 1 ? "checked" : "") onchange="ChangeMasterStatus(@item.Master_Dbkey,@item.is_active,'@ViewBag.mastertype') " />
+                                    </div>
+                                    </td>
+                            </tr>
+                        }
+
+                    }
+                </tbody>
+            </table>
+            @*<input class="form-control" style="position: absolute; top: 393px; left: 271px; padding: 8px; text-align: start; font: 400 13px / 21.0001px &quot;Open Sans&quot;, &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; width: 433px; height: 38px; border-width: 1px 0px 0px; border-style: solid none none; border-color: rgba(0, 0, 0, 0.05) rgb(68, 68, 68) rgb(68, 68, 68); display: none;">*@
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,66 @@
+﻿@model MPCRS.ViewModels.ProcurementMilestoneVM
+@using MPCRS.Utilities
+@{
+    Layout = null;
+}
+@{
+    string datee = DateTime.Now.ToString("yyyy-MM-dd");
+    var DemandDelete = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Delete);
+
+}
+<button class="btn btn-primary btn-sm float-end" onclick="SaveProcurementMilestone()">Save</button>
+
+
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Milestone</th>
+            <th>Components</th>
+            <th>Description</th>
+            <th>Due Date</th>
+            <th>Completion Date</th>
+            <th>Comments</th>
+            
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="Milestonetbl">
+        <tr style="display:none">
+            <td style="display:none"><input type="hidden" class="MilestoneID" id="MilestoneID" value="0" /></td>
+            <td><input type="text" class="form-control MilestoneName" id="MilestoneName" /></td>
+            <td><input type="text" class="form-control Components" id="Components" /></td>
+            <td><input type="text" class="form-control Description" id="Description" /></td>
+            <td><input type="date" class="form-control DueDate" id="DueDate"  value="@datee" /></td>
+            <td><input type="date" class="form-control CompletionDate" id="CompletionDate" value="@datee" /></td>
+            <td><input type="text" class="form-control Comments" id="Comments" /></td>
+            <td><i class="text-warning uil uil-trash fs-1" style="cursor:pointer" onclick="delRowMS(this)"></i></td>
+        </tr>
+        @{
+            foreach (var item in Model.ProcurementMilestoneVMs)
+            {
+                <tr>
+                    <td style="display:none"><input type="hidden" class="MilestoneID" asp-for="@item.MilestoneID" /></td>
+                    <td><input type="text" class="form-control form-control1 MilestoneName" asp-for="@item.MilestoneName" /></td>
+                    <td><input type="text" class="form-control form-control1 Components" asp-for="@item.Components" /></td>
+                    <td><input type="text" class="form-control form-control1 Description" asp-for="@item.Description" /></td>
+                    <td><input type="date" class="form-control form-control1 DueDate" asp-for="@item.DueDate" /></td>
+                    <td><input type="date" class="form-control form-control1 CompletionDate" asp-for="@item.CompletionDate" /></td>
+                    <td><input type="text" class="form-control form-control1 Comments" asp-for="@item.Comments" /></td>
+                    @{
+                        if (DemandDelete)
+                        {
+                            <td><i class="text-danger uil uil-trash-alt fs-1" style="cursor:pointer" onclick="InactivateMilestoneItem(@item.MilestoneID,this)"></i></td>
+                        }
+                    }                
+                </tr>
+            }
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td>
+                <a class="fa fa-plus" onclick="addRowMS()">Add more</a>
+            </td>
+        </tr>
+    </tfoot>
+</table>

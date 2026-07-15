@@ -1,0 +1,110 @@
+﻿@using MPCRS.Models;
+@{
+    var modules = ViewBag.Modules as List<Master_General>;
+    var items = ViewBag.Items as List<NonConformanceReport_Item>;
+    var workflowGuid = ViewBag.WorkflowGuid as string;
+    var ncrGuid = ViewBag.NCRGuid as string;
+}
+
+<form id="ReferItemsForm">
+    <input type="hidden" id="referWorkflowGuid" value="@workflowGuid" />
+    <input type="hidden" id="referNcrGuid" value="@ncrGuid" />
+
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-share"></i>
+                <strong>Refer Items to Another Module</strong>
+                <p class="mb-0 mt-2">Select items to refer to another module within the current stage.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Selection -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <label class="form-label">
+                <strong>Select Items to Refer:</strong>
+                <span class="text-danger">*</span>
+            </label>
+            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px;">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="selectAllItems" onchange="toggleAllItems(this)">
+                    <label class="form-check-label fw-bold" for="selectAllItems">
+                        Select All
+                    </label>
+                </div>
+                <hr style="margin: 8px 0;">
+                @foreach (var item in items)
+                {
+                    <div class="form-check">
+                        <input class="form-check-input item-checkbox"
+                               type="checkbox"
+                               id="item_@item.NCRItemKey"
+                               value="@item.NCRItemKey">
+                        <label class="form-check-label" for="item_@item.NCRItemKey">
+                            <strong>@item.SerialNumber</strong>
+                            @if (!string.IsNullOrEmpty(item.Engine))
+                            {
+                                <span class="text-muted">- Engine: @item.Engine</span>
+                            }
+                        </label>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Module Selection -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <label for="ReferModuleSelect" class="form-label">
+                <strong>Refer To Module:</strong>
+                <span class="text-danger">*</span>
+            </label>
+            <select id="ReferModuleSelect" class="form-control" required>
+                <option value="">-- Select Module --</option>
+                @foreach (var module in modules)
+                {
+                    <option value="@module.Master_Dbkey">@module.Master_Name</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- User Selection -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <label for="ReferUsersSelect" class="form-label">
+                <strong>Assign To Users:</strong>
+                <span class="text-danger">*</span>
+            </label>
+            <select id="ReferUsersSelect" class="form-control" multiple required disabled>
+                <option value="">-- Select Module First --</option>
+            </select>
+            <small class="text-muted">Users will be loaded based on selected module</small>
+        </div>
+    </div>
+
+    <!-- Remarks -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <label for="ReferRemarks" class="form-label">
+                <strong>Referral Remarks:</strong>
+            </label>
+            <textarea id="ReferRemarks" class="form-control" rows="3"
+                      placeholder="Enter reason for referral (optional)"></textarea>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <button type="button" class="btn btn-primary" onclick="submitReferItems()">
+                <i class="fas fa-share"></i> Refer Selected Items
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="bootbox.hideAll()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</form>

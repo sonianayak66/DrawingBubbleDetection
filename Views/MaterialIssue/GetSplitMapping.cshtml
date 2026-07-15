@@ -1,0 +1,151 @@
+﻿@model List<MPCRS.ViewModels.MaterialIssueSplitMapping>
+@{
+    Layout = null;
+}
+@{
+    if (Model.Count != 0)
+    {
+
+        string mattype = Model[0].Master_Name;
+
+        <table class="table table-bordered pull-right" style="width:100%">
+            <tr>
+                <td style="width:80%"><b>Demand Receipt Item Split Mappings</b></td>
+                @{
+                    if (ViewBag.ISdetailsplitInfo == 0)
+                    {
+                        <td style="width:20%"><button class="btn btn-success" onclick="SaveMaterialIssueSplitMapping()">Save</button>  </td>
+                    }
+                    else
+                    {
+                        <td></td>
+                    }
+                }
+
+            </tr>
+        </table>
+
+
+        <table class="table table-bordered table-responsive table-condensed" style="width:100%;border:1px!important">
+            <tr>
+                <th>SL No</th>
+                <th>Material</th>
+                <th>Type</th>
+                <th>MMG File No</th>
+                <th>Rcpt No</th>
+                <th style="display:none">Outer Dia mm</th>
+                <th style="display:none">Thickness</th>
+                <th >length(mm)</th>
+                @{
+                    if (mattype.ToUpper() == "BAR" || mattype.ToUpper() == "PIPE")
+                    {
+                        <th style="display:none">
+                            Breadth(mm)
+                        </th>
+                    }
+                    else
+                    {
+                        <th>
+                            Breadth(mm)
+                        </th>
+                    }
+                }
+                <th>Weight(kg)</th>
+                <th>@Model[0].Master_Name No</th>
+                <th>Heat No</th>
+                <th>Batch No</th>
+                @{
+                    if (ViewBag.ISdetailsplitInfo == 0)
+                    {
+                        <th></th>
+                    }
+                    else
+                    {
+                        <th style="display:none"></th>
+                    }
+                }
+
+            </tr>
+            <tbody id="tblMatIssueConsBody">
+                @foreach (var item in Model.Select((x, i) => new { Data = x, Index = i }))
+                {
+                    <tr>
+                        <td>@(item.Index + 1)</td>
+                        <td>
+                            <input type="hidden" value="@item.Data.split_issue_id" />
+                            <input type="hidden" value="@item.Data.Issue_Item_Dbkey" />
+                            <input type="hidden" value="@item.Data.Issue_Dbkey" />
+                            <input type="hidden" value="@item.Data.SplitId" />
+                            @item.Data.Material_name
+                        </td>
+                        <td>
+                            @item.Data.Master_Name
+                        </td>
+                        <td>
+                            @item.Data.MMG_File_No
+                        </td>
+                        <td>
+                            @item.Data.Receipt_No
+                        </td>
+                        <td style="display:none">
+                            @item.Data.Outer_Dia_mm
+                        </td>
+                        <td style="display:none">
+                            @item.Data.Thickness
+                        </td>
+                        <td>
+                            @item.Data.Measurement
+                        </td>
+                        @{
+                            if (mattype.ToUpper() == "BAR" || mattype.ToUpper() == "PIPE")
+                            {
+                                <td style="display:none">
+                                    @item.Data.Measurement_breadth
+                                </td>
+
+
+                            }
+                            else
+                            {
+                                <td>
+                                    @item.Data.Measurement_breadth
+                                </td>
+                            }
+                        }
+                        <td>
+                            @item.Data.Weight
+                        </td>
+                        <td>
+                            @item.Data.Material_Reference_No
+                        </td>
+                        <td>
+                            @item.Data.Heat_No
+                        </td>
+                        <td>
+                            @item.Data.Batch_No
+                        </td>
+                        @{
+                            if (ViewBag.ISdetailsplitInfo == 0)
+                            {
+                                <td>
+                                    <input type="checkbox" class="SplitMappingCheckbox" data-split_issue_id="@item.Data.split_issue_id" data-Issue_Item_Dbkey="@item.Data.Issue_Item_Dbkey" data-Issue_Dbkey="@item.Data.Issue_Dbkey" data-SplitId="@item.Data.SplitId" style="width:22px!important;height:22px!important" @(item.Data.split_issue_id != 0 ? "checked" : "") />
+                                </td>
+                            }
+                            else
+                            {
+                                <td style="display:none"></td>
+                            }
+                        }
+
+                    </tr>
+                }
+            </tbody>
+
+
+        </table>
+    }
+    else
+    {
+        <h4>Split item is not available for this raw material</h4>
+    }
+}

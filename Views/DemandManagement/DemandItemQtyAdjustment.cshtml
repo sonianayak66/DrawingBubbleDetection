@@ -1,0 +1,71 @@
+﻿ @model MPCRS.ViewModels.DemandItemQtyAdjustmentVM
+
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Adjust Quantity</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            @if (ViewBag.ErrorMessage != null)
+            {
+                    <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+            }
+            else
+            {
+                    <input type="hidden" id="hdnDemandItemKey" value="@Model.DemandItemKey" />
+                    <input type="hidden" id="hdnAdjustmentDbkey" value="@Model.AdjustmentDbkey" />
+
+                    <div class="mb-3">
+                        <label class=""><strong>Item:</strong></label>
+                        <p  class=" mb-0">@Model.ItemName</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class=""><strong>Original Qty:</strong></label>
+                        <p class=" mb-0">@Model.OriginalQty @Model.UOM</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="txtAdjustmentQty" class="form-label">
+                            <strong>Adjustment Qty <span class="text-danger">*</span></strong>
+                        </label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="txtAdjustmentQty" 
+                               step="0.01" 
+                               placeholder="Enter adjustment quantity" 
+                               value="@Model.AdjustmentQty.ToString("0.0")"
+                               required />
+                        <small class=" text-muted">Use negative values for reductions (e.g., -0.5)</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="txtAdjustmentRemarks" class="form-label">
+                            <strong>Remarks <span class="text-danger">*</span></strong>
+                        </label>
+                        <textarea class="form-control" 
+                                  id="txtAdjustmentRemarks" 
+                                  rows="3" 
+                                  placeholder="Enter reason for adjustment" 
+                                  required>@Model.AdjustmentRemarks</textarea>
+                        <small class=" text-muted">Required: Explain the reason for this adjustment</small>
+                    </div>
+
+                @if (Model.HasExistingAdjustment)
+                {
+                            <div class="alert alert-info mb-0">
+                                <i class="uil uil-info-circle"></i> 
+                                An adjustment already exists for this item. Saving will update the existing adjustment.
+                            </div>
+                }
+            }
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="SaveDemandItemAdjustment()">
+                @(Model.HasExistingAdjustment ? "Update" : "Save") Adjustment
+            </button>
+        </div>
+    </div>
+</div>

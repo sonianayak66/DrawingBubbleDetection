@@ -1,0 +1,60 @@
+﻿@model MPCRS.ViewModels.ReceiptCommentVM
+@using MPCRS.Utilities;
+@using System.Data;
+@{
+   
+}
+<div>
+    <b>Receipt No. :</b>
+    @Model.castingReceiptSplitVM.ReceiptNumber
+    <br />
+    <b>Part:</b>
+    @Model.castingReceiptSplitVM.PartName
+    <br />
+    <b>Vendor:</b>
+    @Model.castingReceiptSplitVM.Vendor_Name
+</div>
+    <table class="table table-bordered ">
+        <thead>
+            <tr>
+            <th style="max-width:100px;">User</th>
+            <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+        @{
+            foreach (var item in Model.receiptCommentUserDetailsVMs)
+            {
+
+                <tr>
+                    <td class="p-2">
+                        <label><strong>@item.UserName</strong></label>
+                        <br />
+                         <i> @item.Designation</i>
+                         <br />
+                         <i>  @item.Department</i>
+                    </td>
+                    <td class="p-0">
+                    @{
+                        if(item.UserGuid == ViewBag.userGuid){
+
+                                <textarea asp-for="@item.Comments" 
+                                data-departmentId="@item.DepartmentId"
+                                data-castingReceiptsCommentsKey="@item.CastingReceiptsCommentsKey" 
+                                data-castingReceiptsItemSplitKey="@item.CastingReceiptsItemSplitKey" 
+                                onchange="autoSaveCastingRemarks(this)" 
+                                style="width:100%;height:100px;" 
+                                class="form-control form-control-square " 
+                                placeholder="Enter Remarks here..."></textarea>
+                        }
+                        else{
+                            <span class="p-2">@item.Comments</span>
+                        }
+                    }
+                    </td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+

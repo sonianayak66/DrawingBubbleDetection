@@ -1,0 +1,493 @@
+﻿@model MPCRS.ViewModels.DashboardViewModel
+@{
+	ViewData["Title"] = "Management Dashboard";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+	/* ✅ ADDED: details header */
+	.details-header {
+		padding: 0.85rem 1rem;
+		font-weight: 700;
+		border-bottom: 1px solid rgba(0,0,0,0.08);
+		background: #ffffff;
+		border-radius: 0.75rem 0.75rem 0 0;
+	}
+
+	.page-title {
+		font-weight: 700;
+		color: #2c3e50;
+	}
+
+	/* ✅ KEEP: header variants */
+	.hdr-procurement {
+		background-color: #f4f6f8;
+		color: #1f2937;
+		border-left: 4px solid #64748b;
+	}
+
+	.hdr-mfg {
+		background-color: #f2fbf6;
+		color: #14532d;
+		border-left: 4px solid #22c55e;
+	}
+
+	.hdr-sop {
+		background-color: #f2f7ff;
+		color: #1e3a8a;
+		border-left: 4px solid #3b82f6;
+	}
+
+	.nav-tile {
+		height: 100%;
+		border: 1px solid rgba(0,0,0,0.08);
+		border-radius: 0.5rem;
+		background: #f8f9fb;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+		cursor: pointer;
+		user-select: none;
+		overflow: hidden;
+		width: 62px;
+		transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+	}
+
+		.nav-tile:hover {
+			background: #eef1f6;
+			border-color: rgba(0,0,0,0.15);
+		}
+
+
+
+	.nav-tile-text {
+		writing-mode: vertical-rl;
+		text-orientation: upright;
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+		font-weight: 700;
+		font-size: 0.85rem;
+		letter-spacing: 3px;
+		white-space: nowrap;
+		color: #64748b;
+		text-transform: uppercase;
+		transition: color 0.25s ease;
+	}
+
+
+	.nav-tile-arrow {
+		position: absolute;
+		top: 6px;
+		right: 50%;
+		transform: translateX(50%);
+		border: 0;
+		background: rgba(0,0,0,0.04);
+		border-radius: 999px;
+		padding: 3px 6px;
+		line-height: 1;
+		cursor: pointer;
+		z-index: 2;
+		font-size: 0.65rem;
+		color: #94a3b8;
+		transition: background 0.25s ease, color 0.25s ease;
+	}
+	/* Remove generic active - use section-specific colors */
+	.nav-tile.active::before {
+		content: "";
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 3px;
+		height: 100%;
+		border-radius: 0 2px 2px 0;
+	}
+
+	/* Procurement - Slate/Gray */
+	.nav-tile.active[data-target="procurement"] {
+		border: 1px solid rgba(100, 116, 139, 0.3);
+		background: rgba(100, 116, 139, 0.06);
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.12);
+	}
+
+		.nav-tile.active[data-target="procurement"]::before {
+			background: #64748b;
+		}
+
+		.nav-tile.active[data-target="procurement"] .nav-tile-text {
+			color: #334155;
+			font-weight: 700;
+		}
+
+		.nav-tile.active[data-target="procurement"] .nav-tile-arrow {
+			background: rgba(100, 116, 139, 0.12);
+			color: #64748b;
+		}
+
+	/* Manufacturing - Green */
+	.nav-tile.active[data-target="manufacturing"] {
+		border: 1px solid rgba(34, 197, 94, 0.3);
+		background: rgba(34, 197, 94, 0.06);
+		box-shadow: 0 2px 8px rgba(34, 197, 94, 0.12);
+	}
+
+		.nav-tile.active[data-target="manufacturing"]::before {
+			background: #22c55e;
+		}
+
+		.nav-tile.active[data-target="manufacturing"] .nav-tile-text {
+			color: #14532d;
+			font-weight: 700;
+		}
+
+		.nav-tile.active[data-target="manufacturing"] .nav-tile-arrow {
+			background: rgba(34, 197, 94, 0.12);
+			color: #22c55e;
+		}
+
+	/* SOP - Blue */
+	.nav-tile.active[data-target="sop"] {
+		border: 1px solid rgba(59, 130, 246, 0.3);
+		background: rgba(59, 130, 246, 0.06);
+		box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12);
+	}
+
+		.nav-tile.active[data-target="sop"]::before {
+			background: #3b82f6;
+		}
+
+		.nav-tile.active[data-target="sop"] .nav-tile-text {
+			color: #1e3a8a;
+			font-weight: 700;
+		}
+
+		.nav-tile.active[data-target="sop"] .nav-tile-arrow {
+			background: rgba(59, 130, 246, 0.12);
+			color: #3b82f6;
+		}
+
+	.dashboard-flex {
+		display: flex;
+		gap: .5rem;
+		align-items: stretch;
+	}
+
+	/* each left tile column width (reduce here) */
+	.nav-col {
+		flex: 0 0 auto;
+		width: clamp(48px, 3.2vw, 70px); /* ✅ controls 1st–3rd column width */
+	}
+
+	/* nav-tile should fill nav-col width */
+	.nav-tile {
+		width: 100%;
+	}
+
+	/* ✅ Panel transition container - panels overlap via absolute positioning */
+	.content-col {
+		flex: 1 1 auto;
+		min-width: 0;
+		position: relative; /* ADD THIS to existing .content-col */
+	}
+
+	/* All panels are absolutely positioned so they overlap */
+	.dashboard-panel {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		opacity: 0;
+		visibility: hidden;
+		transform: translateX(-30px);
+		transition: opacity 550ms ease, transform 550ms ease, visibility 550ms ease;
+		pointer-events: none;
+	}
+
+		/* Active panel slides in from left and fades in */
+		.dashboard-panel.panel-active {
+			opacity: 1;
+			visibility: visible;
+			transform: translateX(0);
+			pointer-events: auto;
+		}
+
+</style>
+
+
+<!-- ✅ ADDED: Page headline -->
+<div class="container-fluid mb-2">
+	<h5 class="page-title mb-0">Management Dashboard</h5>
+	<p class="text-muted mb-2">Comprehensive overview of procurement, manufacturing, quality, and operations</p>
+</div>
+
+<div class="dashboard-flex">
+	<!-- COL 1: PROCUREMENT NAV (DEFAULT ACTIVE) -->
+	<div class="col-auto p-0">
+		<div class="nav-tile active" data-target="procurement">
+			<div class="nav-tile-text">Procurement</div>
+			<button type="button" class="nav-tile-arrow" aria-label="Open Procurement">
+				<i class="uil uil-angle-right-b"></i>
+			</button>
+		</div>
+	</div>
+
+	<!-- COL 2: MANUFACTURING NAV -->
+	<div class="col-auto p-0">
+		<div class="nav-tile" data-target="manufacturing">
+			<div class="nav-tile-text">Manufacturing</div>
+			<button type="button" class="nav-tile-arrow" aria-label="Open Manufacturing">
+				<i class="uil uil-angle-right-b"></i>
+			</button>
+		</div>
+	</div>
+
+	<!-- COL 3: SOP NAV -->
+	<div class="col-auto p-0">
+		<div class="nav-tile" data-target="sop">
+			<div class="nav-tile-text">SOP</div>
+			<button type="button" class="nav-tile-arrow" aria-label="Open SOP">
+				<i class="uil uil-angle-right-b"></i>
+			</button>
+		</div>
+	</div>
+
+	<!-- COL 4: DETAILS (LARGE) -->
+	<div class="content-col">
+
+		<!-- PROCUREMENT (DEFAULT VISIBLE) -->
+		<div id="panel-procurement" class="dashboard-panel">
+			<div class="compact-card">
+				<div class="details-header hdr-procurement">
+					Procurement & Materials
+				</div>
+				<div class="compact-card-body">
+					<div id="procurement-section">
+						<div class="text-center py-4">
+							<div class="spinner-border text-primary"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- MANUFACTURING (HIDDEN INITIALLY) -->
+		<div id="panel-manufacturing" class="dashboard-panel">
+			<div class="compact-card">
+				<div class="details-header hdr-mfg">
+					Manufacturing, Quality & Configuration
+				</div>
+				<div class="compact-card-body">
+					<div id="manufacturing-quality-section">
+						<div class="text-center py-4">
+							<div class="spinner-border text-primary"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- SOP -->
+		<div id="panel-sop" class="dashboard-panel  ">
+			<div class="compact-card">
+				<div class="details-header hdr-sop">
+					SOP & System Activity
+				</div>
+				<div class="compact-card-body">
+					<div id="sop-section">
+						<div class="text-center py-4">
+							<div class="spinner-border text-primary"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+</div>
+
+@section Scripts {
+
+	<script src="~/mpi/dashboard.js" asp-append-version="true"></script>
+
+	<script>
+		var userPermissions = {
+			hasProcurement: @Model.UserPermissions.HasProcurement.ToString().ToLower(),
+			hasManufacturing: @Model.UserPermissions.HasManufacturing.ToString().ToLower(),
+			hasQuality: @Model.UserPermissions.HasQuality.ToString().ToLower(),
+			hasSOP: @Model.UserPermissions.HasSOP.ToString().ToLower(),
+			hasConfiguration: @Model.UserPermissions.HasConfiguration.ToString().ToLower(),
+			hasSystem: @Model.UserPermissions.HasSystem.ToString().ToLower()
+		};
+
+		function syncContentHeight() {
+				var activePanel = $('.dashboard-panel.panel-active');
+				if (activePanel.length) {
+					// small delay to let transition start and content render
+					setTimeout(function () {
+						var h = activePanel[0].scrollHeight;
+						$('.content-col').css('min-height', h + 'px');
+					}, 50);
+				}
+			}
+
+		$(document).ready(function () {
+
+			initDashboard();
+
+			
+			function showPanel(target) {
+
+				// highlight 1st-3rd nav
+				$('.nav-tile').removeClass('active');
+				$('.nav-tile[data-target="' + target + '"]').addClass('active');
+
+				// show/hide right panels with crossfade
+				$('.dashboard-panel').removeClass('panel-active');
+				$('#panel-' + target).addClass('panel-active');
+
+				// sync content-col height to active panel
+				syncContentHeight();
+
+				// lazy load manufacturing once
+				if (target === 'manufacturing' &&
+					$('#manufacturing-quality-section').data('loaded') !== true) {
+
+					loadManufacturingSection().then(function () {
+						$('#manufacturing-quality-section').data('loaded', true);
+						syncContentHeight(); // re-sync after content loads
+					});
+				}
+						// lazy load SOP once
+			if (target === 'sop' &&
+				$('#sop-section').data('loaded') !== true) {
+				loadSOPSection().then(function () {
+					$('#sop-section').data('loaded', true);
+					syncContentHeight();
+				});
+			}
+			}
+
+	
+
+				// ✅ ADDED: click tile or arrow
+			$(document).on('click', '.nav-tile, .nav-tile-arrow', function (e) {
+					e.stopPropagation();
+					const target = $(this).closest('.nav-tile').data('target');
+					showPanel(target);
+				});
+
+		 
+			showPanel('procurement');
+		});
+
+		function initDashboard() {
+			var loadPromises = [];
+
+			// ✅ KEEP: load procurement only (default)
+			if (userPermissions.hasProcurement) {
+				loadPromises.push(loadProcurementSection());
+			}
+
+	 
+
+			if (loadPromises.length > 0) {
+				$('#dashboard-loading').show();
+
+				Promise.all(loadPromises)
+					.then(function () {
+						$('#dashboard-loading').hide();
+					})
+					.catch(function (error) {
+						$('#dashboard-loading').hide();
+						showError('Failed to load dashboard: ' + error);
+					});
+			}
+		}
+
+		function loadProcurementSection() {
+			return new Promise(function (resolve, reject) {
+				$.ajax({
+					url: '/Dashboard/LoadProcurementSection',
+					type: 'GET',
+					global: false,
+					success: function (html) {
+						$('#procurement-section').html(html);
+						initializeTooltips();
+						initializeProcurementCharts();
+						syncContentHeight();
+						resolve();
+					},
+					error: function (xhr, status, error) {
+						$('#procurement-section').html('<div class="alert alert-danger">Failed to load procurement data: ' + error + '</div>');
+						reject(error);
+					}
+				});
+			});
+		}
+
+		function loadManufacturingSection() {
+			return new Promise(function (resolve, reject) {
+				$.ajax({
+					url: '/Dashboard/GetManufacturingQualitySection',
+					type: 'GET',
+					global: false,
+					success: function (response) {
+						$('#manufacturing-quality-section').html(response);
+						syncContentHeight();
+						resolve();
+					},
+					error: function (xhr, status, error) {
+						$('#manufacturing-quality-section').html(
+							'<div class="alert alert-danger m-3" role="alert">' +
+							'<i class="uil uil-exclamation-triangle"></i> ' +
+							'Error loading Manufacturing & Quality section. Please refresh the page.' +
+							'</div>'
+						);
+						reject(error);
+					}
+				});
+			});
+		}
+
+		function loadSOPSection() {
+			return new Promise(function (resolve, reject) {
+				$.ajax({
+					url: '/Dashboard/GetSOPSection',
+					type: 'GET',
+					global: false,
+					success: function (response) {
+						$('#sop-section').html(response);
+						syncContentHeight();
+						resolve();
+					},
+					error: function (xhr, status, error) {
+						$('#sop-section').html(
+							'<div class="alert alert-danger m-3">' +
+							'<i class="uil uil-exclamation-triangle"></i> ' +
+							'Error loading SOP section. Please refresh the page.' +
+							'</div>'
+						);
+						reject(error);
+					}
+				});
+			});
+		}
+
+		function initializeTooltips() {
+			var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+			tooltipTriggerList.map(function (tooltipTriggerEl) {
+				return new bootstrap.Tooltip(tooltipTriggerEl);
+			});
+		}
+
+		function initializeProcurementCharts() {
+			setTimeout(function () { }, 100);
+		}
+
+		function showError(message) {
+			$('#error-message').text(message);
+			$('#dashboard-error').show();
+		}
+	</script>
+}
+
+

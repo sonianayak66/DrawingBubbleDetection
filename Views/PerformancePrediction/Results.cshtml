@@ -1,0 +1,109 @@
+﻿@using Newtonsoft.Json;
+@model MPCRS.ViewModels.PerformancePredictionData
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    List<PredectiveEnginePerformance.ModelOutput> outputData = new();
+    if (string.IsNullOrEmpty(Model.OutputDataJson) == false && Model.OutputDataJson.Length > 50)
+    {
+        outputData = JsonConvert.DeserializeObject<List<PredectiveEnginePerformance.ModelOutput>>(Model.OutputDataJson);
+    }
+}
+
+
+<div class="row">
+    <div class="col-md-3">
+        <h3>Prediction Results</h3>
+    </div>
+    <div class="col-md-3">
+        Title:<b> @Model.Title</b>
+    </div>
+    <div class="col-md-3">
+        Description:<b> @Model.Description</b>
+    </div>
+    <div class="col-md-2">
+        File:  <b> @Model.inputFilename</b>
+    </div>
+    <div class="col-md-1">
+        <a   asp-action="index" class="btn btn-secondary btn-sm float-end m-1" style="float:right;">Back</a>
+    </div>
+</div>
+
+<table class="table" id="tblResults">
+    <thead>
+        <tr>
+            <th>P1</th>
+            <th>T1</th>
+            <th>P2</th>
+            <th>T2</th>
+            <th>P2B</th>
+            <th>P3</th>
+            <th>T3</th>
+            <th>T5</th>
+            <th>P6</th>
+            <th>T6</th>
+            <th>P6B</th>
+            <th>T6B</th>
+            <th>NH</th>
+            <th>NL</th>
+            <th>WF</th>
+            <th>Input XG</th>
+            <th>Output XG</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @{
+            foreach (var item in outputData)
+            {
+                <tr>
+                    <td>@item.P1</td>
+                    <td>@item.T1</td>
+                    <td>@item.P2</td>
+                    <td>@item.T2</td>
+                    <td>@item.P2B</td>
+                    <td>@item.P3</td>
+                    <td>@item.T3</td>
+                    <td>@item.T5</td>
+                    <td>@item.P6</td>
+                    <td>@item.T6</td>
+                    <td>@item.P6B</td>
+                    <td>@item.T6B</td>
+                    <td>@item.NH</td>
+                    <td>@item.NL</td>
+                    <td>@item.WF</td>
+                    <td>@item.XG</td>
+                    <td>@item.Score</td>
+                </tr>
+            }
+        }
+    </tbody>
+
+
+</table>
+
+
+
+
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+
+    <script>
+        $(document).ready(function () {
+            $('#tblResults').DataTable({
+                fixedHeader: true,
+                dom: 'Bfrtip',
+                buttons: [ 
+                    {
+                        extend: 'excel'
+                    }
+                ]
+            });
+        }); 
+
+    </script>
+  }

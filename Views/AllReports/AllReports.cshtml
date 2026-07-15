@@ -1,0 +1,211 @@
+﻿@{
+    ViewData["Title"] = "AllReports";
+    var returnUrl = Url.Action("AllReports", "AllReports");
+}
+
+<style>
+    /* Outer panel like screenshot */
+    
+
+    .report-panel {
+        border-radius: 10px;
+        background: #FAF0E6;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.10);
+        padding: 22px 14px 16px;
+    }
+
+    .panel-title {
+        position: absolute;
+        top: -11px;
+        left: 10px;
+        /* background: #fff; */
+        padding: 0 8px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #222;
+        font-display : revert-layer;
+        font-family : 'Times New Roman';
+        font-weight : bold;
+    }
+
+    /* Group cards grid (main cards) */
+    .group-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(260px, 1fr));
+        gap: 10px;
+    }
+
+    /* Razor needs @@media inside cshtml */
+    @@media (max-width: 1100px) {
+        .group-grid {
+            grid-template-columns: repeat(2, minmax(260px, 1fr));
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .group-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Main group card like screenshot */
+    /* Main group card - 3D look */
+    .group-card {
+        border: 1px solid #d0d0d0;
+        border-radius: 10px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+        padding: 14px;
+        position: relative;
+        overflow: hidden;
+        min-height: 120px;
+        /* 3D shadow */
+        box-shadow: 0 10px 18px rgba(0,0,0,0.12), 0 2px 0 rgba(255,255,255,0.9) inset;
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .group-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 26px rgba(0,0,0,0.18), 0 2px 0 rgba(255,255,255,0.9) inset;
+        }
+
+    /* Group name a bit bigger */
+    .group-name {
+        font-size: 13px;
+        font-weight: 900;
+        color: #111;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    /* Sub cards - 3D small tiles */
+    .sub-card {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #d6d6d6;
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: linear-gradient(180deg, #f0FFFF 0%, #f6f6f6 100%);
+        text-decoration: none;
+        color: #111;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.9) inset;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+        .sub-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 18px rgba(0,0,0,0.16), 0 1px 0 rgba(255,255,255,0.9) inset;
+            text-decoration: none;
+            color: #111;
+        }
+
+    /* Bullet and text */
+    .bullet {
+        font-size: 18px;
+        line-height: 1;
+        color: #111;
+    }
+
+    .sub-text {
+        font-size: 13px;
+        font-weight: 800;
+        color: #222;
+        line-height: 1.2;
+    }
+
+    
+</style>
+
+<div class="container-fluid mt-3">
+    <div class="report-panel">
+        <div class="panel-title">All Reports</div>
+
+        <div class="group-grid">
+
+            <!-- GROUP: MPL -->
+            <div class="group-card">
+                <div class="group-name">MPL</div>
+
+                <div class="sub-grid">
+                    <a class="sub-card"
+                       href="@Url.Action("NCR_PartEngine_Report", "NCR", new { returnUrl = returnUrl })"
+                       target="_blank" rel="noopener noreferrer">
+                        <span class="bullet">•</span>
+                        <span class="sub-text">NCR Part-Engine Report</span>
+                    </a>
+
+                    <a class="sub-card"
+                       href="@Url.Action("Report", "MPL", new { returnUrl = returnUrl })"
+                       target="_blank" rel="noopener noreferrer">
+                        <span class="bullet">•</span>
+                        <span class="sub-text">MPL Report</span>
+                    </a>
+                </div>
+
+                
+            </div>
+
+            <!-- GROUP: SOP MANAGEMENT -->
+            <div class="group-card">
+                <div class="group-name">SOP Management</div>
+
+                <div class="sub-grid">
+                    <a class="sub-card"
+                       href="@Url.Action("BATLPartsUpdationReport", "SOPManagement", new { returnUrl = returnUrl })"
+                       target="_blank" rel="noopener noreferrer">
+                        <span class="bullet">•</span>
+                        <span class="sub-text">SOP data availability report - BATL</span>
+                    </a>
+                </div>
+
+                
+            </div>
+
+            <!-- GROUP: PROCUREMENT REPORTS -->
+            <div class="group-card">
+                <div class="group-name">Procurement Reports</div>
+
+                <div class="sub-grid">
+                    <a class="sub-card"
+                       href="@Url.Action("ConsolidatedInventoryReport", "report", new { returnUrl = returnUrl })"
+                       target="_blank" rel="noopener noreferrer">
+                        <span class="bullet">•</span>
+                        <span class="sub-text">Consolidated Inventory Report</span>
+                    </a>
+
+                    <a class="sub-card"
+                       href="@Url.Action("ProductionPlanningReport", "report", new { returnUrl = returnUrl })"
+                       target="_blank" rel="noopener noreferrer">
+                        <span class="bullet">•</span>
+                        <span class="sub-text">Raw material stock availability</span>
+                    </a>
+
+                    <a class="sub-card"
+                       href="@Url.Action("MilestoneReport", "DemandManagement", new { returnUrl = returnUrl })"
+                       target="_blank" rel="noopener noreferrer">
+                        <span class="bullet">•</span>
+                        <span class="sub-text">MileStone Status Summary</span>
+                    </a>
+
+                    <a class="sub-card"
+                       href="@Url.Action("DemandReceiptsHistory", "DemandManagement", new { returnUrl = returnUrl })"
+                       target="_blank" rel="noopener noreferrer">
+                        <span class="bullet">•</span>
+                        <span class="sub-text">Demand Receipt Details</span>
+                    </a>
+
+                    <a class="sub-card"
+                       href="@Url.Action("MaterialIssueReport", "report", new { returnUrl = returnUrl })"
+                       target="_blank" rel="noopener noreferrer">
+                        <span class="bullet">•</span>
+                        <span class="sub-text">Material Issue Report</span>
+                    </a>
+                </div>
+
+               
+            </div>
+
+        </div>
+    </div>
+</div>

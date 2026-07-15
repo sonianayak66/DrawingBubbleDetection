@@ -1,0 +1,81 @@
+﻿@model string
+@using System.Data
+@using MPCRS.Utilities
+@{
+    var dt = MPGlobals.GetDataForDatalist($"[dbo].[MasterSearch_SOPBuilds] @PartNumber = '{Model}'");
+}
+
+<style>
+    .revhist {
+        color: hsl(27deg 83.86% 44.54%) !important;
+    }
+
+    .odditems {
+        background-color: white;
+    }
+
+    .evenitems {
+        background-color: lightgrey;
+    }
+</style>
+@{
+    if (dt.Rows.Count > 0)
+    {
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th colspan="13" class="revhist">SOP Build Details</th>
+                <tr>
+                    <th class="revhist">PART</th>
+                    <th class="revhist">ASSY/SUBASSY</th>
+                    <th class="revhist">Build</th>
+                    <th class="revhist">Revision</th>
+                    <th class="revhist">QtyPerEngine</th>
+                    <th class="revhist">Description</th>
+                    <th class="revhist">JobCard</th>
+                    <th class="revhist">ContractNumber</th>
+                    <th class="revhist">SerialNumber</th>
+                    <th class="revhist">Remarks</th>
+                    <th class="revhist">SchemeNumber</th>
+                    <th class="revhist">IsActive</th>
+                    <th class="revhist">UpdatedOn</th>
+                    <th class="revhist">Attachments</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (DataRow row in dt.Rows)
+                {
+                    <tr>
+                        <td>@row["DrawingNumber"]</td>
+                        <td>@row["ParentPart"]</td>
+                        <th>@row["BuildName"]</th>
+                        <th>@row["Revision"]</th>
+                        <th>@row["QtyPerEngine"]</th>
+                        <td>@row["Description"]</td>
+                        <td>@row["JobCard"]</td>
+                        <td>@row["ContractNumber"]</td>
+                        <td>@row["SerialNumber"]</td>
+                        <td>@row["Remarks"]</td>
+                        <td>@row["SchemeNumber"]</td>
+                        <td>@row["IsActive"]</td>
+                        <td>@row["UpdatedOn"]</td>
+                        <td>
+                            @if (@row["AttachmentFiles"] != DBNull.Value && !string.IsNullOrEmpty(row["AttachmentFiles"].ToString()))
+                            {
+                                @Html.Raw(row["AttachmentFiles"])
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <h4>No data available</h4>
+    }
+}

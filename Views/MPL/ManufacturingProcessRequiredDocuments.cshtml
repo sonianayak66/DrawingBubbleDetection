@@ -1,0 +1,26 @@
+﻿@model List<MPCRS.Models.Manufacturing_Process_Documents_Required>
+
+<table>
+	<thead>
+		<tr>
+			<th>Document Type</th>
+			<th>Required</th>
+		</tr>
+	</thead>
+	<tbody id="tblBody">
+		@{
+			foreach (var item in Model)
+			{
+				bool isChecked = item.Required == null ? false : (item.Required == true ? true : false);
+				<tr>
+					<td>@item.Attachment_Type</td>
+					<td><input class="required-docs" data-typekey="@item.AttachmentTypeKey" data-dbkey="@item.Id" data-partdbkey="@ViewBag.enginePartDbkey" asp-for="@isChecked" data-filename="@item.Attachment_Type" type="checkbox" /></td>
+				</tr>
+			}
+		}
+	</tbody>
+
+</table>
+<tfoot>
+	<input type="button" id="button-saveManufacturingProcessDocumentList" class="btn btn-success" value="Save" onclick="saveManufacturingProcessDocumentList()" />
+</tfoot>

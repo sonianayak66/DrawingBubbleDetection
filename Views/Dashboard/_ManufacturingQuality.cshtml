@@ -1,0 +1,1026 @@
+﻿@model MPCRS.ViewModels.DashboardManufacturingQualityVM
+
+@{
+    // Pre-calculate values for display
+    var ncrDist = Model.NCRDistribution ?? new MPCRS.ViewModels.NCRFullDistribution();
+    var ncrAge = Model.NCRAgeSummary ?? new MPCRS.ViewModels.NCRAgeSummary();
+    var acsnSeries = Model.ACSNBySeriesDistribution ?? new List<MPCRS.ViewModels.ACSNSeriesDistribution>();
+    var acsnAge = Model.ACSNOpenByAge ?? new List<MPCRS.ViewModels.ACSNOpenByAge>();
+}
+
+<style>
+    /* ============================================ */
+    /* MANUFACTURING KPI CARDS                      */
+    /* Reuses .dashboard-kpi-card from Procurement  */
+    /* ============================================ */
+
+    /* Muted professional border colors */
+    .border-mfg-slate {
+        border-color: #475569 !important;
+    }
+
+    .border-mfg-amber {
+        border-color: #b45309 !important;
+    }
+
+    .border-mfg-red {
+        border-color: #b91c1c !important;
+    }
+
+    .border-mfg-purple {
+        border-color: #6d28d9 !important;
+    }
+
+    .text-mfg-slate {
+        color: #475569 !important;
+    }
+
+    .text-mfg-amber {
+        color: #b45309 !important;
+    }
+
+    .text-mfg-red {
+        color: #b91c1c !important;
+    }
+
+    .text-mfg-purple {
+        color: #6d28d9 !important;
+    }
+
+    /* NCR segmented bar */
+    .ncr-segment-bar {
+        display: flex;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+        background: #f1f5f9;
+    }
+
+        .ncr-segment-bar .seg {
+            transition: width 0.4s ease;
+            min-width: 2px;
+        }
+
+    .seg-l1 {
+        background: #f59e0b;
+    }
+
+    .seg-l2 {
+        background: #d97706;
+    }
+
+    .seg-partial {
+        background: #a855f7;
+    }
+
+    .seg-cleared {
+        background: #22c55e;
+    }
+
+    .seg-rejected {
+        background: #ef4444;
+    }
+
+    /* NCR age segments */
+    .age-segment-bar {
+        display: flex;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+        background: #f1f5f9;
+    }
+
+    .seg-fresh {
+        background: #22c55e;
+    }
+
+    .seg-aging {
+        background: #f59e0b;
+    }
+
+    .seg-overdue {
+        background: #ef4444;
+    }
+
+    /* ACSN progress bars */
+    .acsn-series-row {
+        margin-bottom: 0.35rem;
+    }
+
+    .acsn-series-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 2px;
+    }
+
+    .acsn-progress {
+        display: flex;
+        height: 6px;
+        border-radius: 3px;
+        overflow: hidden;
+        background: #f1f5f9;
+    }
+
+        .acsn-progress .closed-bar {
+            background: #22c55e;
+            transition: width 0.4s ease;
+        }
+
+        .acsn-progress .open-bar {
+            background: #f59e0b;
+            transition: width 0.4s ease;
+        }
+
+    /* Legend dots */
+    .legend-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 3px;
+    }
+
+    .legend-item {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-right: 8px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    /* Source label */
+    .kpi-source {
+        font-size: 0.65rem;
+        color: #94a3b8;
+        position: absolute;
+        bottom: 4px;
+        left: 8px;
+        font-style: italic;
+    }
+
+    /* Modal table styles */
+    .modal-detail-table {
+        font-size: 0.8rem;
+    }
+
+        .modal-detail-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+
+        .modal-detail-table td {
+            vertical-align: middle;
+        }
+</style>
+
+<!-- ============================================ -->
+<!-- ROW 1: KPI CARDS (4 cards)                   -->
+<!-- ============================================ -->
+<div class="row mb-3 g-2">
+
+    <!-- Card 1: Engine Builds -->
+    <div class="col-12 col-md-6 col-xl-3 mb-2">
+        <div class="dashboard-kpi-card border-mfg-slate clickable h-100"
+             data-bs-toggle="modal" data-bs-target="#engineBuildsModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <i class="uil uil-cog kpi-bg-icon" style="color: #475569;"></i>
+            <div class="kpi-content">
+                <div class="kpi-label">ENGINE BUILDS</div>
+                <div class="kpi-value text-mfg-slate">@Model.Summary.ActiveEngineBuildsCount</div>
+                <div class="kpi-sublabel">Active / In Progress</div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Completed:</span>
+                    <span class="kpi-value-sm text-success">@Model.Summary.CompletedEngineBuildsCount</span>
+                </div>
+                <div class="kpi-detail-row">
+                    <span class="kpi-text">Total Builds:</span>
+                    <span class="kpi-value-sm">@Model.Summary.TotalEngineBuildsCount</span>
+                </div>
+
+                @if (Model.EnginesByStatus != null && Model.EnginesByStatus.Any())
+                {
+                    <div class="kpi-highlight-compact">
+                        @foreach (var s in Model.EnginesByStatus.Take(3))
+                        {
+                            <span class="badge badge-xs bg-light text-dark me-1">@s.Status: @s.EngineCount</span>
+                        }
+                    </div>
+                }
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+              
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: NCR Distribution -->
+    <div class="col-12 col-md-6 col-xl-3 mb-2">
+        <div class="dashboard-kpi-card border-mfg-amber clickable h-100"
+             data-bs-toggle="modal" data-bs-target="#ncrDistributionModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <i class="uil uil-exclamation-triangle kpi-bg-icon" style="color: #b45309;"></i>
+            <div class="kpi-content">
+                <div class="kpi-label">NCR DISTRIBUTION</div>
+                <div class="kpi-value text-mfg-amber">@ncrDist.TotalNCRs</div>
+                <div class="kpi-sublabel">Total Reports</div>
+
+                <!-- Segmented Bar -->
+                @{
+                    var ncrTotal = ncrDist.TotalNCRs > 0 ? ncrDist.TotalNCRs : 1;
+                    var pctL1 = (ncrDist.InProgress_L1 * 100.0 / ncrTotal);
+                    var pctL2 = (ncrDist.InProgress_L2 * 100.0 / ncrTotal);
+                    var pctPartial = (ncrDist.PartiallyCleared * 100.0 / ncrTotal);
+                    var pctCleared = (ncrDist.Cleared * 100.0 / ncrTotal);
+                    var pctRejected = (ncrDist.Rejected * 100.0 / ncrTotal);
+                }
+                <div class="ncr-segment-bar">
+                    <div class="seg seg-l1" style="width: @pctL1.ToString("F1")%" title="In Process L1: @ncrDist.InProgress_L1"></div>
+                    <div class="seg seg-l2" style="width: @pctL2.ToString("F1")%" title="In Process L2: @ncrDist.InProgress_L2"></div>
+                    <div class="seg seg-partial" style="width: @pctPartial.ToString("F1")%" title="Partially Cleared: @ncrDist.PartiallyCleared"></div>
+                    <div class="seg seg-cleared" style="width: @pctCleared.ToString("F1")%" title="Cleared: @ncrDist.Cleared"></div>
+                    <div class="seg seg-rejected" style="width: @pctRejected.ToString("F1")%" title="Rejected: @ncrDist.Rejected"></div>
+                </div>
+
+                <!-- Legend -->
+                <div style="line-height: 1.6;">
+                    <span class="legend-item"><span class="legend-dot seg-l1"></span>L1: @ncrDist.InProgress_L1</span>
+                    <span class="legend-item"><span class="legend-dot seg-l2"></span>L2: @ncrDist.InProgress_L2</span>
+                    <span class="legend-item"><span class="legend-dot seg-cleared"></span>Cleared: @ncrDist.Cleared</span>
+                    <span class="legend-item"><span class="legend-dot seg-rejected"></span>Rejected: @ncrDist.Rejected</span>
+                    <span class="legend-item"><span class="legend-dot seg-partial"></span>Partial: @ncrDist.PartiallyCleared</span>
+                </div>
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+               
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: NCR Age Health -->
+    <div class="col-12 col-md-6 col-xl-3 mb-2">
+        <div class="dashboard-kpi-card border-mfg-red clickable h-100"
+             data-bs-toggle="modal" data-bs-target="#ncrAgeModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <i class="uil uil-clock-three kpi-bg-icon" style="color: #b91c1c;"></i>
+            <div class="kpi-content">
+                <div class="kpi-label">NCR AGE HEALTH</div>
+                <div class="kpi-value text-mfg-red">@ncrAge.TotalActiveNCRs</div>
+                <div class="kpi-sublabel">Active (In Process)</div>
+
+                <!-- Age segmented bar -->
+                @{
+                    var ageTotal = ncrAge.TotalActiveNCRs > 0 ? ncrAge.TotalActiveNCRs : 1;
+                    var pctFresh = (ncrAge.NCRs_0_30_Days * 100.0 / ageTotal);
+                    var pctAging = (ncrAge.NCRs_31_60_Days * 100.0 / ageTotal);
+                    var pctOverdue = (ncrAge.NCRs_Over_60_Days * 100.0 / ageTotal);
+                }
+                <div class="age-segment-bar">
+                    <div class="seg seg-fresh" style="width: @pctFresh.ToString("F1")%" title="0-30 Days: @ncrAge.NCRs_0_30_Days"></div>
+                    <div class="seg seg-aging" style="width: @pctAging.ToString("F1")%" title="31-60 Days: @ncrAge.NCRs_31_60_Days"></div>
+                    <div class="seg seg-overdue" style="width: @pctOverdue.ToString("F1")%" title="60+ Days: @ncrAge.NCRs_Over_60_Days"></div>
+                </div>
+
+                <div class="kpi-detail-row">
+                    <span class="kpi-text"><span class="legend-dot seg-fresh"></span>0-30 Days:</span>
+                    <span class="kpi-value-sm text-success">@ncrAge.NCRs_0_30_Days</span>
+                </div>
+                <div class="kpi-detail-row">
+                    <span class="kpi-text"><span class="legend-dot seg-aging"></span>31-60 Days:</span>
+                    <span class="kpi-value-sm text-warning">@ncrAge.NCRs_31_60_Days</span>
+                </div>
+                <div class="kpi-detail-row">
+                    <span class="kpi-text"><span class="legend-dot seg-overdue"></span>60+ Days:</span>
+                    <span class="kpi-value-sm text-danger">@ncrAge.NCRs_Over_60_Days</span>
+                </div>
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: ACSN Overview -->
+    <div class="col-12 col-md-6 col-xl-3 mb-2">
+        <div class="dashboard-kpi-card border-mfg-purple clickable h-100"
+             data-bs-toggle="modal" data-bs-target="#acsnOverviewModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <i class="uil uil-file-check-alt kpi-bg-icon" style="color: #6d28d9;"></i>
+            <div class="kpi-content">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="kpi-label">ACSN OVERVIEW</div>
+                        <div class="kpi-value text-mfg-purple">@Model.Summary.PendingACSNCount</div>
+                        <div class="kpi-sublabel">Open / Pending</div>
+                    </div>
+                    <div class="text-end" style="font-size: 0.85rem; line-height: 1.6;">
+                        <span class="text-muted">Closed:</span> <span class="fw-bold text-success">@Model.Summary.ClosedACSNCount</span><br />
+                        <span class="text-muted">Total:</span> <span class="fw-bold">@Model.Summary.TotalACSNCount</span>
+                    </div>
+                </div>
+
+                <!-- Series-wise progress bars -->
+                @if (acsnSeries.Any())
+                {
+                    @foreach (var series in acsnSeries.Take(3))
+                    {
+                        var seriesTotal = series.TotalCount > 0 ? series.TotalCount : 1;
+                        var closedPct = (series.ClosedCount * 100.0 / seriesTotal);
+                        var openPct = (series.OpenCount * 100.0 / seriesTotal);
+                        <div class="acsn-series-row">
+                            <div class="acsn-series-label">@series.Series — <span class="text-success">@series.ClosedCount</span> / <span class="text-warning">@series.OpenCount</span></div>
+                            <div class="acsn-progress">
+                                <div class="closed-bar" style="width: @closedPct.ToString("F1")%"></div>
+                                <div class="open-bar" style="width: @openPct.ToString("F1")%"></div>
+                            </div>
+                        </div>
+                    }
+                }
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ROW 2: CHARTS (2 charts)                     -->
+<!-- ============================================ -->
+<div class="row mb-3">
+    <div class="col-12 col-lg-6 mb-3">
+        <div class="compact-card">
+            <div class="compact-card-header">
+                <h6 class="mb-0"><i class="uil uil-chart-bar me-1"></i>Module-wise Parts Distribution</h6>
+            </div>
+            <div class="compact-card-body">
+                <canvas id="modulePartsChart" style="max-height: 200px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6 mb-3">
+        <div class="compact-card">
+            <div class="compact-card-header">
+                <h6 class="mb-0"><i class="uil uil-chart-pie me-1"></i>NCR Status Distribution</h6>
+            </div>
+            <div class="compact-card-body">
+                <canvas id="ncrDistributionChart" style="max-height: 200px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ROW 3: ACTIONABLE TABLES                     -->
+<!-- ============================================ -->
+<div class="row mb-3">
+
+    <!-- NCRs Requiring Attention (>30 days) -->
+    <div class="col-12 mb-3">
+        <div class="compact-card">
+            <div class="compact-card-header clickable" data-bs-toggle="collapse" data-bs-target="#oldNCRsTable">
+                <h6 class="mb-0">
+                    <i class="uil uil-angle-down collapse-icon"></i>
+                    <i class="uil uil-exclamation-octagon text-danger me-1"></i>
+                    NCRs Requiring Attention (Pending &gt; 30 Days)
+                    <span class="badge bg-danger ms-2">@(Model.OldNCRs?.Count ?? 0)</span>
+                </h6>
+            </div>
+            <div id="oldNCRsTable" class="collapse">
+                <div class="compact-card-body-table">
+                    <table class="table table-sm table-hover mb-0 modal-detail-table">
+                        <thead>
+                            <tr>
+                                <th>NCR Reference</th>
+                                <th>Received Date</th>
+                                <th>Days Pending</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.OldNCRs != null)
+                            {
+                                @foreach (var ncr in Model.OldNCRs)
+                                {
+                                    <tr>
+                                        <td><strong>@ncr.ReferenceNumber</strong></td>
+                                        <td>@(ncr.ReceivedDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                        <td>
+                                            @if (ncr.DaysPending > 60)
+                                            {
+                                                <span class="badge bg-danger">@ncr.DaysPending days</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark">@ncr.DaysPending days</span>
+                                            }
+                                        </td>
+                                        <td>@ncr.ReportStatus</td>
+                                        <td><small>@ncr.Remarks</small></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACSN Step Progress -->
+    <div class="col-12 mb-3">
+        <div class="compact-card">
+            <div class="compact-card-header clickable" data-bs-toggle="collapse" data-bs-target="#acsnStepsTable">
+                <h6 class="mb-0">
+                    <i class="uil uil-angle-down collapse-icon"></i>
+                    <i class="uil uil-list-ol text-mfg-purple me-1"></i>
+                    ACSN Step Progress — Currently Active
+                </h6>
+            </div>
+            <div id="acsnStepsTable" class="collapse">
+                <div class="compact-card-body-table">
+                    <table class="table table-sm table-hover mb-0 modal-detail-table">
+                        <thead>
+                            <tr>
+                                <th>Step Name</th>
+                                <th>ACSNs at this Step</th>
+                                <th>Distribution</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.ACSNItemsByStep != null)
+                            {
+                                var maxActive = Model.ACSNItemsByStep.Max(x => x.ActiveItems);
+                                maxActive = maxActive > 0 ? maxActive : 1;
+                                @foreach (var step in Model.ACSNItemsByStep.OrderByDescending(x => x.ActiveItems))
+                                {
+                                    var barPct = (step.ActiveItems * 100.0 / maxActive);
+                                    <tr>
+                                        <td><strong>@step.StepName</strong></td>
+                                        <td><span class="badge bg-primary">@step.ActiveItems</span></td>
+                                        <td style="width: 250px;">
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar" style="width: @barPct.ToString("F0")%; background: #6d28d9;" role="progressbar"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NCR Rework Items -->
+    @if (Model.NCRReworkItems != null && Model.NCRReworkItems.Any())
+    {
+        <div class="col-12 mb-3">
+            <div class="compact-card">
+                <div class="compact-card-header clickable" data-bs-toggle="collapse" data-bs-target="#reworkTable">
+                    <h6 class="mb-0">
+                        <i class="uil uil-angle-down collapse-icon"></i>
+                        <i class="uil uil-redo text-warning me-1"></i>
+                        NCR Rework Items
+                        <span class="badge bg-warning text-dark ms-2">@Model.NCRReworkItems.Count</span>
+                    </h6>
+                </div>
+                <div id="reworkTable" class="collapse">
+                    <div class="compact-card-body-table">
+                        <table class="table table-sm table-hover mb-0 modal-detail-table">
+                            <thead>
+                                <tr>
+                                    <th>NCR Reference</th>
+                                    <th>Serial Number</th>
+                                    <th>Part Number</th>
+                                    <th>Description</th>
+                                    <th>Engine</th>
+                                    <th>Received Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.NCRReworkItems)
+                                {
+                                    <tr>
+                                        <td><strong>@item.ReferenceNumber</strong></td>
+                                        <td>@item.SerialNumber</td>
+                                        <td>@item.Draw_part_no</td>
+                                        <td><small>@item.PartDescription</small></td>
+                                        <td>@item.Engine</td>
+                                        <td>@(item.ReceivedDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ============================================ -->
+<!-- MODALS                                       -->
+<!-- ============================================ -->
+<!-- Modal 1: Engine Builds Detail -->
+<div class="modal fade" id="engineBuildsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #f8fafc; border-bottom: 3px solid #475569;">
+                <h6 class="modal-title"><i class="uil uil-cog me-2"></i>Engine Builds Detail</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Status Summary -->
+                <div class="row g-2 mb-3">
+                    @if (Model.EnginesByStatus != null)
+                    {
+                        @foreach (var status in Model.EnginesByStatus)
+                        {
+                            <div class="col-auto">
+                                <span class="badge @(status.Status == "In Progress" ? "bg-primary" : status.Status == "Completed" ? "bg-success" : "bg-secondary") fs--1 p-2">
+                                    @status.Status: @status.EngineCount
+                                </span>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <!-- Active Builds Table -->
+                <h6 class="mb-2"><i class="uil uil-constructor me-1"></i>Active Builds (In Progress)</h6>
+                <table class="table table-sm table-hover modal-detail-table">
+                    <thead>
+                        <tr>
+                            <th>Build Name</th>
+                            <th>Build Date</th>
+                            <th>Reference</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.ActiveEngineBuilds != null)
+                        {
+                            @foreach (var build in Model.ActiveEngineBuilds)
+                            {
+                                <tr>
+                                    <td><strong>@build.BuildName</strong></td>
+                                    <td>@(build.BuildDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                    <td>@build.ReferenceNumber</td>
+                                    <td><span class="badge bg-primary">@build.Status</span></td>
+                                    <td>@(build.CreatedOn?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+
+                @if (Model.CompletedEngines != null && Model.CompletedEngines.Any())
+                {
+                    <h6 class="mb-2 mt-3"><i class="uil uil-check-circle me-1 text-success"></i>Recently Completed</h6>
+                    <table class="table table-sm table-hover modal-detail-table">
+                        <thead>
+                            <tr>
+                                <th>Build Name</th>
+                                <th>Build Date</th>
+                                <th>Reference</th>
+                                <th>Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var build in Model.CompletedEngines)
+                            {
+                                <tr>
+                                    <td><strong>@build.BuildName</strong></td>
+                                    <td>@(build.BuildDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                    <td>@build.ReferenceNumber</td>
+                                    <td>@(build.CompletedDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+            <div class="modal-footer"> 
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: NCR Distribution Detail -->
+<div class="modal fade" id="ncrDistributionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #fffbeb; border-bottom: 3px solid #b45309;">
+                <h6 class="modal-title"><i class="uil uil-exclamation-triangle me-2"></i>NCR Distribution Detail</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Distribution Summary -->
+                <div class="row g-2 mb-3">
+                    <div class="col-auto"><span class="badge p-2" style="background: #f59e0b; color: #fff;">In Process L1: @ncrDist.InProgress_L1</span></div>
+                    <div class="col-auto"><span class="badge p-2" style="background: #d97706; color: #fff;">In Process L2: @ncrDist.InProgress_L2</span></div>
+                    <div class="col-auto"><span class="badge p-2" style="background: #a855f7; color: #fff;">Partially Cleared: @ncrDist.PartiallyCleared</span></div>
+                    <div class="col-auto"><span class="badge p-2 bg-success">Cleared: @ncrDist.Cleared</span></div>
+                    <div class="col-auto"><span class="badge p-2 bg-danger">Rejected: @ncrDist.Rejected</span></div>
+                </div>
+
+                <!-- NCRs by Module -->
+                @if (Model.NCRsByModule != null && Model.NCRsByModule.Any())
+                {
+                    <h6 class="mb-2"><i class="uil uil-layer-group me-1"></i>NCRs by Module (Active)</h6>
+                    <table class="table table-sm table-hover modal-detail-table mb-3">
+                        <thead>
+                            <tr>
+                                <th>Module</th>
+                                <th>NCR Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var mod in Model.NCRsByModule)
+                            {
+                                <tr>
+                                    <td>@mod.ModuleName</td>
+                                    <td><span class="badge bg-warning text-dark">@mod.NCRCount</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+
+                <!-- NCRs by Received From -->
+                @if (Model.NCRsByReceivedFrom != null && Model.NCRsByReceivedFrom.Any())
+                {
+                    <h6 class="mb-2"><i class="uil uil-inbox me-1"></i>NCRs by Received From (Active)</h6>
+                    <table class="table table-sm table-hover modal-detail-table mb-3">
+                        <thead>
+                            <tr>
+                                <th>Received From</th>
+                                <th>NCR Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var rf in Model.NCRsByReceivedFrom)
+                            {
+                                <tr>
+                                    <td>@rf.ReceivedFromName</td>
+                                    <td><span class="badge bg-warning text-dark">@rf.NCRCount</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+
+                <!-- Top Parts with NCRs -->
+                @if (Model.TopPartsWithNCRs != null && Model.TopPartsWithNCRs.Any())
+                {
+                    <h6 class="mb-2"><i class="uil uil-exclamation-circle me-1 text-danger"></i>Top Parts with Active NCRs</h6>
+                    <table class="table table-sm table-hover modal-detail-table">
+                        <thead>
+                            <tr>
+                                <th>Part Number</th>
+                                <th>Description</th>
+                                <th>NCR Count</th>
+                                <th>References</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var part in Model.TopPartsWithNCRs)
+                            {
+                                <tr>
+                                    <td><strong>@part.Draw_part_no</strong></td>
+                                    <td><small>@part.Description</small></td>
+                                    <td><span class="badge bg-danger">@part.NCRCount</span></td>
+                                    <td><small>@part.NCR_References</small></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+            <div class="modal-footer">
+               
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: NCR Age Detail -->
+<div class="modal fade" id="ncrAgeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #fef2f2; border-bottom: 3px solid #b91c1c;">
+                <h6 class="modal-title"><i class="uil uil-clock-three me-2"></i>NCR Age Analysis (Active NCRs)</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Age Summary Badges -->
+                <div class="row g-2 mb-3">
+                    <div class="col-auto"><span class="badge p-2 bg-success">0-30 Days: @ncrAge.NCRs_0_30_Days</span></div>
+                    <div class="col-auto"><span class="badge p-2 bg-warning text-dark">31-60 Days: @ncrAge.NCRs_31_60_Days</span></div>
+                    <div class="col-auto"><span class="badge p-2 bg-danger">60+ Days: @ncrAge.NCRs_Over_60_Days</span></div>
+                </div>
+
+                <!-- NCRs by Workflow Stage -->
+                @if (Model.NCRsByStage != null && Model.NCRsByStage.Any())
+                {
+                    <h6 class="mb-2"><i class="uil uil-process me-1"></i>Active NCRs by Workflow Stage</h6>
+                    <table class="table table-sm table-hover modal-detail-table mb-3">
+                        <thead>
+                            <tr>
+                                <th>Stage</th>
+                                <th>NCR Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var stage in Model.NCRsByStage)
+                            {
+                                <tr>
+                                    <td><strong>@stage.Stage</strong></td>
+                                    <td><span class="badge bg-primary">@stage.NCRCount</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+
+                <!-- Old NCRs List -->
+                @if (Model.OldNCRs != null && Model.OldNCRs.Any())
+                {
+                    <h6 class="mb-2"><i class="uil uil-exclamation-octagon me-1 text-danger"></i>NCRs Pending &gt; 30 Days</h6>
+                    <table class="table table-sm table-hover modal-detail-table">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Received Date</th>
+                                <th>Days Pending</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var ncr in Model.OldNCRs)
+                            {
+                                <tr>
+                                    <td><strong>@ncr.ReferenceNumber</strong></td>
+                                    <td>@(ncr.ReceivedDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                    <td>
+                                        <span class="badge @(ncr.DaysPending > 60 ? "bg-danger" : "bg-warning text-dark")">
+                                            @ncr.DaysPending days
+                                        </span>
+                                    </td>
+                                    <td>@ncr.ReportStatus</td>
+                                    <td><small>@ncr.Remarks</small></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+            <div class="modal-footer">
+             
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 4: ACSN Overview Detail -->
+<div class="modal fade" id="acsnOverviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #f5f3ff; border-bottom: 3px solid #6d28d9;">
+                <h6 class="modal-title"><i class="uil uil-file-check-alt me-2"></i>ACSN Overview Detail</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Status Summary -->
+                @if (Model.ACSNByStatus != null)
+                {
+                    <div class="row g-2 mb-3">
+                        @foreach (var st in Model.ACSNByStatus)
+                        {
+                            <div class="col-auto">
+                                <span class="badge p-2 @(st.ACSN_Status == "Closed" ? "bg-success" : "bg-warning text-dark")">
+                                    @st.ACSN_Status: @st.RecordCount
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Series Distribution -->
+                @if (acsnSeries.Any())
+                {
+                    <h6 class="mb-2"><i class="uil uil-chart-bar me-1"></i>Series-wise Distribution</h6>
+                    <table class="table table-sm table-hover modal-detail-table mb-3">
+                        <thead>
+                            <tr>
+                                <th>Series</th>
+                                <th>Open</th>
+                                <th>Closed</th>
+                                <th>Total</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var series in acsnSeries)
+                            {
+                                var sTotal = series.TotalCount > 0 ? series.TotalCount : 1;
+                                var cPct = (series.ClosedCount * 100.0 / sTotal);
+                                <tr>
+                                    <td><strong>@series.Series</strong></td>
+                                    <td><span class="badge bg-warning text-dark">@series.OpenCount</span></td>
+                                    <td><span class="badge bg-success">@series.ClosedCount</span></td>
+                                    <td>@series.TotalCount</td>
+                                    <td style="width: 150px;">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-success" style="width: @cPct.ToString("F0")%;" role="progressbar"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+
+                <!-- Open ACSNs by Age -->
+                @if (acsnAge.Any())
+                {
+                    <h6 class="mb-2"><i class="uil uil-clock me-1"></i>Open ACSNs by Age</h6>
+                    <table class="table table-sm table-hover modal-detail-table mb-3">
+                        <thead>
+                            <tr>
+                                <th>Age Bucket</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var age in acsnAge)
+                            {
+                                <tr>
+                                    <td>@age.AgeBucket</td>
+                                    <td><span class="badge bg-warning text-dark">@age.ACSNCount</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+
+                <!-- Pending ACSNs List -->
+                @if (Model.PendingACSNs != null && Model.PendingACSNs.Any())
+                {
+                    <h6 class="mb-2"><i class="uil uil-hourglass me-1 text-warning"></i>Pending ACSN Approvals (Top 20)</h6>
+                    <table class="table table-sm table-hover modal-detail-table">
+                        <thead>
+                            <tr>
+                                <th>ACSN #</th>
+                                <th>Drawing No</th>
+                                <th>Description</th>
+                                <th>Days Pending</th>
+                                <th>Existing Rev</th>
+                                <th>New Rev</th>
+                                <th>Module</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var acsn in Model.PendingACSNs)
+                            {
+                                <tr>
+                                    <td><strong>@acsn.ACSNnum</strong></td>
+                                    <td>@acsn.DrawingNumber</td>
+                                    <td><small>@acsn.description</small></td>
+                                    <td>
+                                        <span class="badge @(acsn.DaysPending > 60 ? "bg-danger" : "bg-warning text-dark")">
+                                            @acsn.DaysPending days
+                                        </span>
+                                    </td>
+                                    <td>@acsn.existingRevision</td>
+                                    <td>@acsn.NewRevision</td>
+                                    <td>@acsn.ModuleName</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+            <div class="modal-footer">
+              
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var manufacturingChartData = {
+        modulePartsData: @Html.Raw(Json.Serialize(Model.ModulePartsDistribution)),
+        ncrDistribution: @Html.Raw(Json.Serialize(Model.NCRDistribution))
+    };
+
+    $(document).ready(function () {
+        // Module Parts Bar Chart (existing)
+        if (manufacturingChartData.modulePartsData && manufacturingChartData.modulePartsData.length > 0) {
+            renderModulePartsChart(manufacturingChartData.modulePartsData);
+        }
+
+        // NCR Distribution Donut Chart (new)
+        renderNCRDistributionDonut(manufacturingChartData.ncrDistribution);
+
+        // Initialize collapsible tables
+        initializeCollapsibleTables();
+
+        // Fix: Move modals to body and clean up backdrop issues
+        $('#engineBuildsModal, #ncrDistributionModal, #ncrAgeModal, #acsnOverviewModal').each(function () {
+            $(this).appendTo('body');
+
+            $(this).on('shown.bs.modal', function () {
+                var backdrops = $('.modal-backdrop');
+                if (backdrops.length > 1) {
+                    backdrops.not(':last').remove();
+                }
+            });
+
+            $(this).on('hidden.bs.modal', function () {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open').css({ 'overflow': '', 'padding-right': '' });
+            });
+        });
+    });
+
+    function renderNCRDistributionDonut(data) {
+        if (!data) return;
+
+        var canvas = document.getElementById('ncrDistributionChart');
+        if (!canvas) return;
+
+        var ctx = canvas.getContext('2d');
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['In Process (L1)', 'In Process (L2)', 'Partially Cleared', 'Cleared', 'Rejected'],
+                datasets: [{
+                    data: [
+                        data.inProgress_L1 || 0,
+                        data.inProgress_L2 || 0,
+                        data.partiallyCleared || 0,
+                        data.cleared || 0,
+                        data.rejected || 0
+                    ],
+                    backgroundColor: [
+                        '#f59e0b',
+                        '#d97706',
+                        '#a855f7',
+                        '#22c55e',
+                        '#ef4444'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '55%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 12,
+                            font: { size: 11 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                var total = context.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                                var value = context.parsed;
+                                var pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return context.label + ': ' + value + ' (' + pct + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>

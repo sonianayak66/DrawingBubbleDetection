@@ -1,0 +1,213 @@
+﻿@{
+    ViewBag.Title = "RawmaterialsInventoryDetail";
+    // Layout = "~/Views/Shared/_LayoutPage.cshtml";
+}
+
+<style>
+    #InventoryReportTable td {
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 2px !important;
+        font-size: small !important;
+    }
+
+    th {
+        font-size: small !important;
+    }
+
+    body {
+        font-size: small;
+        background-color: white;
+    }
+
+    /* Center-align the buttons */
+    .dataTables_wrapper .dataTables_filter {
+        float: left;
+    }
+
+    .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate {
+        float: right;
+    }
+
+    /* Add margin between search box and buttons */
+    .dataTables_wrapper .dataTables_filter {
+        margin-right: 20px;
+    }
+
+    .table {
+        --phoenix-table-striped-bg: white;
+    }
+
+
+    .buttons-html5 {
+        padding: 0.25rem 0.5rem; /* Adjust padding to make the button smaller */
+        font-size: 0.675rem; /* Adjust font size to make the text smaller */
+        line-height: 1.5;
+    }
+
+    /* Custom styles for smaller paging dropdown */
+
+    .dataTables_length select {
+        padding: 0.225rem 0.35rem; /* Adjust padding to make the dropdown smaller */
+        font-size: 0.65rem; /* Adjust font size to make the text in the dropdown smaller */
+    }
+
+    .form-control-sm {
+        min-height: calc(1.39em + 0.65rem + 2px);
+        padding: 0.175rem 0.35rem;
+        font-size: 0.6rem;
+        border-radius: 0.375rem;
+    }
+
+    .buttons-excel, .buttons-html5, .btn-smaller {
+        padding: 0.25rem 0.5rem; /* Adjust padding to make the button smaller */
+        font-size: 0.675rem; /* Adjust font size to make the text smaller */
+        line-height: 1.5; /* Adjust line height for proper text alignment */
+    }
+
+    .content {
+        min-height: 100vh;
+        padding: calc(var(--phoenix-navbar-top-height) + 0.5rem) 1.5rem 6.375rem 1.5rem;
+        /* padding-bottom: 6rem; */
+    }
+</style>
+
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-md-10">
+                <h3>Raw-material Inventory</h3>
+            </div>
+            <div class="col-md-2 text-end">
+                <a href="/Report/InventoryReport" style="margin-left: 4px;" class="btn btn-secondary  btn-smaller float-end">Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+<hr />
+
+
+<div class="col-md-12 col-sm-12 col-lg-12">
+    <table id="datatables" class="table table-striped table-bordered table-condensed" cellspacing="0" style="width:100%">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Material Name</th>
+                <th>Material Type</th>
+                <th>UOM</th>
+                <th>Transaction</th>
+                <th>Qty</th>
+                <th>Balance</th>
+                <th></th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+@section Scripts {
+
+    <script>
+
+        $(document).ready(function () {
+            GetRawMaterialMaster();
+        });
+
+        var dataTable;
+        function GetRawMaterialMaster() {
+
+            try {
+                dataTable.destroy();
+            } catch (e) {
+            }
+
+            dataTable = $("#datatables").DataTable({
+                "ajax": {
+                    "url": "/Report/GetRawmaterialsInventory?ForConsolidatedReport=0&Raw_material_Dbkey=" + @ViewBag.Raw_material_Dbkey,
+                    "type": "GET",
+                    "dataSrc": "",
+                    "datatype": "json"
+                },
+                dom: 'Bfrtip',
+                buttons: [{
+                    extend: 'excel',
+                    title: 'Raw Material Inventory',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7, 8] //Your Colume value those you want
+                    }
+                }],
+                order: [[0, "asc"], [3, "asc"], [4, "asc"]],
+                responsive: true,
+                paging: false,
+
+                "columns": [
+                    {
+                        "data": "Receipt_Date", render: function (data, type, row) {
+                            if (type === 'display' || type === 'filter') {
+                                var rowvalue = row["Receipt_Date"];
+                                return (moment(data).format("DD-MM-YYYY"));
+                            }
+
+                            return data;
+                        }
+                    },
+                    { "data": "Raw_material_Name" },
+                    { "data": "RMType" },
+                    { "data": "UOM" },
+                    { "data": "TransType" },
+                    { "data": "Qty" },
+                    { "data": "RunningBalance" },
+                    { "data": null }],
+
+                columnDefs: [{
+                    targets: [-1], render: function (a, b, data, d) {
+
+                        return "<a style='cursor:pointer' class='btn btn-primary btn-smaller' href='/Report/InventoryReportDetail?Raw_material_Dbkey=" + data.Raw_material_Dbkey + "'>View Detail</a>"
+
+                        //return "<div class='btn-group'> <button type='button' class='btn btn-sm btn-success btn-outline dropdown-toggle' data-toggle='dropdown'>Actions</button>"
+                        //return "<div class='font-sans-serif btn-reveal-trigger position-static'>" +
+                        //    "<button class= 'btn dropdown-toggle dropdown-toggle-split btn-secondary btn-smaller' data-bs-toggle='dropdown' data-boundary='window' aria-haspopup='true' aria-expanded='false'> Action</button>" +
+                        //    "<div class='dropdown-menu btn-smaller'>" +
+                        //    // "<a class='dropdown-item' href = '#' onclick = 'GetUserprofile(' + "'" + row.UserGUID + "'" + ')"> View </a>'''
+                        //    "<a class='dropdown-item btn-smaller' style='cursor:pointer' href='/Report/InventoryReportDetail?id=" + data.Raw_material_Dbkey + 'A' + data.Outer_Dia_mm + 'A' + data.Thickness + 'A' + data.height + "'>Detail</a>" +
+                        //    "</div>" +
+                        //    "</div>";
+                    },
+                    "orderable": false,
+                    "paging": false,
+                    "ordering": false,
+
+                },
+
+                ],
+                "rowCallback": function (row, data, index) {
+
+                    if (data.Qty < 0) {
+                        $('td', row).css('color', '#db5949');
+                    }
+
+                    if (data.Qty > 0) {
+                        $('td', row).css('color', '#72b159');
+                    }
+                    //if (data.Receiving_inventory >= data.orderd) {
+                    //    $('td', row).css('color', '#72b159');
+                    //}
+
+
+                },
+            });
+
+            $('.DT-search .form-control').attr('placeholder', 'Search...');
+            $('.DT-search .form-control').attr('class', 'DT-search form-control');
+            $('.DT-lf-right').attr('class', 'pull-left');
+            $('.dataTables_length').attr('class', 'dataTables_length DT-lf-right');
+
+        }
+
+    </script>
+
+
+
+}
+

@@ -1,0 +1,204 @@
+﻿@model List<MPCRS.ViewModels.CastingOrderSummaryVM>
+@{
+    Layout = null;
+}
+<style>
+    td {
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+    }
+
+    .partcol-dashboard {
+        width: 30% !important;
+        padding-left: 10px !important;
+    }
+
+    .qtyCols-dashboard {
+        width: 100px !important;
+        text-align: right;
+        padding-right: 15px !important;
+    }
+
+    .custom-textarea {
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        margin: 0; /* Remove default margins */
+        padding: 0; /* Remove default padding */
+        border: none; /* Remove border */
+        box-sizing: border-box; /* Include padding in width/height calculations */
+    }
+
+    .greyed-out-engine {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    /* .greyed-out-engine {
+            opacity: 0.5;
+            filter: grayscale(90%) brightness(0.7);
+            pointer-events: none;
+            cursor: not-allowed;
+        } */
+</style>
+@{
+    string engines = ViewBag.Engines;
+    bool isFirstEngine = true; // Flag to track first engine
+}
+
+<table id="summaryTable" class="table  table-bordered table-hover table-condensed">
+    <thead>
+        <tr>
+            <th>SL No</th>
+            <th class="partcol-dashboard" style="min-width:250px!important"> Part </th>
+            <th class="qtyCols-dashboard"> Qty/Eng </th>
+            @{
+
+                foreach (var item in engines.Split(","))
+                {
+                    if (!item.ToLower().Contains("groundtest"))
+                    {
+                        <th> @item </th>
+                    }
+                }
+            }
+            <th> Accepted </th>
+            <th> Issued </th>
+            <th> Available </th>
+            @* <th> Remarks </th> *@
+            <th>Ground Test </th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @{
+            int sl = 0;
+            foreach (var item in Model.Select(x => new { x.Engine_Part_Dbkey, x.Draw_part_no, x.Description, x.QuantityPerEngine, x.AcceptedQty, x.RejectedQty, x.OrderQty, x.TotalRecievedQty, x.IssuedQty }).
+            OrderByDescending(x => x.OrderQty).ThenBy(x => x.Draw_part_no).Distinct())
+            {
+                sl++;
+                <tr style="padding:0px!important">
+                    <td style="text-align: right;">
+                        @sl
+                    </td>
+                    <td class="partcol-dashboard" style="min-width:250px!important">
+                        <b>@item.Draw_part_no</b> - @item.Description
+                    </td>
+                    <td style="padding-right:15px; text-align:right;"> @item.QuantityPerEngine </td>
+
+                    @{
+
+                        int? qtyAvailable = (item.AcceptedQty - item.IssuedQty);
+                        int? IssuedQty = item.IssuedQty;
+                        int? GroundTestQty = 0;
+                        foreach (var engine in engines.Split(","))
+                        {
+
+                            var enginePart = Model.Where(x => x.Draw_part_no == item.Draw_part_no && x.ForEngine == engine).FirstOrDefault();
+                            if (engine.ToLower().Contains("groundtest"))
+                            {
+                                if (enginePart != null)
+                                {
+                                    GroundTestQty = enginePart.IsuueQtyPerEngine;
+                                }
+                                continue;
+                            }
+                            string style = "background: linear-gradient(to right, green 40%, orange 40%);";
+                            string cellvalue = "";
+                            string tooltip = "";
+                            if (enginePart != null)
+                            {
+                                style = "background:green";
+                                // IssuedQty = IssuedQty - item.QuantityPerEngine;
+                                cellvalue = "A";
+                                tooltip = "Issued";
+                            }
+                            else
+                            {
+                                style = "background:red";
+                                cellvalue = "";
+                                tooltip = "Not Issued";
+                            }
+                            // if ((IssuedQty / item.QuantityPerEngine) >= 1)
+                            // {
+                            //     style = "background:green";
+                            //     IssuedQty = IssuedQty - item.QuantityPerEngine;
+                            //     cellvalue = "A";
+                            //     tooltip = "Issued";
+                            // }
+                            // else if (((float)IssuedQty / (float)item.QuantityPerEngine) > 0.01)
+                            // {
+                            //     float acceptedPercentage = ((float)IssuedQty / (float)item.QuantityPerEngine) * 100;
+                            //     float PendingPercentage = 100 - acceptedPercentage;
+                            //     style = "background: linear-gradient(to right, green " + acceptedPercentage + "%, orange " + PendingPercentage + "%);";
+                            //     IssuedQty = IssuedQty - item.QuantityPerEngine;
+                            //     cellvalue = "P";
+                            //     tooltip = "Partially Issued";
+                            // }
+                            // else if (IssuedQty >= item.QuantityPerEngine)
+                            // {
+                            //     style = "background:orange";
+                            //     IssuedQty = IssuedQty - item.QuantityPerEngine;
+                            //     cellvalue = "I";
+                            //     tooltip = "Under Inspection";
+                            // }
+                            // else
+                            // {
+                            //     style = "background:red";
+                            //     cellvalue = "";
+                            //     tooltip = "Not Issued";
+                            // }
+
+                            @if (engine == "J1" && (item.Draw_part_no == "PS13004" || item.Draw_part_no == "PT14101"))
+                            {
+                                <td class="greyed-out-engine" style="text-align:center; @style" data-bs-toggle="tooltip" data-bs-placement="top" title="">
+                                    @{
+                                        if (cellvalue == "A")
+                                        {
+                                            <span class="text-light uil uil-check-circle"></span>
+                                        }
+                                        else if (cellvalue == "P")
+                                        {
+                                            <span class="text-light uil uil-adjust-half"></span>
+                                        }
+                                        else if (cellvalue == "I")
+                                        {
+                                            <span class="text-light uil uil-credit-card-search"></span>
+                                        }
+                                    }
+                                </td>
+                            }
+                            else
+                            {
+                                <td style="text-align:center; @style" data-bs-toggle="tooltip" data-bs-placement="top" title="@tooltip">
+                                    @{
+                                        if (cellvalue == "A")
+                                        {
+                                            <span class="text-light uil uil-check-circle"></span>
+                                        }
+                                        else if (cellvalue == "P")
+                                        {
+                                            <span class="text-light uil uil-adjust-half"></span>
+                                        }
+                                        else if (cellvalue == "I")
+                                        {
+                                            <span class="text-light uil uil-credit-card-search"></span>
+                                        }
+                                    }
+                                </td>
+                            }
+
+                        }
+                    }
+
+                    <td> @item.AcceptedQty </td>
+                    <td> @item.IssuedQty </td>
+                    <td> @(item.AcceptedQty - item.IssuedQty) </td>
+                    @*  <td style="padding:0px!important;">
+<textarea class="custom-textarea" ondblclick="enableTextarea(this)" rows="2" readonly>
+</textarea> </td> *@
+                    <td>@GroundTestQty</td>
+                </tr>
+
+            }
+        }
+    </tbody>
+</table>

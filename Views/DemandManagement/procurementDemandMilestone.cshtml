@@ -1,0 +1,243 @@
+﻿@model List<MPCRS.ViewModels.Procurement_Demand_MileStoneViewModel>
+@using MPCRS.Utilities;
+@using Newtonsoft.Json;
+@using MPCRS.ViewModels;
+
+<style>
+	.qtyCols {
+		text-align: right;
+		padding-right: 9px !important;
+	}
+</style>
+
+@{
+	List<milestoneStatusData> milestoneStatusList = new();
+
+	@*  CHANGED: was (Model.Count > 0) — now also handles empty-item milestones safely *@
+	if (Model != null && Model.Count > 0)
+	{
+		@*  CHANGED: skip null DemandDbkey rows before calling First() *@
+		var firstValidItem = Model.Where(x => x.DemandDbkey != null).FirstOrDefault();
+		if (firstValidItem != null)
+		{
+			var DemandDbkey = firstValidItem.DemandDbkey;
+			try
+			{
+				System.Data.DataTable dt = MPCRS.Utilities.MPGlobals.GetDataForDatatable($"[dbo].[GetMilestoneStatus] @demandKey = {DemandDbkey}");
+				milestoneStatusList = JsonConvert.DeserializeObject<List<milestoneStatusData>>(JsonConvert.SerializeObject(dt));
+			}
+			catch (Exception)
+			{
+				milestoneStatusList = new List<milestoneStatusData>();
+			}
+		}
+	}
+}
+
+@{
+	if (ViewBag.IsEditMode == "true")
+	{
+		<div class="float-end">
+			<input class="btn btn-success btn-small" type="button" value="Save" onclick="SaveDemandMilestoneDetails()" />
+			<input class="btn btn-secondary btn-small" type="button" value="Exit" onclick="GetViewMilestoneDetails(false)" />
+		</div>
+		<span class="text-danger" id="validationMessage"></span>
+		<table class="table table-sm table-hover" id="tbl-milestone-editmode">
+			<thead>
+				<tr>
+					<th rowspan="2">Item</th>
+					<th rowspan="2" class="qtyCols">Order Qty</th>
+					@foreach (var item in Model.Select(x => new { x.MilestoneID, x.Milestone, x.DeliveryDate, x.DemandDbkey, x.MilestoneName, x.Comments }).Distinct().OrderBy(x => x.DeliveryDate))
+					{
+						<th class="text-center">
+							<div class="col">
+								<div class="row-4">
+									<div class="form-floating mb-2">
+										<input class="form-control MilestoneName" data-milestoneid="@item.MilestoneID" asp-for="@item.MilestoneName" />
+										<label>Milestone Name</label>
+									</div>
+								</div>
+								<div class="row-4">
+									<div class="form-floating mb-2">
+										<input class="form-control milestonecls" type="date" asp-for="@item.DeliveryDate" data-demandkey="@item.DemandDbkey" data-milestone="@item.Milestone" data-field="Milestone" data-itemkey="-1" />
+										<label>Delivery Date</label>
+									</div>
+								</div>
+								<div class="row-4">
+									<div class="form-floating mb-2">
+										<input class="form-control milstoneRemarks" type="text" asp-for="@item.Comments" />
+										<label>Remarks</label>
+									</div>
+								</div>
+							</div>
+							<i class="uil uil-trash-alt fs-1 float-end" style="color:red;text-align:center;cursor:pointer" onclick="DeleteMilestonecol(@item.MilestoneID)"></i>
+						</th>
+					}
+				</tr>
+			</thead>
+			<tbody>
+				@{
+					foreach (var item in Model.Select(x => new { x.DemandItemName, x.ItemDescription, x.DemandItemDbKey, x.DemandDbkey, x.OrderQuantity }).Distinct())
+					{
+						@*  ADDED: skip empty placeholder rows (milestone with no items returns DemandItemDbKey = null/0) *@
+						if (item.DemandItemDbKey == null || item.DemandItemDbKey == 0) { continue; }
+
+						<tr class="tblbodyItems">
+							<td> <p class="ItemCls">@item.DemandItemName</p> <p>@item.ItemDescription</p> </td>
+							<td> <p class="qtyCols">@item.OrderQuantity</p> </td>
+
+							@foreach (var milestone in Model.Select(x => new { x.MilestoneID, x.Milestone, x.DeliveryDate, x.DemandDbkey }).Distinct().OrderBy(x => x.DeliveryDate))
+							{
+								var mileStoneInfo = Model.Where(x => x.MilestoneID == milestone.MilestoneID && x.DemandItemDbKey == item.DemandItemDbKey).Select(x => new { x.MilestoneQty, x.MilestoneDbKey, x.ItemMilestoneStatus }).FirstOrDefault();
+								<td>
+									@{
+										if (mileStoneInfo == null)
+										{
+											<input class="float-end form-control MilestoneItems"
+												   type="number" step="any"
+												   value="0"
+												   data-demandkey="@item.DemandDbkey"
+												   data-milestone="@milestone.Milestone"
+												   data-milestonedbkey="0"
+												   data-itemkey="@item.DemandItemDbKey"
+												   data-field="MilestoneQty"
+												   data-orderqty="@item.OrderQuantity"
+												   data-milestoneid="@milestone.MilestoneID"
+												   data-componentname="@item.DemandItemName" />
+										}
+										else
+										{
+											<input class="float-end form-control MilestoneItems"
+												   type="number" step="any"
+												   value="@(mileStoneInfo.MilestoneQty)"
+												   data-demandkey="@item.DemandDbkey"
+												   data-milestone="@milestone.Milestone"
+												   data-milestonedbkey="@(mileStoneInfo.MilestoneDbKey)"
+												   data-itemkey="@item.DemandItemDbKey"
+												   data-field="MilestoneQty"
+												   data-orderqty="@item.OrderQuantity"
+												   data-milestoneid="@milestone.MilestoneID"
+												   data-componentname="@item.DemandItemName" />
+										}
+									}
+								</td>
+							}
+						</tr>
+					}
+				}
+			</tbody>
+		</table>
+	}
+	else
+	{
+		<table class="table table-sm table-hover" id="tbl-milestone-viewmode">
+			<thead>
+				<tr>
+					<th rowspan="2">Item</th>
+					<th rowspan="2" class="qtyCols">Order Qty</th>
+					<th rowspan="2" class="qtyCols">Receipt as on date</th>
+					@foreach (var item in Model.Select(x => new { x.MilestoneID, x.Milestone, x.DeliveryDate, x.DemandDbkey, x.MilestoneName, x.Comments, x.OriginalDueDate }).Distinct().OrderBy(x => x.DeliveryDate))
+					{
+						<th class="text-center p-2">
+							<p>@item.MilestoneName</p>
+							@{
+								var isExtended = item.OriginalDueDate != null
+								&& item.DeliveryDate != null
+								&& item.OriginalDueDate.Value.Date != item.DeliveryDate.Value.Date;
+							}
+							@if (isExtended)
+							{
+								<span style="text-decoration:line-through;color:#999;font-size:0.85em;">
+									@(MPGlobals.GetFormattedDate(item.OriginalDueDate))
+								</span>
+								<span style="color:#999;font-size:0.85em;"> → </span>
+								<span style="color:#dc3545;font-weight:600;">
+									@(MPGlobals.GetFormattedDate(item.DeliveryDate))
+								</span>
+								<br />
+								<span class="badge bg-warning text-dark" style="font-size:0.7em;">Extended</span>
+							}
+							else
+							{
+								@(MPGlobals.GetFormattedDate(item.DeliveryDate))
+							}
+							<p class="text-wrap">@item.Comments</p>
+							<i class="uil uil-trash-alt fs-1 float-end" style="color:red;text-align:center;cursor:pointer" onclick="DeleteMilestonecol(@item.MilestoneID)"></i>
+						</th>
+					}
+				</tr>
+			</thead>
+			<tbody>
+				@{
+					foreach (var item in Model.Select(x => new { x.DemandItemName, x.ItemDescription, x.DemandItemDbKey, x.DemandDbkey, x.OrderQuantity }).Distinct())
+					{
+						@* ✅ ADDED: skip empty placeholder rows in view mode too *@
+						if (item.DemandItemDbKey == null || item.DemandItemDbKey == 0) { continue; }
+
+						var milestoneStatus = milestoneStatusList.Where(x => x.DemandItemDbKey == item.DemandItemDbKey).FirstOrDefault();
+						milestoneStatus = milestoneStatus == null ? new() : milestoneStatus;
+						var progresscolor = "bg-danger";
+						if (milestoneStatus.OverallrptPc >= 100)
+						{
+							progresscolor = "bg-success";
+						}
+						else if (milestoneStatus.OverallrptPc >= 75)
+						{
+							progresscolor = "bg-warning";
+						}
+
+						<tr>
+							<td> <p>@item.DemandItemName</p> <p>@item.ItemDescription</p> </td>
+							<td> <p class="qtyCols">@item.OrderQuantity</p> </td>
+							<td>
+								<div class="row">
+									<div class="col-8" style="padding-right:2px">
+										<div class="progress">
+											<div class="progress-bar @progresscolor" role="progressbar" style="width: @milestoneStatus.OverallrptPc%" aria-valuemin="0" aria-valuemax="100"></div>
+										</div>
+									</div>
+									<div class="col-4" style="padding-left:2px">
+										<div class="qtyCols">
+											@string.Format("{0:F2}", milestoneStatus.TotalReceipts)
+										</div>
+									</div>
+								</div>
+							</td>
+							@{
+								@foreach (var milestone in Model.Select(x => new { x.MilestoneID, x.Milestone, x.DeliveryDate, x.DemandDbkey }).Distinct().OrderBy(x => x.DeliveryDate))
+								{
+									var mileStoneInfo = Model.Where(x => x.MilestoneID == milestone.MilestoneID && x.DemandItemDbKey == item.DemandItemDbKey).Select(x => new { x.MilestoneQty, x.MilestoneDbKey, x.ItemMilestoneStatus }).FirstOrDefault();
+									double? Qty = 0.0;
+									if (mileStoneInfo != null)
+									{
+										Qty = mileStoneInfo.MilestoneQty;
+									}
+
+									var milestoneStatusitem = milestoneStatusList.Where(x => x.MilestoneID == milestone.MilestoneID && x.DemandItemDbKey == item.DemandItemDbKey).FirstOrDefault();
+									milestoneStatusitem = milestoneStatusitem == null ? new() : milestoneStatusitem;
+									var progresscoloritem = "text-danger";
+									if (Qty == 0)
+									{
+										progresscoloritem = "text-success";
+									}
+									else if (milestoneStatusitem.rptPc >= 100.00)
+									{
+										progresscoloritem = "text-success";
+									}
+									else if (milestoneStatusitem.rptPc >= 75.00)
+									{
+										progresscoloritem = "text-warning";
+									}
+
+									<td>
+										<p class="qtyCols @progresscoloritem">@string.Format("{0:F2}", Qty)</p>
+									</td>
+								}
+							}
+						</tr>
+					}
+				}
+			</tbody>
+		</table>
+	}
+}

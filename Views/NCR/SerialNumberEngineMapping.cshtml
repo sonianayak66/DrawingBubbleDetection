@@ -1,0 +1,120 @@
+﻿@model List<MPCRS.Models.NCR_SerialNumber_Engine_Mapping>
+
+@{
+	Layout = null;
+    var EngineList = MPCRS.Utilities.Masters.GetEngineList();
+}
+
+<style>
+    #mappingTable tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .mapping-serial-input {
+        font-weight: 500;
+    }
+
+    .mapping-engine-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+</style>
+
+ 
+<div class="modal fade" id="serialEngineMapModal" tabindex="-1" aria-labelledby="serialEngineMapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="serialEngineMapModalLabel">
+                    <i class="bi bi-diagram-3"></i> Map Serial Numbers to Engines
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (Model == null || Model.Count == 0)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i> No serial numbers found. Please enter serial numbers in the form above first.
+                    </div>
+                }
+                else
+                {
+                     
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle" id="mappingTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 15%" class="text-center">S.No</th>
+                                    <th style="width: 40%">Serial Number</th>
+                                    <th style="width: 45%">Engine</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mappingTableBody">
+                                @{
+                                    int rowIndex = 1;
+                                    foreach (var item in Model)
+                                    {
+                                        <tr data-mapping-id="@item.Id" data-serial-number="@item.SerialNumber">
+                                            <td class="text-center">
+                                                <strong>@rowIndex</strong>
+                                            </td>
+                                            <td>
+                                                <input type="text"
+                                                       class="form-control form-control-sm mapping-serial-input"
+                                                       value="@item.SerialNumber"
+                                                       readonly
+                                                       style="background-color: #e9ecef; cursor: not-allowed;">
+                                                <input type="hidden" class="mapping-id" value="@item.Id">
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-sm mapping-engine-select"
+                                                        data-current-value="@item.Engine">
+                                                    <option value="">Select Engine</option>
+                                                    @foreach (var engine in EngineList)
+                                                    {
+                                                        if (engine.Value != "0")
+                                                        {
+                                                            <option value="@engine.Value" selected="@(engine.Value == item.Engine)">
+                                                                @engine.Text
+                                                            </option>
+                                                        }
+                                                    }
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        rowIndex++;
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-lightbulb"></i>
+                            <strong>Tip:</strong> Serial numbers are automatically populated from the form. Select the engine for each serial number from the dropdown.
+                        </small>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                @if (Model != null && Model.Count > 0)
+                {
+                    <button type="button" class="btn btn-primary" id="saveMappingBtn" onclick="saveSerialEngineMapping()">
+                        <i class="bi bi-save"></i> Save Mapping
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+

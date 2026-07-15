@@ -1,0 +1,53 @@
+﻿@using MPCRS.Utilities
+@model MPCRS.ViewModels.Upload_DocumentVM
+@{
+    Layout = null;
+    var DocumentType = Masters.GetMaster_General_Value("Demand_Document");
+    var DemandDocUploadAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write_Documents);
+    var DemandItemDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Delete);
+    var SourceTbl = "Demand_Document";
+}
+@{
+    if (DemandDocUploadAccess)
+    {
+        <a class="btn btn-success btn-small float-end" onclick="UploadDemandDocuments()"><i class="uil uil-upload fs-1" style="cursor:pointer"></i> Upload</a>
+    }
+}
+
+
+<table id="DemandDocTable" width="50%">
+    <thead>
+        <tr>
+            <th>Document Type</th>
+            <th>Description</th>
+            <th>Uploaded On</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            foreach (var item in Model.UploadDocumentVM)
+            {
+                <tr>
+                    <td>@item.Master_Name</td>
+                    <td>@item.Remarks</td>
+                    <td>@item.Updated_On?.ToString("dd-MM-yyyy")</td>
+                     <td>
+                        <a class="text-success uil uil-cloud-download fs-2" href="~/DemandManagement/Downloadfile?Id=@item.DocumentID" style="cursor:pointer" target="_blank">  </a>
+                    </td>
+                    <td>
+                        @{
+                            if (DemandItemDeleteAccess)
+                            {
+                                <i class="text-danger uil uil-trash-alt fs-2" style="cursor:pointer" onclick="DelDocData(@item.DocumentID)" style="cursor:pointer"></i>
+                            }
+                        }
+                      
+                    </td>
+                </tr>
+            }
+        }
+
+    </tbody>
+</table>

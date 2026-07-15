@@ -1,0 +1,51 @@
+﻿@model MPCRS.ViewModels.SOP_AdditionalComponentVM
+@using MPCRS.Utilities;
+@using MPCRS.ViewModels;
+@{
+    Layout = null;
+    SelectList revisionlist = Masters.RevisionList();
+    SelectList parttypes = Masters.GetPartTypeList();
+    SelectList rawmaterial = Masters.RawMaterialList();
+    SelectList modresponsbility = Masters.GetMaster_General("Module_Responsibility");
+}
+<div class="col-md-12">
+    <h4>Parent  - @ViewBag.ParentPart</h4>
+</div>
+
+<form asp-action="AdditionalSopBuildComponent" id="formAdditionalComp" asp-controller="SOPManagement" method="post">
+    <input type="hidden" asp-for="Engine_Part_Dbkey" />
+    <input type="hidden" asp-for="Parent_id" />
+    <input type="hidden" asp-for="BL_Engine_Dbkey" />
+       <input type="hidden" asp-for="BuildId" />
+    <div class="form-floating mb-2">
+        <select asp-for="Type_Dbkey" class="form-control" asp-items="parttypes"></select>
+        <label asp-for="Type_Dbkey">Type</label>
+    </div>
+    <div class="form-floating mb-2">
+        <input asp-for="DrawingNumber" class="form-control" />
+        <label asp-for="DrawingNumber">Drawing Number</label>
+    </div>
+    <div class="form-floating mb-2">
+        <select asp-for="Revision" class="form-control" asp-items="revisionlist"></select>
+        <label asp-for="Revision">Revision</label>
+    </div>
+    <div class="form-floating mb-2">
+        <input asp-for="QtyPerEngine" class="form-control" type="number" />
+        <label asp-for="QtyPerEngine">Qty/Engine</label>
+    </div>
+    <div class="form-floating mb-2">
+        <select asp-for="Module_Responsibility" class="form-control" asp-items="modresponsbility"></select>
+        <label asp-for="Module_Responsibility">Module Responsibility</label>
+    </div>
+    <div class="form-floating mb-2">
+        <select asp-for="RawMaterial" class="form-control" asp-items="rawmaterial"></select>
+        <label asp-for="RawMaterial">Raw Material</label>
+    </div>
+    <div class="form-floating mb-2">
+        <textarea asp-for="Description" class="form-control" style="height: 90px"></textarea>
+        <label asp-for="Description">Description</label>
+    </div>
+    <div class="mt-3">
+        <button class="btn btn-primary" type="button" id="lnk_save_mpl" onclick="SaveAdditionalSopBuildComponent(this)">Submit</button>
+    </div>
+  </form>

@@ -1,0 +1,94 @@
+﻿@model MPCRS.ViewModels.EngineBuildComponents
+@{
+	Layout = null;
+
+	string style = Model.IsParent == "Yes" ? "font-weight: bold; font-size: 12px !important;" : "";
+
+	if (Model.IsUpdated ?? false)
+	{
+		style = style + "color:#0eb438;";
+	}
+	if (Model.IsNewlyAdded ?? false)
+	{
+		style = style + "color:#e67c29;";
+	}
+	if (Model.IsReplaced ?? false)
+	{
+		style = style + "color:#800080;";
+	}
+
+	if (Model.IsRemoved ?? false)
+	{
+		style = style + "color:Red;";
+	}
+
+	string additionalClasses = Model.Collaborators == null ? string.Empty : Model.Collaborators;
+	if (!string.IsNullOrEmpty(additionalClasses))
+	{
+		additionalClasses = additionalClasses.Trim();
+		additionalClasses = additionalClasses.Replace(',', ' ');
+	}
+	additionalClasses = additionalClasses + " Collabs ";
+
+
+	if (Model.Draw_part_no == "DUMMY")
+	{
+		style = style + "display:none";
+	}
+
+	if (Model.Revision != Model.SOP_BuildPartRevision)
+	{
+		additionalClasses = additionalClasses + " revdeviation ";
+	}
+
+	bool MPLWriteAccess = true;
+}
+
+<style>
+
+	.textWarp {
+		word-wrap: break-word !important; /* Break long words and wrap them to the next line */
+		word-break: break-all !important;
+		white-space: normal !important; /* Allow text to wrap to the next line */
+	}
+
+</style>
+<tr style="@style" class="@(Model.MainAssesmblyHeading+ " " +additionalClasses)Level@(Model.Level - Model.reducer)"
+	data-has-batl="@Model.HasBATLData"
+	data-exec-resp="@(Model.ExecutionResponsibility ?? "")">
+	@for (int i = 1; i <= Model.MaxLevel; i++)
+	{
+		if (Model.Level - Model.reducer == i)
+		{
+			<td style="cursor:pointer;" onclick="ViewDocuments(@Model.SOP_ComponentId,'@Model.Draw_part_no')">@Model.Draw_part_no</td>
+		}
+		else
+		{
+			<td></td>
+		}
+	}
+	<td>
+		@Model.Description
+		@* @if (Model?.Description?.StartsWith("O RING", StringComparison.OrdinalIgnoreCase) == true || Model?.Description?.StartsWith("TAB WASHER", StringComparison.OrdinalIgnoreCase) == true)
+		{
+			<span>[@Model.ParentName]</span>
+		} *@
+
+
+	</td>
+	<td>@Model.Type_Part_Name</td>
+	<td class="text-center">@Model.SOP_BuildPartRevision</td>
+	@* <td class="text-center">@Model.Qty_per_Engine</td> *@
+	<td class="text-center">@Model.SOP_BuildPartQtyPerEngine</td>
+	<td>@Model.Material_name</td>
+	<td>@Model.SOP_BuildPartJobCard</td>
+	<td class="textWarp">
+		@Model.SOP_BuildPartSerialNumber
+
+
+		@* @Model.SOP_BuildPartSerialNumber *@
+	</td>
+	<td>@Model.PartModuleRes </td>
+	<td>@Model.SOP_BuildPartRemarks</td>
+	<td>@Model.ExecutionResponsibility</td>
+</tr>

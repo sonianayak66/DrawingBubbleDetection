@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Python Execution with SSE</title>
+</head>
+<body>
+    <button id="runScript">Run Script</button>
+    <div id="results"></div>
+
+    <script>
+        document.getElementById('runScript').addEventListener('click', function () {
+            const eventSource = new EventSource('/Python/ExecuteScript');
+
+            eventSource.onmessage = function (event) {
+                const resultDiv = document.getElementById('results');
+                resultDiv.innerHTML += `<div>${event.data}</div>`;
+            };
+
+            eventSource.onerror = function (err) {
+                console.log(err);
+                eventSource.close();
+
+                // alert('An error occurred. Stream closed.');
+            };
+        });
+    </script>
+</body>
+</html>

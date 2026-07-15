@@ -1,0 +1,274 @@
+﻿@using System.Data
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "Builds";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var buildsList = MPGlobals.GetDataForDatalist("SELECT  [BuildGuid] ,[BuildName] + ' - ' + [Description] as BuildName  FROM  [dbo].[EngineBuilds] order by ID desc");
+}
+
+
+
+
+<div class="page-header">
+    <div class="row">
+        <div class="col-md-3">
+            <h3>Correct Serial number</h3>
+        </div>
+        <div class="col-md-1 text-right">
+            <b class="float-end">Build</b>
+        </div>
+
+        <div class="col-md-3">
+            <div class="input-group">
+                <select class="form-control" id="BuildGUID">
+                    @{
+                        foreach (DataRow item in buildsList.Rows)
+                        {
+                                    <option value="@item["BuildGuid"]">@item["BuildName"]</option>
+                        }
+                    }
+                </select>
+                <span class="input-group-text" id="basic-addon2" style="cursor:pointer" onclick="GetSOPBuildDetails()"><i class="uil uil-search"></i></span>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <a class="float-end btn btn-secondary" href="/SOPReport/SOPDocuments">Back</a>
+        </div>
+    </div>
+</div>
+
+<hr />
+
+
+
+<div class="col-md-12">
+    <table id="datatables" class="table table-bordered table-condensed" cellspacing="0" style="width:100%;">
+        <thead>
+            <tr>
+                <th>Drawing #</th>
+                <th>Desc</th>
+                <th style="max-width:25%">Serial Number</th>
+                <th></th>
+               @*  <th>File Type</th>
+                <th>File Name</th> *@
+            </tr>
+        </thead>
+    </table>
+</div>
+
+   @section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(function () {
+            GetSOPBuildDetails();
+        });
+
+        var dataTable;
+        function GetSOPBuildDetails() {
+
+            try {
+                dataTable.destroy();
+            } catch (e) {
+            }
+
+            var BuildGUID = document.getElementById("BuildGUID").value;
+
+            dataTable = $("#datatables").DataTable({
+                "ajax": {
+                    "url": "/SOPManagement/BuildSerialNumberDetails?BuildGUID=" + BuildGUID,
+                    "type": "GET",
+                    "dataSrc": "",
+                    "datatype": "json"
+                },
+                "fixedHeader": {
+                    "headerOffset": getNavBarHeight()
+                },
+                scrollY: 510,
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem(
+                        'DataTables_' + settings.sInstance,
+                        JSON.stringify(data)
+                    );
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                },
+                responsive: true,
+                paging: false,
+                order: false,
+                "order": [[0, "asc"]],
+                dom: 'Bfrtip',
+                buttons: [{
+                    extend: 'excel',
+                    title: 'SOP Document Status',
+                    exportOptions: {
+                        columns: [0, 1, 2] //Your Colume value those you want
+                    }
+                }],
+
+                "columns": [
+                    { "data": "DrawingNumber" },
+                    { "data": "Description" },
+                    { "data": "SerialNumber" },
+                    {
+                        "data": null,
+                        render: function (data, type, row) {
+                            return '<a style="cursor:pointer;color:blue" onclick="correctSerilaNo(\' ' + row.EngineBuildComponentDbkey + '\', \'' + encodeURIComponent(row.SerialNumber) + '\', \'' + row.DrawingNumber + '\')" ' + ' ><u>Correct serial number</u></a>'
+                        }
+                    },
+                    // { 
+                    //     "data": null,
+                    //     render: function (data, type, row) {
+                    //         var badge = '';
+                    //         if (row.SlnoStatus === 'POSSIBLE DUPLICATE') {
+                    //             badge = 'badge badge-phoenix fs--2 badge-phoenix-warning';
+                    //         }
+                    //         else if (row.SlnoStatus === 'SHARED') {
+                    //             badge = 'badge badge-phoenix fs--2 badge-phoenix-success';
+                    //         }
+                    //         return '<span>' + row.SerialNumber + '</span>' +
+                    //             '</br>' +
+                    //             '<span class="' + badge + '" style="cursor:pointer;" onclick="serialNoUsage(\'' + encodeURIComponent(row.SerialNumber) + '\', \'' + row.DrawingNumber + '\')">' + row.SlnoStatus + '</span>';
+                    //     }
+                    // },
+                    // { "data": "Attachment_type" },
+                    // { "data": "FileDownloadAnchor" }
+                ],
+            });
+        }
+
+        function correctSerilaNo(EBC_Dbkey,slno, drgNo) {
+            var decodeSerialNo = decodeURIComponent(slno);
+            console.log(decodeSerialNo);
+            bootbox.dialog({
+                title: "Enter serial number range",
+                message: `
+                        <div class="d-flex justify-content-around">
+                                <div><b> Drawing No: ` + drgNo + `</b> </div>
+                        <div>Current Serial No: ` + decodeSerialNo + `</div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap;">
+                <div style="margin-right: 10px;">
+                    <label for="prefix">Prefix: </label>
+                    <input type="text" id="prefix" class="form-control">
+                </div>
+                <div style="margin-right: 10px;">
+                    <label for="suffix">Suffix: </label>
+                    <input type="text" id="suffix" class="form-control">
+                </div>
+                <div style="margin-right: 10px;">
+                    <label for="startRange">Start Range: </label>
+                    <input type="number" id="startRange" class="form-control">
+                </div>
+                <div>
+                    <label for="endRange">End Range: </label>
+                    <input type="number" id="endRange" class="form-control">
+                </div>
+            </div>
+            <div id="generatedslno">
+         
+            </div>
+        `,
+                buttons: {
+                    cancel: {
+                        label: 'Cancel',
+                        className: 'btn-secondary'
+                    },
+                    confirm: {
+                        label: 'Generate',
+                        className: 'btn-primary',
+                        callback: function () {
+                            // Grab the values from the inputs
+                            var prefix = $('#prefix').val();
+                            var suffix = $('#suffix').val();
+                            var startRangeStr = String($('#startRange').val());
+                            var endRangeStr = String($('#endRange').val());
+
+                            // Validate the inputs
+                            if (startRangeStr !== '' && endRangeStr !== '') {
+                                var rangeArray = [];
+
+                                // Check if the startRangeStr starts with '0' (indicating padding is needed)
+                                var paddingNeeded = startRangeStr.startsWith('0');
+
+                                // If padding is needed, calculate the number of digits for padding
+                                var numDigits = 0;
+                                if (paddingNeeded) {
+                                    numDigits = Math.max(startRangeStr.length, endRangeStr.length);
+                                }
+
+                                // Loop over the range and pad the numbers with leading zeros (if needed)
+                                for (var i = parseInt(startRangeStr, 10); i <= parseInt(endRangeStr, 10); i++) {
+                                    var paddedNumber = String(i);
+
+                                    // Apply padding only if it's needed
+                                    if (paddingNeeded) {
+                                        paddedNumber = paddedNumber.padStart(numDigits, '0');
+                                    }
+
+                                    rangeArray.push(prefix + paddedNumber + suffix);
+                                }
+
+                                // Join the range array into a comma-separated string
+                                var resultString = rangeArray.join(', ');
+
+                                // Generate the editable input and save button
+                                var editSlno = '<input id="slnos" class="form-control">';
+                                var saveButton = '</br> <a class="btn btn-sm btn-success" onclick="saveNewSlno(' + EBC_Dbkey + ')">Save</a>';
+
+                                // Display the generated values and input
+                                document.getElementById('generatedslno').innerHTML = "Generated Values: " + editSlno + saveButton;
+                                document.getElementById('slnos').value = resultString;
+
+                                // Optionally, you can show an alert (optional)
+                                // alert("Generated Values: " + resultString);
+                            } else {
+                                alert("Please fill out all fields with valid data.");
+                            }
+
+                            return false;
+                        }
+                    }
+                }
+            });
+         
+       }
+
+        function saveNewSlno(ebc_id){
+            var updatedSlno = document.getElementById('slnos').value;
+            if (updatedSlno.trim()) {
+                $.ajax({
+                    // url: UrlSubmitCastingReceiptItemSplitModel,
+                    url: "/SOPManagement/SaveSerialNo?EBC_Id=" + ebc_id + '&newSlno=' + updatedSlno,
+                    type: 'POST',
+                    success: function (response) {
+                        if(response.success === true){
+                            bootbox.alert('Submitted Successfully', function () {
+                                var BuildGUID = document.getElementById("BuildGUID").value;
+                               // window.location.href = "/SOPManagement/BuildsSerialNoCorrection?BuildGUID=" + BuildGUID;
+                                bootbox.hideAll();
+                            });
+                        }
+                        else{
+                            bootbox.alert("Failed to submit");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+
+                    }
+                });
+            }
+            else{
+                alert('Generated Slno should not be empty');
+            }
+        }
+
+
+    </script>
+   }

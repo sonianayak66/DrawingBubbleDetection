@@ -1,0 +1,133 @@
+﻿@using MPCRS.Utilities;
+@{
+    ViewData["Title"] = "Email Logs";
+    SelectList MailTypeList = Masters.GetMailTypeList();
+}
+ 
+
+<div class="page-header row m-2"> 
+    <div class="col-2">
+        <h4><b>Email Logs</b></h4>
+    </div>
+    <div class="col-2">
+        <b>Email Type</b> <select id="MailType" class="form-select" asp-items="@MailTypeList"></select>
+    </div>
+    <div class="col-2">
+        <b>Start Date</b>  <br /> <input type="date" class="form-control" id="StartDate" value="@ViewBag.StartDate" />
+    </div>
+    <div class="col-2">
+        <b>End Date</b>  <br /> <input type="date" class="form-control" id="EndDate" value="@ViewBag.EndDate" />
+       
+    </div>
+    <div class="col-1">
+        <b>No. of Email</b>
+        <select id="EmailLimit" class="form-select">
+            <option value="10">10</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="300" selected>300</option>
+            <option value="-1">All</option>
+        </select>
+    </div>
+    <div class="col-1">
+        <button class="btn btn-success bt-sm float-end" onclick="getEmailData()">Get</button>
+    </div>
+
+    <div class=" col-1">       
+        <a href="/Home/Index" class="btn btn-secondary bt-sm float-end">Back</a>
+    </div>
+</div>
+<hr />
+<div class="col-md-12 col-sm-12 col-lg-12">
+    <table class="table table-bordered table-responsive" id="EmailTbl">
+        <thead>
+            <tr>
+                 <th>Sent On</th>
+                <th>Recipients Email</th>
+                <th>Sub</th>
+                <th>Body</th>  
+                <th>Sent By</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+
+    <script type="text/javascript">
+        var EmailDataForList = [];
+        $(document).ready(function () {
+            getEmailData();
+            //UpdateNavHeading("Email Logs");
+        });
+        function getEmailData() {
+            var MailType = document.getElementById("MailType").value;
+            var StartDate = document.getElementById("StartDate").value;
+            var EndDate = document.getElementById("EndDate").value;
+            var EmailLimit = document.getElementById("EmailLimit").value;
+            
+            $.ajax({
+                type: 'Get',
+                url: '/Configuration/EmailLogsData/?MailType=' + MailType + '&StartDate=' + StartDate + '&EndDate=' + EndDate + '&EmailLimit=' + EmailLimit,
+                success: function (data) {
+                   
+                    EmailDataForList = JSON.parse(data);
+                    //console.log(EmailDataForList);
+                    GetEmaildatalist();
+                }
+            })
+        }
+
+
+        function GetEmaildatalist() {
+            try {
+                dataTable.destroy();
+            } catch (e) { }
+            dataTable = $("#EmailTbl").DataTable({
+                scrollY: 510,
+                data: EmailDataForList,
+                paging: false,
+                autoWidth: true,
+                sorting:false,
+                // responsive: true,
+                //"order": [[0, "asc"]],
+                dom: 'Bfrtip',
+               
+                buttons: [
+                    {
+                        extend: 'excel',
+                        title: 'Email Logs',
+                        exportOptions: {
+                            columns: [0, 1, 2, 3] //Your Colume value those you want
+                        }
+                    }],
+                columns: [
+                    {
+                        data: "SentOn",
+                        "render": function (data, type, row) {
+                            // Convert the date format using Moment.js
+                            return '<p class="p-2">' + moment(data).format('DD/MMM/YYYY, h:mm:ss') + '</p>';
+                        }
+                    },
+                    { data: "MailTo" },
+                    { data: "Subject" },
+                    { data: "Body" },
+          
+                    { data: "SentBy" },
+                ]
+            });
+            dataTable.draw();
+        }
+        function formatDate(dateString) {
+            var date = new Date(dateString);
+            var day = date.getDate();
+            var month = date.toLocaleString('en-GB', { month: 'short' });
+            var year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+    </script>
+}

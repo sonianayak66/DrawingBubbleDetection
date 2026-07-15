@@ -1,0 +1,95 @@
+﻿ @model MPCRS.ViewModels.DistinctBuildAssignmentData
+
+ <style>
+    .build-pill {
+        margin: 2px;
+    }
+    
+    .build-name-link {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .build-name-link:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .build-pill.active .build-name-link {
+        background-color: #28a745 !important;
+        border-color: #1e7e34;
+    }
+    
+    .gap-2 {
+        gap: 0.5rem !important;
+    }
+    
+    #buildNamesSection {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+</style>
+
+<div id="uniquePartsContainer">
+    <!-- Build Names as Pills/Badges -->
+    <div id="buildNamesSection" class="mb-4">
+        <h5>Available Builds <small class="text-muted">(Click to view unique parts)</small></h5>
+        <div class="d-flex flex-wrap gap-2" id="buildPillsContainer">
+            @if (Model?.DistinctBuildNames != null)
+            {
+                foreach (var build in Model.DistinctBuildNames)
+                {
+                    <div class="build-pill" data-build-name="@build.engine_build_name">
+                        <span class="badge bg-primary build-name-link"
+                              data-build-name="@build.engine_build_name"
+                              style="cursor: pointer; font-size: 0.9em; padding: 8px 12px;">
+                            <strong>@build.engine_build_name</strong>
+                            <span class="badge bg-light text-dark ms-1">@build.distinct_part_count</span>
+                        </span>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Parts Details Table -->
+    <div id="buildPartsSection" class="col-md-12">
+        <h5 id="selectedBuildTitle">Parts for <span id="selectedBuildName">Loading...</span></h5>
+        <table class="table table-bordered" id="buildPartsTable" style="width: 100%;">
+            <thead>
+                <tr>
+                    @* <th>Sl No</th> *@
+                    <th>Build Name</th>
+                    <th>Part Number</th>
+                    <th>Parent Part Number</th>
+                    <th>Revision</th>
+                    @* <th>Quantity</th> *@
+                  @*   <th>Serial Number</th> *@
+                  
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model?.DistinctBuildParts != null)
+                {
+                    foreach (var part in Model.DistinctBuildParts)
+                    {
+                        <tr>
+                            @* <td></td> <!-- Serial number will be handled by DataTable --> *@
+                            <td class="p-2">@part.engine_build_name</td>
+                            <td>@part.draw_part_no</td>
+                            <td>@part.parent_part_no</td>
+                            <td>@part.revision</td>
+                            @* <td class="text-center">@part.quantity</td> *@
+                            @* <td>@part.serial_number</td> *@
+                         
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div> 
+
+ 

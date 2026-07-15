@@ -1,0 +1,27 @@
+﻿@model MPCRS.ViewModels.AspNetRolesVM
+@using static MPCRS.Utilities.Constants;
+@{
+    Layout = null;
+    var rolelist = MPCRS.Utilities.Masters.GetRolesDropDownList(true);
+    var pagetitle = Model.Id == VTSDataRecordType.New.ToString() ? "New Role" : "Edit Role";
+}
+<h5 class="mb-3">@pagetitle</h5>
+<form method="post" asp-controller="Users" id="roleform" asp-action="AddRoles">
+    <input type="hidden" asp-for="Id" />
+    <div class="modal-content">
+     
+            <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" asp-for="Name" type="text" placeholder="AA" />
+                <label asp-for="Name"></label>
+            </div>
+      
+            <div class="form-floating mb-3">
+                <select asp-for="ClonePermissionsFromRole" asp-items="rolelist" class="form-select"></select>
+                <label asp-for="ClonePermissionsFromRole">Clone Permissions</label>
+            </div>    
+      
+            <button type="button" onclick="SubmitRole()" class="btn btn-primary btn-sm m-2" style="float:right;">Save</button>       
+
+    </div>
+</form>
+

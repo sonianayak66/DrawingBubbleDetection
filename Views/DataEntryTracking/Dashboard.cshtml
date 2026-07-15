@@ -1,0 +1,664 @@
+﻿@model MPCRS.ViewModels.DataEntryTrackingDashboardVM
+@{
+    ViewData["Title"] = "Data Entry Status Dashboard";
+
+    // Parse display column headers from first detail row's JSON
+    var columnHeaders = new List<string>();
+    if (Model.Details != null && Model.Details.Any())
+    {
+        try
+        {
+            var firstJson = Model.Details.First().DisplayValuesJson;
+            if (!string.IsNullOrEmpty(firstJson))
+            {
+                var parsed = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, string>>(firstJson);
+                if (parsed != null)
+                {
+                    columnHeaders = parsed.Keys.ToList();
+                }
+            }
+        }
+        catch { }
+    }
+}
+
+<style>
+    /* ===== Summary Cards ===== */
+    .tracking-summary-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .tracking-module-card {
+        flex: 1;
+        min-width: 220px;
+        max-width: 320px;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+        cursor: pointer;
+        transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+        .tracking-module-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            border-color: #adb5bd;
+        }
+
+        .tracking-module-card.active-card {
+            border-color: #0d6efd;
+            border-width: 2px;
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+        }
+
+    .module-card-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .module-card-stats {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .stat-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+        .stat-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+    .stat-green {
+        background: #e6f4ea;
+        color: #1e7e34;
+    }
+
+        .stat-green .dot {
+            background: #28a745;
+        }
+
+    .stat-amber {
+        background: #fff8e1;
+        color: #e67c00;
+    }
+
+        .stat-amber .dot {
+            background: #ffc107;
+        }
+
+    .stat-red {
+        background: #fdecea;
+        color: #c62828;
+    }
+
+        .stat-red .dot {
+            background: #dc3545;
+        }
+
+    .stat-blocked {
+        background: #fff3e0;
+        color: #e65100;
+    }
+
+        .stat-blocked .dot {
+            background: #ff9800;
+        }
+
+    .stat-total {
+        background: #f5f5f5;
+        color: #555;
+    }
+
+    /* ===== Status Badges in Table ===== */
+    .status-pill {
+        display: inline-block;
+        padding: 3px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-green {
+        background: #e6f4ea;
+        color: #1e7e34;
+    }
+
+    .status-amber {
+        background: #fff8e1;
+        color: #e67c00;
+    }
+
+    .status-red {
+        background: #fdecea;
+        color: #c62828;
+    }
+
+    .status-blocked {
+        background: #fff3e0;
+        color: #e65100;
+    }
+
+    /* ===== Filter Bar ===== */
+    .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+
+        .filter-bar .btn-filter {
+            padding: 4px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid #dee2e6;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+            .filter-bar .btn-filter:hover {
+                background: #f0f0f0;
+            }
+
+            .filter-bar .btn-filter.active {
+                background: #0d6efd;
+                color: #fff;
+                border-color: #0d6efd;
+            }
+
+    /* ===== Remark Column ===== */
+    .remark-text-cell {
+        max-width: 250px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .btn-remark {
+        padding: 2px 10px;
+        font-size: 12px;
+        border-radius: 4px;
+    }
+
+    .blocked-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #fff3e0;
+        color: #e65100;
+    }
+
+    /* ===== Days Since Update ===== */
+    .days-count {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .days-green {
+        color: #28a745;
+    }
+
+    .days-amber {
+        color: #e67c00;
+    }
+
+    .days-red {
+        color: #dc3545;
+    }
+
+    .days-blocked {
+        color: #ff9800;
+    }
+
+    /* ===== Page Header ===== */
+    .page-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+        .page-header-row h4 {
+            margin: 0;
+            font-weight: 600;
+            color: #333;
+        }
+
+    /* ===== Select Module Placeholder ===== */
+    .select-module-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 80px 20px;
+        text-align: center;
+        color: #adb5bd;
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+    }
+
+        .select-module-placeholder i {
+            font-size: 56px;
+            margin-bottom: 18px;
+            opacity: 0.5;
+        }
+
+        .select-module-placeholder h5 {
+            color: #6c757d;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .select-module-placeholder p {
+            color: #adb5bd;
+            font-size: 14px;
+            margin: 0;
+        }
+
+    /* ===== Modal ===== */
+    .remark-modal-body textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .history-table {
+        font-size: 13px;
+    }
+
+        .history-table td, .history-table th {
+            padding: 6px 10px;
+        }
+</style>
+
+<!-- Page Header -->
+<div class="page-header-row">
+    <h4><i class="fas fa-clipboard-check me-2"></i>Data Entry Status Dashboard</h4>
+    <div>
+        @if (MPCRS.Utilities.UserData.IsAuthorized(User, MPCRS.Utilities.Constants.UserPermissions.DataEntry_Tracking_Config))
+        {
+            <a href="/DataEntryTracking/Config" class="btn btn-outline-primary btn-sm me-2">
+                <i class="fas fa-cogs me-1"></i> Configuration Page
+            </a>
+        }
+        <button class="btn btn-outline-secondary btn-sm" onclick="refreshDashboard()">
+            <i class="fas fa-sync-alt me-1"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="tracking-summary-row" id="summaryCardsContainer">
+    @if (Model.Summary != null && Model.Summary.Any())
+    {
+        @foreach (var module in Model.Summary)
+        {
+            <div class="tracking-module-card @(Model.ActiveConfigId == module.ConfigId ? "active-card" : "")"
+                 onclick="filterByModule(@module.ConfigId)" title="View @module.ModuleName details">
+                <div class="module-card-title">@module.ModuleName</div>
+                <div class="module-card-stats">
+                    <span class="stat-badge stat-total">Total: @module.TotalRecords</span>
+                    <span class="stat-badge stat-red">
+                        <span class="dot"></span> @module.RedCount
+                    </span>
+                    @if (module.BlockedCount > 0)
+                    {
+                        <span class="stat-badge stat-blocked">
+                            <span class="dot"></span> @module.BlockedCount
+                        </span>
+                    }
+                    <span class="stat-badge stat-amber">
+                        <span class="dot"></span> @module.AmberCount
+                    </span>
+                    <span class="stat-badge stat-green">
+                        <span class="dot"></span> @module.GreenCount
+                    </span>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="alert alert-info w-100">
+            <i class="fas fa-info-circle me-1"></i> No modules configured for tracking.
+            Contact admin to set up Data Entry Tracking configuration.
+        </div>
+    }
+</div>
+
+@if (Model.ActiveConfigId.HasValue)
+{
+    <!-- Filter Bar -->
+    <div class="filter-bar" id="filterBar">
+        <span style="font-size:13px; color:#666; font-weight:500;">Filter:</span>
+        <button class="btn-filter @(Model.ActiveFilter == null ? "active" : "")"
+                onclick="filterByStatus(null)">
+            All
+        </button>
+        <button class="btn-filter @(Model.ActiveFilter == "Red" ? "active" : "")"
+                onclick="filterByStatus('Red')">
+            🔴 Overdue
+        </button>
+        <button class="btn-filter @(Model.ActiveFilter == "Blocked" ? "active" : "")"
+                onclick="filterByStatus('Blocked')">
+            🟠 Blocked
+        </button>
+        <button class="btn-filter @(Model.ActiveFilter == "Amber" ? "active" : "")"
+                onclick="filterByStatus('Amber')">
+            🟡 Approaching
+        </button>
+        <button class="btn-filter @(Model.ActiveFilter == "Green" ? "active" : "")"
+                onclick="filterByStatus('Green')">
+            🟢 On Track
+        </button>
+    </div>
+
+    <!-- Detail Table — dynamic columns -->
+    <div class="card">
+        <div class="card-body p-2">
+            <table class="table table-bordered table-hover" id="trackingTable" style="width:100%; font-size:13px;">
+                <thead>
+                    <tr>
+                        @foreach (var header in columnHeaders)
+                        {
+                            <th>@header</th>
+                        }
+                        <th>Last Updated</th>
+                        <th>Days Since</th>
+                        <th>Status</th>
+                        <th>Remark</th>
+                        <th style="width:100px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Details != null)
+                    {
+                        foreach (var row in Model.Details)
+                        {
+                            // Parse this row's display values
+                            var displayValues = new Dictionary<string, string>();
+                            try
+                            {
+                                if (!string.IsNullOrEmpty(row.DisplayValuesJson))
+                                {
+                                    displayValues = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, string>>(row.DisplayValuesJson)
+                                    ?? new Dictionary<string, string>();
+                                }
+                            }
+                            catch { }
+
+                            var statusClass = row.TrackingStatus switch
+                            {
+                                "Green" => "status-green",
+                                "Amber" => "status-amber",
+                                "Red" => "status-red",
+                                "Blocked" => "status-blocked",
+                                _ => ""
+                            };
+                            var daysClass = row.TrackingStatus switch
+                            {
+                                "Green" => "days-green",
+                                "Amber" => "days-amber",
+                                "Red" => "days-red",
+                                "Blocked" => "days-blocked",
+                                _ => ""
+                            };
+                            var statusLabel = row.TrackingStatus switch
+                            {
+                                "Green" => "On Track",
+                                "Amber" => "Approaching",
+                                "Red" => "Overdue",
+                                "Blocked" => "Blocked",
+                                _ => row.TrackingStatus
+                            };
+
+                            <tr>
+                                @foreach (var header in columnHeaders)
+                                {
+                                    <td>@(displayValues.ContainsKey(header) ? displayValues[header] : "")</td>
+                                }
+                                <td>
+                                    @(row.LastUpdatedOn.HasValue? row.LastUpdatedOn.Value.ToString("dd-MMM-yy") : "Never")
+                                </td>
+                                <td>
+                                    <span class="days-count @daysClass">@row.DaysSinceUpdate days</span>
+                                </td>
+                                <td>
+                                    <span class="status-pill @statusClass">@statusLabel</span>
+                                </td>
+                                <td>
+                                    @if (row.IsBlocked)
+                                    {
+                                        <span class="blocked-badge"><i class="fas fa-ban me-1"></i>Update Blocked</span>
+                                        <br />
+                                    }
+                                    @if (!string.IsNullOrEmpty(row.RemarkText))
+                                    {
+                                        <span class="remark-text-cell" title="@row.RemarkText">@row.RemarkText</span>
+                                        <br />
+                                        <small class="text-muted">— @row.RemarkByName, @(row.RemarkOn.HasValue? row.RemarkOn.Value.ToString("dd-MMM-yy HH:mm") : "")</small>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-remark"
+                                            onclick="openRemarkModal(@row.ConfigId, @row.SourceRecordKey, '@(row.RemarkId?.ToString() ?? "")', '@(row.RemarkText?.Replace("'", "\\'").Replace("\r", "").Replace("\n", "") ?? "")', @(row.IsBlocked ? "true" : "false"))">
+                                        <i class="fas fa-comment-dots"></i>
+                                        @(row.RemarkId.HasValue ? "Edit" : "Add")
+                                    </button>
+                                    @if (row.RemarkId.HasValue)
+                                    {
+                                        <button class="btn btn-outline-secondary btn-remark ms-1"
+                                                onclick="viewRemarkHistory(@row.RemarkId)" title="View History">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <!-- No module selected — show placeholder -->
+    <div class="select-module-placeholder">
+        <i class="fas fa-hand-pointer"></i>
+        <h5>Select a module to view details</h5>
+        <p>Click on one of the module cards above to see record-level tracking details</p>
+    </div>  
+}
+
+<!-- Remark Modal -->
+<div class="modal fade" id="remarkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add / Edit Remark</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body remark-modal-body">
+                <input type="hidden" id="rmk_ConfigId" />
+                <input type="hidden" id="rmk_SourceRecordKey" />
+                <input type="hidden" id="rmk_RemarkId" />
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Remark</label>
+                    <textarea class="form-control" id="rmk_RemarkText" rows="3"
+                              placeholder="Enter remark — e.g. Waiting for vendor quote, Data with XYZ person..."></textarea>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="rmk_IsBlocked">
+                    <label class="form-check-label" for="rmk_IsBlocked">
+                        <strong>Update Blocked</strong>
+                        <small class="text-muted d-block">Flag this record as blocked — update is needed but something is preventing it</small>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveRemark()">
+                    <i class="fas fa-save me-1"></i> Save Remark
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Remark History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered history-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Old Value</th>
+                            <th>New Value</th>
+                            <th>By</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        var dataTable;
+
+        $(document).ready(function () {
+            if ($('#trackingTable').length) {
+                // Dynamic column count — Days Since column is after all display columns
+                var daysSinceColIndex = @columnHeaders.Count + 1;
+
+                dataTable = $('#trackingTable').DataTable({
+                    dom: 'Bfrtip',
+                    paging: false,
+                    scrollY: 450,
+                    order: [[daysSinceColIndex, 'desc']],
+                    buttons: ['excel']
+                });
+            }
+        });
+
+        function filterByModule(configId) {
+            window.location.href = '/DataEntryTracking/Dashboard?configId=' + configId;
+        }
+
+        function filterByStatus(status) {
+            var currentConfigId = '@(Model.ActiveConfigId?.ToString() ?? "")';
+            var url = '/DataEntryTracking/Dashboard';
+            var params = [];
+            if (currentConfigId) params.push('configId=' + currentConfigId);
+            if (status) params.push('statusFilter=' + status);
+            if (params.length > 0) url += '?' + params.join('&');
+            window.location.href = url;
+        }
+
+        function refreshDashboard() {
+            window.location.reload();
+        }
+
+        function openRemarkModal(configId, sourceRecordKey, remarkId, remarkText, isBlocked) {
+            $('#rmk_ConfigId').val(configId);
+            $('#rmk_SourceRecordKey').val(sourceRecordKey);
+            $('#rmk_RemarkId').val(remarkId || '');
+            $('#rmk_RemarkText').val(remarkText || '');
+            $('#rmk_IsBlocked').prop('checked', isBlocked || false);
+            $('#remarkModal').modal('show');
+        }
+
+        function saveRemark() {
+            var remarkId = $('#rmk_RemarkId').val();
+            var payload = {
+                ConfigId: parseInt($('#rmk_ConfigId').val()),
+                SourceRecordKey: parseInt($('#rmk_SourceRecordKey').val()),
+                RemarkText: $('#rmk_RemarkText').val(),
+                NoUpdateNeeded: $('#rmk_IsBlocked').is(':checked'),
+                RemarkId: remarkId ? parseInt(remarkId) : null
+            };
+
+            $.ajax({
+                url: '/DataEntryTracking/SaveRemark',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function (res) {
+                    if (res.success) {
+                        $('#remarkModal').modal('hide');
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + res.msg);
+                    }
+                },
+                error: function () {
+                    alert('Failed to save remark. Please try again.');
+                }
+            });
+        }
+
+        function viewRemarkHistory(remarkId) {
+            $.get('/DataEntryTracking/GetRemarkHistory?remarkId=' + remarkId, function (res) {
+                if (res.success) {
+                    var tbody = $('#historyTableBody');
+                    tbody.empty();
+
+                    if (res.data.length === 0) {
+                        tbody.append('<tr><td colspan="5" class="text-center text-muted">No history found</td></tr>');
+                    } else {
+                        res.data.forEach(function (h) {
+                            var dateStr = h.actionOn ? moment(h.actionOn).format('DD-MMM-YY HH:mm') : '';
+                            tbody.append(
+                                '<tr>' +
+                                '<td>' + (h.action || '') + '</td>' +
+                                '<td>' + (h.oldValue || '-') + '</td>' +
+                                '<td>' + (h.newValue || '-') + '</td>' +
+                                '<td>' + (h.actionByName || '') + '</td>' +
+                                '<td>' + dateStr + '</td>' +
+                                '</tr>'
+                            );
+                        });
+                    }
+
+                    $('#historyModal').modal('show');
+                } else {
+                    alert('Error loading history: ' + res.msg);
+                }
+            });
+        }
+    </script>
+}

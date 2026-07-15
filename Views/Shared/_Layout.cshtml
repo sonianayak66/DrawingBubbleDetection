@@ -1,0 +1,262 @@
+﻿
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr" class="navbar-horizontal">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+	<!-- ===============================================-->
+	<!--    Document Title-->
+	<!-- ===============================================-->
+	<title>STFE V2 @Context.Items["Title"]</title>
+
+
+	<!-- ===============================================-->
+	<!--    Favicons-->
+	<!-- ===============================================-->
+	<link rel="apple-touch-icon" sizes="180x180" href="~/assets/img/favicons/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="~/assets/img/favicons/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="~/assets/img/favicons/favicon-16x16.png">
+	<link rel="shortcut icon" type="image/x-icon" href="~/assets/img/favicons/favicon.ico">
+	<link rel="manifest" href="~/assets/img/favicons/manifest.json">
+	<meta name="msapplication-TileImage" content="~/assets/img/favicons/mstile-150x150.png">
+	<meta name="theme-color" content="#ffffff">
+	@* <script src="~/vendors/imagesloaded/imagesloaded.pkgd.min.js"></script>*@
+	@*<script src="~/vendors/simplebar/simplebar.min.js"></script>*@
+	<script src="~/assets/js/config.js"></script>
+
+	<!-- ===============================================-->
+	<!--    Stylesheets-->
+	<!-- ===============================================-->
+
+
+	<link href="~/fonts/gfonts/gfonts.css" rel="stylesheet" />
+	<link href="~/bundle/bundledstyles.min.css" asp-append-version="true" rel="stylesheet" />
+	@*
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.6.5/css/buttons.dataTables.min.css">
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/rowgroup/1.1.2/css/rowGroup.dataTables.min.css">
+	*@
+	@*<link href="~/lib/jquery/dist/jquery.contextmenu.min.css" rel="stylesheet" /> *@
+	@*<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.9.2/jquery.contextMenu.min.css"> *@
+	<link href="~/css/contextmenu.min.css" rel="stylesheet" />
+	@* <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.default.css"> *@
+	<link href="~/css/tom-select.default.css" rel="stylesheet" />
+	<style type="text/css">
+		.dropdown-menu-card {
+			min-width: 800px !important;
+			left: 0% !important;
+		}
+
+		.buttons-excel, .buttons-html5, .btn-small {
+			padding: 0.3rem 0.6rem; /* Adjust padding as needed */
+			font-size: 0.75rem; /* Adjust font size as needed */
+		}
+
+		body {
+			font-size: 0.85em; /* 80% of the default size */
+		}
+
+		.form-control-square, .form-select-square {
+			border-radius: 0;
+		}
+
+		
+	</style>
+	<!--deesign used for GDnT Symbols-->
+	<style type="text/css">
+		.gd-t-container {
+			position: relative;
+			display: inline-block;
+			width: 100%;
+		}
+
+		.DrawingDimension {
+			padding-right: 30px; /* Space for icon */
+		}
+
+		.symbolDropdown {
+			position: absolute;
+			display: none;
+			border: 1px solid #ddd;
+			background-color: #fff;
+			max-height: 200px;
+			width: 200px;
+			overflow-y: auto;
+			z-index: 1000;
+		}
+
+			.symbolDropdown div {
+				padding: 8px;
+				cursor: pointer;
+			}
+
+				.symbolDropdown div:hover {
+					background-color: #f0f0f0;
+				}
+
+		.large-icon {
+			font-size: 24px; /* Adjust size as needed */
+		}
+	</style>
+
+
+	<style>
+		/* Custom styles to make the modal fit the screen */
+		.custom-modal .modal-dialog {
+			width: 100%;
+			max-width: 100%;
+			height: 100%;
+			margin: 0;
+		}
+
+		.custom-modal .modal-content {
+			height: 100%;
+			border: none; /* Optional: Remove border if desired */
+		}
+
+		.custom-modal .modal-body {
+		}
+
+		.modal-header {
+			background-color: black;
+		}
+
+		.bootbox-close-button {
+			background-color: white;
+		}
+
+		.modal-title {
+			font-size: 1rem;
+			color: #fff;
+		}
+
+		.modal-backdrop.fade {
+			background-color: rgba(0,0,0,0.5) !important;
+		}
+
+		.modal-backdrop {
+			z-index: 1040 !important;
+		}
+
+		.modal-content {
+			margin: 2px auto;
+			z-index: 1100 !important;
+		}
+
+		.modal-header .btn-close {
+			padding: calc(var(--phoenix-modal-header-padding-y)* .4) calc(var(--phoenix-modal-header-padding-x)* .4);
+			margin: calc(-0.5* var(--phoenix-modal-header-padding-y)) calc(-0.5* var(--phoenix-modal-header-padding-x)) calc(-0.5* var(--phoenix-modal-header-padding-y)) auto;
+		}
+
+		.modal-header {
+					padding: 5px!important;
+			
+		}
+
+		.logo-text {
+    font-size: 1.3625rem;
+
+		}
+	</style>
+
+
+	<style>
+		.form-control {
+			padding: 0.25rem 0.5rem;
+		}
+
+		.form-select {
+			padding: 0.25rem 0.5rem;
+		}
+	</style>
+
+
+</head>
+<body>
+
+	<main class="main" id="top">
+		 
+			 
+				<partial name="_Navbar.cshtml">
+			 
+		 
+		
+			<div class="content">
+				@RenderBody()
+			</div>
+			<partial name="_loader.cshtml">
+	</main>
+
+	<!-- ===============================================-->
+	<!--    JavaScripts-->
+	<!-- ===============================================-->
+	@*
+	// MOVED TO BUNDLE
+	<script src="~/lib/jquery/dist/jquery.min.js"></script>
+	<script src="~/vendors/popper/popper.min.js"></script>
+	<script src="~/vendors/bootstrap/bootstrap.min.js"></script>
+	<script src="~/vendors/anchorjs/anchor.min.js"></script>
+	<script src="~/vendors/is/is.min.js"></script>
+	<script src="~/vendors/fontawesome/all.min.js"></script>
+	<script src="~/vendors/feather-icons/feather.min.js"></script>
+	<script src="~/js/datatables.min.js"></script>
+	<script src="~/js/bootbox.all.min.js"></script>
+	<script src="~/js/summernote.min.js"></script>
+	<script src="~/js/moment.min.js"></script>
+	<script src="~/js/select2.min.js"></script>
+	<script src="~/vendors/choices/choices.min.js"></script>
+	*@
+	
+	<script src="~/bundle/bundledScripts.min.js" asp-append-version="true"></script>
+	<script src="~/js/chart.umd.min.js" asp-append-version="true"></script>
+	<script src="~/mpi/common.js" asp-append-version="true"></script>
+	<script src="~/mpi/attachment.js" asp-append-version="true"></script>
+	<script src="~/js/printthis.js"></script>
+	<script src="~/js/jquery.easy-autocomplete.min.js"></script>
+	<script src="~/lib/jquery/dist/jqueryui.dialog.fullmode.js"></script>
+	<script src="~/js/contextmenu.min.js"></script>
+	<script src="~/js/tom-select.complete.min.js"></script>
+	<link href="~/js/xdialog.3.4.0.min.css" rel="stylesheet" />
+	<script src="~/js/xdialog.3.4.0.min.js"></script>
+
+	@await RenderSectionAsync("Scripts", required: false)
+
+	<script>
+		bootbox.setDefaults({
+			centerVertical: true,
+			scrollable: true
+		});
+
+		function getNavBarHeight() {
+			return document.getElementById("navbarTop").clientHeight;
+		}
+
+		function UpdateNavHeading(text) {
+			document.getElementById("nav-heading-element").innerText = text;
+		}
+
+		function highlightRow(row, tableId) {
+			// Remove the 'highlight' class from all rows
+			var tableRows = document.querySelectorAll('#' + tableId + ' tbody tr');
+			tableRows.forEach(function (r) {
+				if (r.classList.contains('highlight')) {
+					r.style.backgroundColor = ''
+				}
+			});
+
+			// Add the 'highlight' class to the clicked row
+			row.classList.add('highlight');
+			row.style.backgroundColor = "#ffcc85";
+		}
+
+
+
+	</script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,130 @@
+﻿@model MPCRS.ViewModels.DocumentsViewModel
+
+<style>
+    .tag-container {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 8px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        min-height: 42px;
+        cursor: text;
+        background: #fff;
+        transition: border-color 0.15s;
+    }
+    .tag-container:focus-within {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
+    }
+    .tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        background: #e7f1ff;
+        color: #0d6efd;
+        border: 1px solid #b6d4fe;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        white-space: nowrap;
+        animation: tagFadeIn 0.15s ease;
+    }
+    @@keyframes tagFadeIn { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+    .tag-pill .tag-remove {
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        color: #6c757d;
+        font-weight: bold;
+        margin-left: 2px;
+    }
+    .tag-pill .tag-remove:hover { color: #dc3545; }
+    .tag-input {
+        border: none;
+        outline: none;
+        flex: 1;
+        min-width: 80px;
+        font-size: 0.85rem;
+        background: transparent;
+        padding: 2px 0;
+    }
+    .tag-input::placeholder { color: #adb5bd; }
+</style>
+
+<form asp-action="SaveDocumentDetail" asp-controller="DocManager" id="DocMainForm" class="needs-validation" novalidate="">
+
+    <input type="hidden" asp-for="Document_Dbkey" />
+    <input type="hidden" asp-for="Parent_id" />
+    <input type="hidden" asp-for="Item_type" />
+
+    @{
+        if (Model.Parent_id == 0)
+        {
+            <div class="text-muted mb-3" style="font-size:0.85rem;">
+                <i class="fas fa-folder-open me-1"></i> Base folder: <strong>Root</strong>
+            </div>
+        }
+        else
+        {
+            <div class="text-muted mb-3" style="font-size:0.85rem;">
+                <i class="fas fa-folder-open me-1"></i> Base folder: <strong>@Model.Parent</strong>
+            </div>
+        }
+    }
+
+    <div class="form-floating mb-3">
+        <input class="form-control" asp-for="Refrence_Title" />
+        <label asp-for="Refrence_Title">Title</label>
+        <span class="text-danger text-sm-start" asp-validation-for="Refrence_Title"></span>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input class="form-control" asp-for="Description" />
+        <label asp-for="Description">Description</label>
+    </div>
+
+    <div class="mb-3" style="display:@(Model.Item_type == "File" ? "block" : "none")">
+        <label class="form-label" style="font-size:0.85rem; color:#6c757d;">Search Tags</label>
+        <div class="tag-container" id="tagContainerFolder" onclick="this.querySelector('.tag-input').focus()">
+            <input type="text" class="tag-input" id="tagInputFolder" placeholder="Type and press Enter to add..." />
+        </div>
+        <input type="hidden" asp-for="SearchTags" id="SearchTags" />
+    </div>
+
+    <div class="form-floating mb-3" style="display:@(Model.Item_type == "File" ? "block" : "none")">
+        <input class="form-control" asp-for="Note" />
+        <label asp-for="Note">Note</label>
+    </div>
+
+    <div class="form-check form-switch mb-3" style="display:@(Model.Item_type == "File" ? "none" : "block")">
+        <input class="form-check-input" asp-for="is_required_approve" type="checkbox" />
+        <label class="form-check-label" asp-for="is_required_approve">Approval Required</label>
+    </div>
+    <div class="form-check form-switch mb-3" style="display:@(Model.Item_type == "File" ? "none" : "block")">
+        <input class="form-check-input" asp-for="Inherit_Parent_Access" type="checkbox" />
+        <label class="form-check-label" asp-for="Inherit_Parent_Access">Inherit Parent Access</label>
+    </div>
+
+    <div class="mb-3" style="display:@(Model.Item_type == "File" ? "block" : "none")">
+        <label class="form-label" style="font-size:0.85rem; color:#6c757d;">File</label>
+        <input class="form-control" id="DocSFile" type="file" />
+    </div>
+
+    <div class="d-flex justify-content-end mt-3">
+        <button type="button" class="btn btn-success px-4" id="lnksave" onclick="UpdateDocumentFolderinfo()">
+            <i class="fas fa-save me-1"></i> Save
+        </button>
+    </div>
+
+</form>
+
+<script>
+    (function () {
+        // Initialize tag input for Folder form
+        var existingTags = document.getElementById('SearchTags').value || '';
+        initTagInput('tagContainerFolder', 'tagInputFolder', 'SearchTags', existingTags);
+    })();
+</script>

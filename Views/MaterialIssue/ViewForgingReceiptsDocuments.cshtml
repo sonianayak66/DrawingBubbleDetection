@@ -1,0 +1,78 @@
+﻿@using MPCRS.Utilities
+@model List<MPCRS.ViewModels.ForgingReceiptDocumentsVM>
+@{
+    Layout = null;
+}
+
+<div style="margin-top:10px; margin-bottom:15px"><h4>Receipt Documents</h4></div>
+
+
+<table id="Receipt-Documents-Table" class="table table-bordered">
+    <thead>
+        <tr>
+     @*       <th>Demand #</th>*@
+            <th>Receipt #</th>
+            <th>Date</th>
+            <th>Item</th>
+            <th style="text-align:right; padding-right:12px; max-width:80px!important">Receipt Qty</th>
+            <th style="max-width:350px!important">Documents</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            foreach (var item in Model.Select(x => new { x.Issue_Dbkey, x.Demand_No, x.MMG_File_No, x.Receipt_Number, x.Drawing_no, x.Receipt_Date, x.GTRE_Drawing_No, x.HAL_Drawing_No, x.Receiving_Inventory }).Distinct().OrderBy(x => x.Receipt_Date).ThenBy(x => x.Receipt_Number).ThenBy(x => x.GTRE_Drawing_No).ToList())
+            {
+                <tr>
+                    @* <td>@item.MMG_File_No</td>*@
+                    <td>@item.Receipt_Number
+                    <br/>
+                        @item.Drawing_no
+                    </td>
+                    <td>@MPGlobals.GetFormattedDate(@item.Receipt_Date)</td>
+                    <td>
+                    @item.GTRE_Drawing_No
+                    <br/>
+                        @item.HAL_Drawing_No
+                    
+                    </td>
+                    <td>@item.Receiving_Inventory</td>
+                        <td>
+                        @{
+                            foreach (var doc in Model.Where(x => x.Receipt_Number == item.Receipt_Number
+                                  && x.Issue_Dbkey == item.Issue_Dbkey
+                                && x.Receipt_Date == item.Receipt_Date
+                                && x.Receiving_Inventory == item.Receiving_Inventory
+                                && x.GTRE_Drawing_No == item.GTRE_Drawing_No).ToList())
+                            {
+                                //if (!string.IsNullOrEmpty(doc.Attachments))
+                                //{
+                                //    string[] csvArray = doc.Attachments.Split(',');
+                                //    foreach (string mapdoc in csvArray)
+                                //    {
+                                //        if (mapdoc.Trim() == doc.Attachment_Db_Key.ToString())
+                                //        {
+                                //            var href = doc.Attachment_location == null ? "#" : doc.Attachment_location + doc.Attachment_FileName;
+                                //            <a href="@href" target="_blank" class="badge badge-phoenix-success">
+                                //                @doc.DocumentType
+                                //            </a>
+                                //        }
+                                //    }
+                                //}
+
+                                var href = doc.Attachment_location == null ? "#" : doc.Attachment_location + doc.Attachment_FileName;
+                                <a href="@href" target="_blank" class="badge badge-phoenix-success">
+                                    @doc.DocumentType
+                                </a>
+                              
+                            
+                            }
+                            }
+                        
+                        </td>
+
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+

@@ -1,0 +1,575 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@{
+    ViewData["Title"] = "Home Page";
+    var AcsnRead = UserData.IsAuthorized(User, Constants.UserPermissions.ACSN_Read);
+    var NCRRead = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Read);
+    var SOPRead = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Read);
+    var MasterSearch = UserData.IsAuthorized(User, Constants.UserPermissions.Access_Master_Search);
+    var partsList = MPCRS.Utilities.Masters.GetEnginePartList_NeedTobeRefactored();
+    var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email).Value;
+    List<string> emails = new List<string> { "lakshmiv@mail.gtre.org", "manohar_tk@mail.gtre.org", "gopalakrishnan_l@mail.gtre.org", "lavanya@gtre.in", "Venkataramana@mail.gtre.org" };
+    DataTable builds = MPGlobals.GetDataForDatalist("Select BuildGuid from dbo.EngineBuilds");
+}
+
+<style>
+    .select2-results__options {
+        max-height: 300px !important;
+        font-size: 18px;
+    }
+
+    .select2-selection__arrow {
+        display: none;
+    }
+
+    .select2.select2-container .select2-selection {
+        border: 1px solid #2d9fd9;
+        -webkit-border-radius: 20px;
+        -moz-border-radius: 20px;
+        border-radius: 20px;
+        height: 46px;
+        outline: none !important;
+        color: #a0d18c;
+        font-size: 18px;
+    }
+
+        .select2.select2-container .select2-selection .select2-selection__rendered {
+            color: #333;
+            line-height: 42px;
+            padding-right: 33px;
+
+        }
+
+    /* make radio/checkbox bigger */
+    .form-check-input {
+        width: 1.5em;
+        height: 1.5em;
+    }
+
+    /* optional: center label text nicely */
+    .form-check-label {
+        margin-left: 0.35rem;
+        font-size: 1.1rem; /* increase label text too if needed */
+    }
+</style>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mt-2">
+        <h4 class="text-black mb-0">
+            Hello @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName).Value
+        </h4>
+
+        @if (emails.Contains(email))
+        {
+            <div class="d-flex gap-2">
+                <a class="btn btn-sm btn-primary" href="/Dashboard/Index">
+                    New Dashboard
+                </a>
+
+                <a class="btn btn-sm btn-primary" href="/AllReports/Index">
+                    All Reports
+                </a>
+            </div>
+        }
+    </div>
+
+    <hr />
+    @{
+       
+        if (MasterSearch)
+        {
+            <h3>Search By</h3>
+            <br />
+
+            <div class="">
+                <div class="card-body">
+                    <h4 class="card-title"> </h4>
+
+                    <div class="form-check form-check-inline">
+
+                        <input class="form-check-input" id="radioPart" type="radio" name="inlineRadioOptions" value="part" checked />
+                        <label class="form-check-label" for="radioPart">Part</label>
+                    </div>
+
+                    <div class="form-check form-check-inline">
+
+                        <input class="form-check-input" id="radioJobCard" type="radio" name="inlineRadioOptions" value="jobcard" />
+                        <label class="form-check-label" for="radioJobCard">Job Card</label>
+                    </div>
+
+                    <div class="form-check form-check-inline">
+
+                        <input class="form-check-input" id="radioBatchNo/HeatNo" type="radio" name="inlineRadioOptions" value="batch" />
+                        <label class="form-check-label" for="radioBatchNo/HeatNo">Batch No / Heat No</label>
+                    </div>
+
+                    <div class="form-check form-check-inline">
+
+
+                        <input class="form-check-input" id="radioRawMaterial" type="radio" name="inlineRadioOptions" value="rawmaterial" disabled />
+                        <label class="form-check-label" for="radioRawMaterial">Raw Material</label>
+                    </div>
+
+                    <div class="form-check form-check-inline">
+
+                        <input class="form-check-input" id="radioMMGNumber" type="radio" name="inlineRadioOptions" value="mmgnumber" disabled />
+                        <label class="form-check-label" for="radioMMGNumber">MMG Number</label>
+                    </div>
+
+                    
+
+
+
+                    <br />
+                    <br />
+
+                    <div class="selectWrapper">
+
+                        <select id="partSelect" class="form-control searchable" asp-items="@partsList"></select>
+
+                        @* --- JOB CARD SEARCH TEXTBOX (ONLY ONE INPUT) --- *@
+                        @* *** UPDATED: single box, hidden initially with d-none *** *@
+                        <input type="text"
+                               id="jobCardInput"
+                               class="form-control mt-2 d-none"
+                               placeholder="Enter Job Card Number or File Name" />
+
+                        <input type="text"
+                               id="batchInput"
+                               class="form-control mt-2 d-none"
+                               placeholder="Enter Batch No. or Heat No." />
+
+                        <input type="text"
+                               id="rawmaterialInput"
+                               class="form-control mt-2 d-none" 
+                               placeholder="Enter the Raw Materials" />
+
+                        <input type="text"
+                               id="mmgnumberInput"
+                               class="form-control mt-2 d-none"
+                               placeholder="Enter the MMG Number" />
+
+                        <div class="text-center mt-3">
+                            <button class="btn btn-primary btn-lg me-1 mb-1"
+                                    id="searchBtn"
+                                    onclick="SearchPart()"
+                                    type="button">
+                                Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+
+        <hr />
+
+        if (AcsnRead)
+        {
+            <div class="col-md-12">
+                <a class="mb-2" href="/ACSN/Index"><h4>ACSN</h4></a>
+                <partial name="../ACSN/SummaryBanner.cshtml">
+            </div>
+            <hr />
+        }
+
+        if (NCRRead)
+        {
+            <div class="col-md-12">
+                <a class="mb-2" href="/NCR/Index"><h4>NCR</h4></a>
+                <partial name="../NCR/NCRSummary.cshtml">
+            </div>
+            <hr />
+        }
+
+        // if (SOPRead)
+        // {
+        //  <div class="col-md-12">
+        //      <a class="mb-2" href="/SOPManagement/Builds"><h4>Builds</h4></a>
+        //      @for (int i = 0; i < builds.Rows.Count; i++)
+        //      {
+        //          var buildGuid = builds.Rows[i]["BuildGuid"].ToString();
+        //          <partial name="../SOPManagement/_BuildInfoBanner.cshtml" model="buildGuid"></partial>
+        //          <hr />
+        //      }
+        //  </div>
+        // }
+        if (!MasterSearch && !AcsnRead && !NCRRead)
+        {
+            @Html.Partial("../Shared/_menuItems.cshtml", true)
+        }
+    }
+</div>
+
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function () {
+
+            $('.searchable').select2({
+                dropdownParent: $('.selectWrapper'),
+                placeholder: "Select a part",
+                closeOnSelect: true,
+                allowClear: true
+            });
+
+
+            $('input[name="inlineRadioOptions"]').on('change', function () {
+                var selected = $('input[name="inlineRadioOptions"]:checked').val();
+
+                if (selected === "part") {
+
+                    $('#partSelect').next('.select2-container').show();
+                    $('#jobCardInput').addClass('d-none');
+                    $('#batchInput').addClass('d-none');
+                    $('#rawmaterialInput').addClass('d-none');
+                    $('#mmgnumberInput').addClass('d-none');
+
+
+                    $('#jobCardInput').val('');
+                    $('#batchInput').val('');
+                   // $('rawmaterialinput').val('');
+                }
+                else if (selected === "jobcard"){
+
+                   $('#partSelect').next('.select2-container').hide();
+                    $('#batchInput').addClass('d-none');
+                    $('#jobCardInput').removeClass('d-none');
+                    $('#rawmaterialInput').addClass('d-none');
+                    $('#mmgnumberInput').addClass('d-none');
+
+
+
+
+                  //$('#partSelect').val(null).trigger('change');
+                    $('#jobCardInput').val('');
+                    $('#jobCardInput').focus('');
+                }
+                
+                else if (selected === "batch") {
+                    $('#partSelect').next('.select2-container').hide();
+                    $('#jobCardInput').addClass('d-none');
+                    $('#batchInput').removeClass('d-none');
+                    $('#rawmaterialInput').addClass('d-none');
+                    $('#mmgnumberInput').addClass('d-none');
+
+                      $('#batchInput').val('');
+                      $('#batchInput').focus('');
+
+
+                }
+
+                else if(selected === "rawmaterial") {
+                    $('#partSelect').next('.select2-container').hide();
+                    $('#rawmaterialInput').removeClass('d-none');
+                    $('#jobCardInput').addClass('d-none');
+                    $('#batchInput').addClass('d-none');
+                    $('#mmgnumberInput').addClass('d-none');
+
+                    $('#rawmaterialInput').val('');
+                    $('#rawmaterialInput').focus('');
+                }
+
+                else if(selected === "mmgnumber") {
+                    $('#partSelect').next('.select2-container').hide();
+                    $('#jobcardInput').addClass('d-none');
+                    $('#batchInput').addClass('d-none');
+                    $('#rawmaterialInput').addClass('d-none');
+                    $('#mmgnumberInput').removeClass('d-none');
+
+                    $('#mmgnumberInput').val('');
+
+                    $('#mmgnumberInput').focus('');
+                }
+            });
+
+
+            //$('input[name="inlineRadioOptions"]:checked').trigger('change');
+
+
+            $(document).on("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    $("#searchBtn").trigger("click");
+                }
+            });
+        });
+
+
+        function SearchPart() {
+            var selected = $('input[name="inlineRadioOptions"]:checked').val();
+           // console.log(selected);
+            if (selected === "part") {
+
+                var partNumber = $('#partSelect').val();
+                if (partNumber != null && partNumber !== "") {
+                    var url = "/Home/Search?partNumber=" + encodeURIComponent(partNumber);
+                    window.open(url, "_blank");
+                }
+            }
+            else if (selected === "jobcard") {
+               
+                var jobCardSearchText = $('#jobCardInput').val().trim();
+                //console.log(jobCardSearchText);
+                if (jobCardSearchText === null || jobCardSearchText.trim() === "") {
+                    return;
+
+                  }
+                    var url = "/Home/JobCardSearch?searchText=" + encodeURIComponent(jobCardSearchText);
+                    window.open(url, "_blank");
+            }
+            else if(selected === "batch") {
+                
+                var batchNumber = $('#batchInput').val().trim();
+              //  console.log('batch value ' + batchNumber);
+                if (!batchNumber) {
+                    return;
+                }
+                var url = "/Home/batchsearch?searchText=" + encodeURIComponent(batchNumber);
+                window.open(url, "_blank");
+            }
+             else if(selected === "rawmaterial") {
+
+                 var rawmaterial = $('#rawmaterialInput').val().trim();
+                 if (!rawmaterial) {
+                     return;
+                 }
+                 
+                 var url = "/Home/rawmaterialsearch?searchText=" + encodeURIComponent(rawmaterial);
+                 window.open(url, "_blank");
+
+             }
+
+                else if(selected === "mmgnumber") {
+    
+                    var mmgnumber = $('#mmgnumberInput').val().trim();
+                    if (!mmgnumber) {
+                        return;
+                    }
+    
+                    var url = "/Home/mmgnumbersearch?searchText=" + encodeURIComponent(mmgnumber);
+                    window.open(url, "_blank");
+
+                }
+                }
+        
+
+    </script>
+}
+
+
+@* @using MPCRS.Utilities;
+@using System.Data;
+@{
+	ViewData["Title"] = "Home Page";
+	var AcsnRead = UserData.IsAuthorized(User, Constants.UserPermissions.ACSN_Read);
+	var NCRRead = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Read);
+	var SOPRead = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Read);
+	var MasterSearch = UserData.IsAuthorized(User, Constants.UserPermissions.Access_Master_Search);
+	var partsList = MPCRS.Utilities.Masters.GetEnginePartList_NeedTobeRefactored();
+
+	DataTable builds = MPGlobals.GetDataForDatalist("Select BuildGuid from dbo.EngineBuilds");
+}
+<style>
+	.select2-results__options {
+		max-height: 300px !important;
+		font-size: 18px;
+	}
+
+	.select2-selection__arrow {
+		display: none;
+	}
+
+	.select2.select2-container .select2-selection {
+		border: 1px solid #2d9fd9;
+		-webkit-border-radius: 20px;
+		-moz-border-radius: 20px;
+		border-radius: 20px;
+		height: 46px;
+		outline: none !important;
+		color: #a0d18c;
+		font-size: 18px;
+	}
+
+		.select2.select2-container .select2-selection .select2-selection__rendered {
+			color: #333;
+			line-height: 42px;
+			padding-right: 33px;
+		}
+
+	/* make radio/checkbox bigger */
+	.form-check-input {
+		width: 1.5em;
+		height: 1.5em;
+	}
+
+	/* optional: center label text nicely */
+	.form-check-label {
+		margin-left: 0.35rem;
+		font-size: 1.1rem; /* increase label text too if needed */
+	}
+</style>
+
+<div class="container">
+	<h4 class="mt-2 text-black">Hello @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName).Value</h4>
+	<hr />
+	@{
+		if (MasterSearch)
+		{
+			<h3>Search By</h3>
+			<br />
+
+			<div class="">
+				<div class="card-body">
+					<h4 class="card-title"> </h4>
+
+
+
+					<div class="form-check form-check-inline">
+
+						<input class="form-check-input"  type="radio" name="inlineRadioOptions" value="option1" checked/>
+
+						<label class="form-check-label">Part</label>
+					</div>
+					<div class="form-check form-check-inline">
+
+						<input class="form-check-input" type="radio" name="inlineRadioOptions" value="option2" disabled="" />
+
+						<label class="form-check-label" >Raw Material</label>
+					</div>
+					<div class="form-check form-check-inline">
+
+						<input class="form-check-input"  type="radio" name="inlineRadioOptions" value="option3" disabled="" />
+
+						<label class="form-check-label">MMG Number</label>
+					</div>
+					<div class="form-check form-check-inline">
+
+						<input class="form-check-input" type="radio" name="inlineRadioOptions" value="option4" disabled="" />
+
+						<label class="form-check-label">Batch No / Heat No</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" id="radioJobCard" type="radio" name="inlineRadioOptions" value="jobcard" />
+						<label class="form-check-label" for="radioJobCard">Job Card</label>
+					</div>
+
+
+					<br />
+					<br />
+					<div class="selectWrapper">
+						<select class="form-control searchable" asp-items="@partsList"></select>
+						<div class="text-center">
+							<button class="btn btn-primary btn-lg me-1 mb-1" id="searchBtn" onclick="SearchPart()" type="button">Search</button>
+						</div>
+					</div>
+					<div>
+							<input type="text" id="jobCardInput" class="form-control mt-2 d-none" placeholder="Enter Job Card Number" />
+					</div>
+				</div>
+			</div>
+
+
+	
+		 
+		}
+
+		<hr />
+
+		if (AcsnRead)
+		{
+			<div class="col-md-12">
+				<a class="mb-2" href="/ACSN/Index"><h4>ACSN</h4></a>
+				<partial name="../ACSN/SummaryBanner.cshtml">
+			</div>
+			<hr />
+		}
+
+		if (NCRRead)
+		{
+			<div class="col-md-12">
+				<a class="mb-2" href="/NCR/Index"><h4>NCR</h4></a>
+				<partial name="../NCR/NCRSummary.cshtml">
+			</div>
+			<hr />
+		}
+
+		// if (SOPRead)
+		// {
+		// 	<div class="col-md-12">
+		// 		<a class="mb-2" href="/SOPManagement/Builds"><h4>Builds</h4></a>
+		// 		@for (int i = 0; i < builds.Rows.Count; i++)
+		// 		{
+		// 			var buildGuid = builds.Rows[i]["BuildGuid"].ToString();
+		// 			<partial name="../SOPManagement/_BuildInfoBanner.cshtml" model="buildGuid"></partial>
+		// 			<hr />
+		// 		}
+		// 	</div>
+
+		// }
+		if (!MasterSearch && !AcsnRead && !NCRRead)
+		{
+			@Html.Partial("../Shared/_menuItems.cshtml", true)
+		}
+
+	}
+
+
+</div>
+@section scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+
+
+	<script>
+
+		 
+		$(document).ready(function () {
+			$('.searchable').select2(
+				{
+					dropdownParent: $('.selectWrapper'),
+					placeholder: "Select a part",
+					closeOnSelect: true,
+					allowClear: true,
+				}
+			);
+
+				   $(document).on("keydown", function (e) {
+			if (e.key === "Enter") {
+				e.preventDefault(); // stop form reload
+				$("#searchBtn").trigger("click"); // click the button
+			}
+		});
+
+		});
+
+		function SearchPart() {
+			var partNumber = $('.searchable').val();
+			if (partNumber != null && partNumber !== "") {
+				var url = "/Home/Search?partNumber=" + encodeURIComponent(partNumber);
+				window.open(url, "_blank"); // opens in a new tab
+			}
+		}
+
+		 if (selected === "jobcard") {
+			// Job Card mode
+			var jobCardNumber = $('#jobCardInput').val();
+			if (jobCardNumber != null && jobCardNumber.trim() !== "") {
+
+				var url = "/Home/JobCardSearch?jobCardNumber=" + encodeURIComponent(jobCardNumber.trim());
+
+				window.open(url, "_blank");
+			}
+		}
+
+	</script>
+}
+ *@
+
+
+

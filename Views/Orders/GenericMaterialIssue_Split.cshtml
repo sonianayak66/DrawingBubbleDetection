@@ -1,0 +1,53 @@
+﻿@model List<MPCRS.ViewModels.GenericMaterialIssueSummary_Vendorwise_VM>
+@using MPCRS.Utilities;
+@{
+	Layout = null;
+
+	if (Model.Count > 0)
+	{
+		<table class="table  table-bordered table-hover   p-0 m-0">
+			<thead>
+				<tr>
+					<th>Reference No. & Issue Date</th>
+					<th>Part No. & Vendor</th>
+					<th>For Engine</th>
+					<th style="text-align:right">Issue Qty</th>
+					<th>Issued Serial Nos.</th>
+				</tr>
+			</thead>
+			<tbody>
+				@{
+
+					foreach (var item in Model)
+					{
+
+						<tr>
+							<td class="p-2">
+								<b>@item.Reference_No</b>
+								<p>[@MPGlobals.GetFormattedDate(@item.IssueDate)]</p>
+							</td>
+							<td>
+								<b>@item.Vendor_Name</b>
+								<p>[@item.Draw_part_no - @item.Description]</p>
+							</td>
+							<td>@item.ForEngine</td>
+							<td class="qtyCols">@item.IssuedQty</td>
+							<td style="width:35%;">
+								@{
+									if (item.IssueSlNos != null)
+									{
+										foreach (var slno in item.IssueSlNos.Split(','))
+										{
+											<span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark ">@slno</span>
+										}
+									}
+								}
+							</td>
+						</tr>
+
+					}
+				}
+			</tbody>
+		</table>
+	}
+}

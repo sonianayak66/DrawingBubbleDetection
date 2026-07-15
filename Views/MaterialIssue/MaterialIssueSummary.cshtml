@@ -1,0 +1,106 @@
+﻿@{
+    ViewData["Title"] = "Material Issue Summary";
+}
+
+<style>
+    .mi-column-filters {
+        display: grid;
+        grid-template-columns: 2.8fr 0.8fr 1.4fr 0.8fr 0.8fr 0.8fr 1fr;
+        gap: 8px;
+        margin-bottom: 10px;
+        align-items: end;
+    }
+
+        .mi-column-filters .filter-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mi-column-filters label {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .mi-column-filters input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+</style>
+
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-sm-11">
+                <h3>Material Issue Details</h3>
+            </div>
+            <div class="col-sm-1 pull-right">
+                <a href="/MaterialIssue/MaterialIssueTree" style="margin-right:4px" class="btn btn-secondary float-end">Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br />
+
+<div id="miFilters" class="mi-column-filters">
+    <div class="filter-item">
+        <label>Part Name</label>
+        <input type="text" id="filterPartName" class="form-control form-control-sm" placeholder="Search" />
+    </div>
+    <div class="filter-item">
+        <label>For Qty</label>
+        <input type="text" id="filterQty" class="form-control form-control-sm" placeholder="Search" />
+    </div>
+    <div class="filter-item">
+        <label>RM Name</label>
+        <input type="text" id="filterRMName" class="form-control form-control-sm" placeholder="Search" />
+    </div>
+    <div class="filter-item">
+        <label>Size(LxB)</label>
+        <input type="text" id="filterSize" class="form-control form-control-sm" placeholder="Search" />
+    </div>
+    <div class="filter-item">
+        <label>Wgt Issued</label>
+        <input type="text" id="filterWeight" class="form-control form-control-sm" placeholder="Search" />
+    </div>
+    <div class="filter-item">
+        <label>Job Card</label>
+        <input type="text" id="filterJobCard" class="form-control form-control-sm" placeholder="Search" />
+    </div>
+    <div class="filter-item">
+        <label>Job Card Doc</label>
+        <input type="text" id="filterJobCardDoc" class="form-control form-control-sm" placeholder="Search" />
+    </div>
+</div>
+
+<div>
+    <table id="MItable" class="table table-bordered table-hover table-sm" cellspacing="0" style="width:100%">
+        <thead>
+            <tr>
+                <th>Order No.</th>
+                <th>Part Name</th>
+                <th>For Qty</th>
+                <th>RM Name</th>
+                <th>Size(LxB)</th>
+                <th>Wgt Issued</th>
+                <th>Job Card</th>
+                <th>Job Card Doc</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script src="~/js/jstree.min.js" asp-append-version="true"></script>
+    <script src="~/mpi/materialissue.js" asp-append-version="true"></script>
+    <script>
+        $(function () {
+            getIssueDetails();
+        });
+    </script>
+}

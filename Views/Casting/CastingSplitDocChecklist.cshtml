@@ -1,0 +1,69 @@
+﻿@model MPCRS.ViewModels.DetailedCastingDataVM
+@using System.Data;
+@using MPCRS.Utilities;
+@using Newtonsoft.Json;
+@{
+	Layout = null;
+	List<MPCRS.ViewModels.SplitDocumentChecklistVM> documentChecklist = new List<MPCRS.ViewModels.SplitDocumentChecklistVM>();
+
+	string cmdstr = $"dbo.[GetCastingSplitDocInfo] @partDbKey={Model.EnginePartDbkey}, @receiptSplitDbKey={Model.SplitId}";
+
+	DataTable dt = MPCRS.Utilities.MPGlobals.GetDataForDatalist(cmdstr);
+	if (dt.Rows.Count > 0)
+	{
+		documentChecklist = JsonConvert.DeserializeObject<List<MPCRS.ViewModels.SplitDocumentChecklistVM>>(JsonConvert.SerializeObject(dt));
+	}
+	if(documentChecklist != null)
+	{
+		if(documentChecklist.Count > 3)
+		{
+			<div style="max-height:65px;max-width:300px;overflow:hidden;" class="attachmentDiv">
+				@foreach (var item in documentChecklist)
+				{
+					var href = "/Attachment/DownloadfileWithKey/" + item.Attachment_Db_Key;
+					if (item.Attachment_location == null)
+					{
+						<a class="badge badge-phoenix fs--2 @(item.Attachment_location == null ? "badge-phoenix-danger" :"badge-phoenix-success")">
+							@item.Attachment_Type
+						</a>
+					}
+					else
+					{
+						<div style="max-width:400px">
+							<a href="@href" target="_blank" data-fileref="@item.FileReference" title="@item.FileReference" class="badge badge-phoenix fs--2 @(item.Attachment_location == null ? "badge-phoenix-danger" :"badge-phoenix-success")">
+								@item.Attachment_Type
+							</a>
+						</div>
+					}
+				}
+			</div>
+			<i class="fas fa-angle-down fa-1x" style="cursor:pointer" onclick="viewMore(this,'attachmentDiv')"></i>
+		}
+		else
+		{
+			foreach (var item in documentChecklist)
+			{
+				//var href = item.Attachment_location == null ? "#" : item.Attachment_location + "/" + item.Attachment_FileName;
+				var href = "/Attachment/DownloadfileWithKey/" + item.Attachment_Db_Key;
+				if (item.Attachment_location == null)
+				{
+					<a class="badge badge-phoenix fs--2 @(item.Attachment_location == null ? "badge-phoenix-danger" :"badge-phoenix-success")">
+						@item.Attachment_Type
+					</a>
+				}
+				else
+				{
+					<div style="max-width:400px">
+						<a href="@href" target="_blank" data-fileref="@item.FileReference" title="@item.FileReference" class="badge badge-phoenix fs--2 @(item.Attachment_location == null ? "badge-phoenix-danger" :"badge-phoenix-success")">
+							@item.Attachment_Type
+						</a>
+					</div>
+				}
+
+			}
+			
+		}
+		
+	}
+	
+}

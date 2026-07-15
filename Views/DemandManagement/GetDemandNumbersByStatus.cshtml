@@ -1,0 +1,27 @@
+﻿@model System.Data.DataTable
+@using System.Data;
+@{
+    Layout = null;
+}
+
+
+<table class="table table-hover table-bordered">
+    <thead>
+        <tr>
+
+            <th>Demand Numbers</th>
+            <th>Demand Description</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (DataRow row in Model.Rows)
+        {
+            <tr>
+                <td class="p-2">@row["Demand_No"].ToString()</td>
+                <td>@row["Item_Description"].ToString()</td>
+                <td><a href="#" onclick="ViewDemandByStatus(@row["DemandDbKey"])">View</a></td>
+            </tr>
+        }
+    </tbody>
+</table>

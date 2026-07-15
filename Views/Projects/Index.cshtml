@@ -1,0 +1,145 @@
+﻿@model List<MPCRS.ViewModels.ProjectVM>
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "Projects";
+    //Layout = null;
+    var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.Projects_Write);
+    var Permission_read = UserData.IsAuthorized(User, Constants.UserPermissions.Projects_Read);
+
+}
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-sm-10">
+                <h3>Projects</h3>
+            </div>
+            <div class="col-sm-1 pull-right">
+                <a onclick="OpenProject(0)" class="btn btn-primary mr-1 float-end ">Create</a>
+            </div>
+            <div class="col-sm-1 pull-right">
+                <a href="/Home" style="margin-right:4px" class="btn btn-secondary float-end ">Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+<hr />
+
+<div class="col-md-12 col-sm-12 col-lg-12 ">
+    <div class="card">
+        <table class="table table-bordered table-sm fs--1 mb-2" id="Projecttbl">
+            <thead>
+                <tr>
+                    <th data-sortable="true" scope="col">Title </th>
+                    <th data-sortable="true" scope="col"> Display title</th>
+                    <th data-sortable="true" scope="col"> Project Head</th>
+                    <th data-sortable="true" scope="col">DOC</th>
+                    <th data-sortable="true" scope="col">No of Engines</th>
+                    <th data-sortable="true" scope="col">Unique Name</th>
+                    <th data-sortable="true" scope="col">Base Line Engine</th>
+
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Title</td>
+                            <td>@item.Display_title</td>
+                            <td>@item.Project_Number</td>
+                            <td>@item.EDO.ToString("dd-MM-yyyy")</td>
+                            <td>@item.No_of_Engines</td>
+                            <td>@item.Unique_Name</td>
+                            <td>@item.Engine_Title</td>
+
+                            <td>
+                                <div class="font-sans-serif btn-reveal-trigger position-static">
+                                    <a href="#" onclick=OpenProject(@item.Project_Dbkey) class="btn btn-primary btn-sm">Edit</a>
+
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section scripts {
+    <script type="text/javascript">
+
+        var ProjectDataList = [];
+
+        $(document).ready(function () {
+
+            dataTable = $("#Projecttbl").DataTable({
+                scrollY: 510,
+
+                responsive: true,
+                paging: false,
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem(
+                        'DataTables_' + settings.sInstance,
+                        JSON.stringify(data)
+                    );
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                },
+
+                dom: 'Bfrtip',
+                buttons: [{
+                    extend: 'excel',
+                    title: 'Projects',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5] //Your Colume value those you want
+                    }
+                }],
+            });
+        });
+
+        function OpenProject(ID) {
+            $.ajax({
+                url: "/Projects/CreateProject/" + ID,
+                type: 'GET',
+                success: function (data) {
+                    bootbox.alert({
+                        message: data,
+                        size: 'large',
+                        buttons: {
+                            ok: {
+                                className: 'd-none'
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+
+        function Save() {
+            if (!$('#CreateProject').valid()) { return false }
+            var formData = $("#CreateProject").serialize();
+            $.ajax({
+                url: '/Projects/CreateProject',
+                type: 'POST',
+                data: formData,
+                success: function (data) {
+                    if (data.success) {
+                        window.location.href = "/Projects/Index";
+                        
+                    } else {
+                        alert('Some error occurred.');
+                    }
+                },
+                error: function (error) {
+                    console.error('Error:', error);
+                }
+            });
+        }
+
+    </script>
+}

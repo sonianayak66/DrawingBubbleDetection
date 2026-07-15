@@ -1,0 +1,43 @@
+﻿@using MPCRS.Utilities
+@model List<MPCRS.ViewModels. CastingReceiptBatchSummary>
+@{
+	Layout = null;
+
+	if (Model.Count > 0)
+	{
+		<table class="table  table-bordered table-hover table-condensed table-primary p-0 m-0">
+			<tbody>
+				@{
+					foreach (var item in Model.Select(x => new { x.ReceiptDate, x.BatchNumber, }).Distinct())
+					{
+
+						var AcceptedQty = Model.Where(x => x.ReceiptDate == item.ReceiptDate && x.BatchNumber == item.BatchNumber && x.StatusRemarks == "Accepted").Select(x => x.SplitQty).Sum();
+						var RejectedQty = Model.Where(x => x.ReceiptDate == item.ReceiptDate && x.BatchNumber == item.BatchNumber && x.StatusRemarks == "Rejected").Select(x => x.SplitQty).Sum();
+						var Received = AcceptedQty + RejectedQty;
+						<tr>
+							<td class="partcol"></td>
+							<td class="drawingNoCol"></td>
+							<td class="dateCol"> @MPGlobals.GetFormattedDate(item.ReceiptDate)</td>
+							<td class="qtyCols">Batch No: @item.BatchNumber</td>
+							<td class="qtyCols">@Received</td>
+							<td class="qtyCols">@AcceptedQty</td>
+							<td class="qtyCols">@RejectedQty</td>
+							<td class="qtyCols"></td>
+							<td class="qtyCols"></td>
+						
+						
+					</tr>
+					}
+				}
+		</tbody>
+		</table>
+	}
+		else
+		{
+	<div class="col-12 text-center p-3">
+		<h4>Order information unavailable</h4>
+	</div>
+		}
+}
+
+

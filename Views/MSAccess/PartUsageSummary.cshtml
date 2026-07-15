@@ -1,0 +1,361 @@
+﻿@* @{
+	ViewData["Title"] = "Part Usage Summary";
+}
+
+<div class="row">
+	<div class="col-6">
+		<h3>Part Usage Summary</h3>
+	</div>
+	<div class="mb-2 col-6 d-flex align-items-center justify-content-end">
+		<a class="btn btn-secondary" href="/MSAccess/Index">Back</a>
+	</div>
+</div>
+
+<table id="usageSummaryTable" class="table table-bordered nowrap" style="width:100%">
+	<thead>
+		<tr id="dynamic-header">
+			<th>Drawing No</th>
+			<th>Serial No</th>
+			<!-- Build headers will be added via JS -->
+			<th>Used?</th>
+		</tr>
+	</thead>
+	<tbody></tbody>
+</table>
+
+
+
+@section Scripts {
+	<script>
+		$(document).ready(function () {
+			$.getJSON('/MSAccess/GetPartUsageSummaryJson', function (data) {
+				const builds = data.buildName;
+				var usage = data.usageDetails;
+
+				// Generate column headers
+				let headerRow = '<th>Drawing No</th><th>Serial No</th>';
+				builds.forEach(b => {
+					headerRow += `<th>${b}</th>`;
+				});
+				headerRow += '<th>Used?</th>';
+				$('#dynamic-header').html(headerRow);
+
+				// Generate row data grouped by draw_part_no + serial_no
+				const grouped = {};
+				usage.forEach(item => {
+					const key = `${item.draw_part_no}||${item.serial_No}`;
+					if (!grouped[key]) {
+						grouped[key] = {
+							draw_part_no: item.draw_part_no,
+							serial_No: item.serial_No,
+							used: item.used,
+							builds: {}
+						};
+					}
+					grouped[key].builds[item.buildName] = item.matchStatus;
+				});
+
+				// Build row array for DataTable
+				const tableData = Object.values(grouped).map(entry => {
+					const row = [
+						entry.draw_part_no,
+						entry.serial_No
+					];
+					builds.forEach(b => {
+						row.push(entry.builds[b] === 'MATCHED' ?
+							'<span class="badge badge-phoenix badge-phoenix-success">Yes</span>' :
+							'<span class="badge badge-phoenix badge-phoenix-danger">No</span>');
+					});
+					row.push(entry.used === 'Yes' ?
+						'<span class="badge badge-phoenix badge-phoenix-warning">Yes</span>' :
+						'<span class="badge badge-phoenix badge-phoenix-secondary">No</span>');
+					return row;
+				});
+
+				// Initialize DataTable
+				$('#usageSummaryTable').DataTable({
+					data: tableData,
+					columns: [
+						{ title: "Drawing No" },
+						{ title: "Serial No" },
+						...builds.map(b => ({ title: b })),
+						{ title: "Used?" }
+					],
+					scrollY: "600px",
+					scrollX: true,
+					scrollCollapse: true,
+					paging: true,
+						 pageLength: 25,            // ✅ Default rows per page
+							lengthMenu: [
+			[10, 25, 50, 100, 500,1000,2000,5000, -1], // -1 means "All"
+			[10, 25, 50, 100, 500,1000,2000,5000, "All"]
+		],
+					fixedHeader: true,
+					deferRender: true,
+
+		processing: true,
+					dom: 'Blfrtip',
+					buttons: [
+						{
+							extend: 'excelHtml5',
+							text: 'Download Excel',
+							title: 'Part_Usage_Summary',
+							exportOptions: {
+								columns: ':visible'
+							}
+						}
+					]
+				});
+			});
+		});
+	</script>
+}
+ *@
+@{
+	ViewData["Title"] = "Part Usage Summary";
+}
+
+<div class="row">
+	<div class="col-6">
+		<h3>Part Usage Summary</h3>
+	</div>
+	<div class="mb-2 col-6 d-flex align-items-center justify-content-end">
+		<a class="btn btn-secondary" href="/MSAccess/Index">Back</a>
+	</div>
+</div>
+
+<table id="usageSummaryTable" class="table table-bordered nowrap" style="width:100%">
+	<thead>
+		<tr>
+			<th>Drawing No</th>
+			<th>Description</th>
+			<th>Revision</th>
+			<th>Quantity</th>
+			<th>Serial Numbers</th>
+			<th>Usage Summary</th>
+		</tr>
+	</thead>
+	<tbody></tbody>
+</table>
+
+@section Scripts {
+	<script>
+		$(document).ready(function () {
+
+			// Function to format serial numbers with badges
+			function formatSerialNumbers(serialNumbersString) {
+				if (!serialNumbersString) return '';
+
+				// The string is already properly formatted from SQL
+				// Format: "SN001 (Build_A, Build_B), SN002, SN003 (Build_C)"
+				// We need to split carefully to preserve build lists within parentheses
+
+				let formattedSerials = [];
+				let currentSerial = '';
+				let inParentheses = false;
+				let parenCount = 0;
+
+				for (let i = 0; i < serialNumbersString.length; i++) {
+					const char = serialNumbersString[i];
+
+					if (char === '(') {
+						inParentheses = true;
+						parenCount++;
+						currentSerial += char;
+					} else if (char === ')') {
+						parenCount--;
+						if (parenCount === 0) {
+							inParentheses = false;
+						}
+						currentSerial += char;
+					} else if (char === ',' && !inParentheses) {
+						// This comma is a separator between serials, not within build names
+						if (currentSerial.trim()) {
+							formattedSerials.push(currentSerial.trim());
+						}
+						currentSerial = '';
+					} else {
+						currentSerial += char;
+					}
+				}
+
+				// Add the last serial
+				if (currentSerial.trim()) {
+					formattedSerials.push(currentSerial.trim());
+				}
+
+				// Now format each serial as a badge
+				return formattedSerials.map(serial => {
+					if (serial.includes('(') && serial.includes(')')) {
+						// Used serial: SN001 (Build_A, Build_B)
+						return `<span class="badge badge-phoenix badge-phoenix-success me-1 mb-1">${serial}</span>`;
+					} else {
+						// Unused serial: SN001
+						return `<span class="badge badge-phoenix badge-phoenix-secondary me-1 mb-1">${serial}</span>`;
+					}
+				}).join(' ');
+			}
+
+			// Initialize DataTable with AJAX
+			$('#usageSummaryTable').DataTable({
+				ajax: {
+					url: '/MSAccess/GetPartUsageSummaryJson',
+					type: 'GET',
+					dataSrc: function(json) {
+						// Process data after receiving from server
+						if (!json.groupedUsageDetails) {
+							return [];
+						}
+
+						return json.groupedUsageDetails.map(function(item) {
+							return [
+								item.draw_part_no || '',
+								item.description || '',
+								item.revision || '',
+								item.quantity || 0,
+								formatSerialNumbers(item.serialNumbers),
+								`<span class="badge badge-phoenix badge-phoenix-info">${item.usageSummary || ''}</span>`
+							];
+						});
+					},
+					error: function(xhr, error, code) {
+						console.error('Error loading data:', error);
+						alert('Error loading part usage data. Please try again.');
+					}
+				},
+				columns: [
+					{ title: "Drawing No", width: "12%" },
+					{ title: "Description", width: "25%" },
+					{ title: "Revision", width: "8%" },
+					{ title: "Quantity", width: "8%" },
+					{
+						title: "Serial Numbers",
+						width: "35%",
+						orderable: false // Disable sorting for this column due to HTML content
+					},
+					{ title: "Usage Summary", width: "12%" }
+				],
+				// Pagination settings
+				scrollY: "600px",
+				scrollX: true,
+				scrollCollapse: true,
+				paging: true,
+				pageLength: 25,            // Default rows per page
+				lengthMenu: [
+					[10, 25, 50, 100, 500, 1000, 2000, 5000, -1], // -1 means "All"
+					[10, 25, 50, 100, 500, 1000, 2000, 5000, "All"]
+				],
+				// Performance settings
+				fixedHeader: true,
+				deferRender: true,
+				//processing: true,
+
+				// DOM and buttons
+				dom: 'Blfrtip',
+				buttons: [
+					{
+						extend: 'excelHtml5',
+						text: 'Download Excel',
+						title: 'Part_Usage_Summary_Grouped',
+						exportOptions: {
+							columns: [0, 1, 2, 3, 4, 5], // Export all columns
+							format: {
+								body: function (data, row, column, node) {
+									// Clean up HTML content for Excel export
+									if (column === 4) { // Serial Numbers column
+										// Extract text from badges and format for Excel
+										const tempDiv = $('<div>').html(data);
+										let serialsText = '';
+										tempDiv.find('.badge').each(function() {
+											if (serialsText) serialsText += ', ';
+											const badgeText = $(this).text().trim();
+											serialsText += badgeText;
+										});
+										return serialsText || data;
+									} else if (column === 5) { // Usage Summary column
+										// Extract text from badge
+										return $(data).text() || data;
+									}
+									return data;
+								}
+							}
+						}
+					}
+				],
+
+				// Loading state
+				// language: {
+				// 	processing: '<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div></div>',
+				// 	emptyTable: "No part usage data available",
+				// 	loadingRecords: "",
+				// 	zeroRecords: ""
+				// },
+
+				// Row creation callback for styling
+				createdRow: function(row, data, dataIndex) {
+					// Add styling to cells with badges for better display
+					$(row).find('td:eq(4)').addClass('serial-badges-cell');
+				},
+
+				// Initialization complete callback
+				initComplete: function(settings, json) {
+				//	console.log('Part Usage Summary table loaded successfully');
+
+					// Optional: Add any post-initialization logic here
+					// For example, you could show row count, add custom filters, etc.
+					//var api = this.api();
+					//var rowCount = api.rows().count();
+				//	console.log(`Loaded ${rowCount} part records`);
+				}
+			});
+		});
+	</script>
+
+	<style>
+		/* Custom styling for serial number badges */
+		.serial-badges-cell {
+			line-height: 1.8;
+			vertical-align: top;
+		}
+
+			.serial-badges-cell .badge {
+				margin-right: 4px;
+				margin-bottom: 4px;
+				display: inline-block;
+				word-wrap: break-word;
+			}
+
+		/* Ensure badges wrap nicely in narrow cells */
+		.serial-badges-cell {
+			white-space: normal !important;
+			word-wrap: break-word;
+		}
+
+		/* Loading spinner styling */
+		.dataTables_processing {
+			background: rgba(255, 255, 255, 0.9) !important;
+			border: 1px solid #ddd !important;
+			border-radius: 4px !important;
+		}
+
+		/* Table responsiveness */
+		#usageSummaryTable {
+			font-size: 0.9em;
+		}
+
+		@@media (max-width: 768px) {
+			#usageSummaryTable
+
+		{
+			font-size: 0.8em;
+		}
+
+		.serial-badges-cell .badge {
+			font-size: 0.7em;
+			margin-right: 2px;
+			margin-bottom: 2px;
+		}
+
+		}
+	</style>
+}

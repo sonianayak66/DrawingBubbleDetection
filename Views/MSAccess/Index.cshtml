@@ -1,0 +1,752 @@
+﻿@using MPCRS.Utilities;
+@{
+	var UploadZipfile = UserData.IsAuthorized(User, Constants.UserPermissions.MsAccess_File_Upload);
+}
+
+
+<style>
+	td.sl-no, th.sl-no {
+		text-align: center;
+	}
+
+	.serial-no-column {
+		max-width: 180px;
+		white-space: normal !important;
+	}
+
+	.serial-pills-wrap {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 2px;
+	}
+
+	.serial-pills-wrap.collapsed {
+		max-height: 66px;
+		overflow: hidden;
+	}
+
+	.serial-toggle {
+		cursor: pointer;
+		color: #2c7be5;
+		font-size: 11px;
+		margin-top: 2px;
+		display: inline-block;
+	}
+
+	#InspectionReportData th, #InspectionReportData td {
+		vertical-align: top;
+		font-size: 13px;
+	}
+
+	#InspectionReportData .rmc-column {
+		max-width: 150px;
+		word-break: break-word;
+	}
+</style>
+
+
+
+@* <div >
+    <form method="post" enctype="multipart/form-data" asp-action="UploadDocument">
+        <div>
+            <label for="document" class="form-control">Access Doc:</label>
+            <input type="file" id="document" class="form-control" name="document" />
+        </div>
+        <button type="submit" class="btn" onclick="SaveAccessFile()">Upload</button>
+    </form>
+</div> *@
+<div>
+	<div id="uploadForm" style="display:none;">
+		<form method="post" enctype="multipart/form-data" asp-action="UploadDocument">
+			<div>
+				<label for="document">Access Doc:</label>
+				<input type="file" id="document" class="form-control" name="document" />
+			</div>
+			<br />
+			<button type="button" id="uploadButton" class="btn btn-primary">Submit</button>
+		</form>
+	</div>
+</div>
+<div class="row">
+	<div class="col-6">
+		<h4>
+			Inspection Reports Imports
+		</h4>
+	</div>
+	<div class="col-6 d-flex justify-content-around">
+	
+		<div>
+			<a class="btn btn-primary" type="button" href="/MSAccess/PartUsageSummary">
+				Part Usage Summary
+			</a>
+		</div>
+		<div>
+			@if (UploadZipfile)
+			{
+
+				<input type="button" id="showUploadModal" class="btn btn-primary" value="Upload Batch File" />
+
+			}
+		</div>
+		<div class="dropdown">
+			<button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+				Download
+			</button>
+			<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+				<li><a class="dropdown-item" href="/MSAccess/DownloadMPLJsonFile">Download Latest MPL (JSON)</a></li>
+				<li><a class="dropdown-item" href="/MSAccess/Download_RM_JsonFile">Download Raw Material Master (JSON)</a></li>
+				<li><a class="dropdown-item" href="/MSAccess/DownloadSOPData">Download SOP Builds Data (JSON)</a></li>
+				<li><a class="dropdown-item" href="/MSAccess/Download_CastingData_JsonFile">Download Casting Data (JSON)</a></li>
+				@* <li><a class="dropdown-item" href="/MSAccess/Download_ForgingData_JsonFile">Download Forging Data (JSON)</a></li> *@
+
+
+			</ul>
+		</div>
+
+	</div>
+
+</div>
+<hr />
+<div class="row mb-2">
+	<div class="col-auto">
+		<label for="vendorFilter" class="form-label fw-bold mb-0" style="line-height:38px;">Vendor:</label>
+	</div>
+	<div class="col-auto">
+		<select id="vendorFilter" class="form-select form-select-sm" style="min-width:180px;">
+			<option value="">All Vendors</option>
+		</select>
+	</div>
+</div>
+<ul class="nav nav-pills" id="myTab" role="tablist">
+	<li class="nav-item"><a class="nav-link active" id="home-tab" data-bs-toggle="tab" href="#tab-home" role="tab" aria-controls="tab-home" aria-selected="true" onclick="dataTable.draw()">Batch Files</a></li>
+	<li class="nav-item"><a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#tab-profile" role="tab" aria-controls="tab-profile" aria-selected="false" onclick="dataTable.draw()">Inspection reports</a></li>
+	<li class="nav-item"><a class="nav-link" id="RMCData-tab" data-bs-toggle="tab" href="#tab-RMCData" role="tab" aria-controls="tab-RMCData" aria-selected="false" onclick="RMC_datatable.draw()">RMC Data</a></li>
+	<li class="nav-item"><a class="nav-link" id="BuildAssignmentData-tab" data-bs-toggle="tab" href="#tab-BuildAssignmentData" role="tab" aria-controls="tab-BuildAssignmentData" aria-selected="false" onclick="BuikdAssignment_datatable.draw()">Build Assignment Data</a></li>
+	<li class="nav-item"><a class="nav-link" id="uniqueBuildAssignedParts-tab" data-bs-toggle="tab" href="#tab-uniqueBuildAssignedParts" role="tab" aria-controls="tab-uniqueBuildAssignedParts" aria-selected="false" onclick="buildPartsTable.draw()">Unique Part List </a></li>
+	<li class="nav-item"><a class="nav-link" id="NCRData-tab" data-bs-toggle="tab" href="#tab-NCRData" role="tab" aria-controls="tab-NCRData" aria-selected="false" onclick="NCR_datatable.draw()">NCR Data</a></li>
+</ul>
+<div class="tab-content mt-3" id="myTabContent">
+	<div class="tab-pane fade show active" id="tab-home" role="tabpanel" aria-labelledby="home-tab">
+		<table class="table table-bordered" id="AccessRecordTbl">
+			<thead>
+				<tr>
+					<th>Sl No</th>
+					<th>File Name</th>
+					<th>File Uploaded On</th>
+					<th>File Uploaded By</th>
+					<th>Vendor</th>
+					<th>Download</th>
+				</tr>
+			</thead>
+
+		</table>
+
+	</div>
+	<div class="tab-pane fade" id="tab-profile" role="tabpanel" aria-labelledby="profile-tab">
+		<table class="table table-bordered" id="InspectionReportData">
+			<thead>
+				<tr>
+					<th>Sl No</th>
+					<th>Part</th>
+					@* <th>Rev</th> *@
+					@* <th>Qty</th> *@
+					<th>Mod Res</th>
+					<th>Assem</th>
+					<th style="max-width:15%;">Serial No</th>
+					<th>Rev</th>
+					<th>Qty</th>
+					<th>Job Card</th>
+					<th>RMC Number</th>
+					<th>RMC Status</th>
+					<th>Remarks</th>
+					<th>File Name</th>
+					<th>Extracted From</th>
+					@* <th>File loc</th> *@
+					<th></th>
+				</tr>
+			</thead>
+
+		</table>
+	</div>
+	<div class="tab-pane fade" id="tab-RMCData" role="tabpanel" aria-labelledby="RMCData-tab">
+		<table class="table table-bordered" id="RMDataTbl">
+			<thead>
+				<tr>
+					<th>RMC Number</th>
+					<th>Raw Material</th>
+					<th>Hea No</th>
+					<th>Batch No</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</div>
+	<div class="tab-pane fade" id="tab-BuildAssignmentData" role="tabpanel" aria-labelledby="BuildAssignmentData-tab">
+		<table class="table table-bordered" id="BuildAssignmentDataTbl">
+			<thead>
+				<tr>
+					<th>Engine Build Name</th>
+					<th>Parent Partno</th>
+					<th>Part Number</th>
+					<th>Revision</th>
+					<th>Assigned SerialNumbers</th>
+					<th>Quantity</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</div>
+	<div class="tab-pane fade" id="tab-uniqueBuildAssignedParts" role="tabpanel" aria-labelledby="uniqueBuildAssignedParts-tab">
+		</div>
+	<div class="tab-pane fade" id="tab-NCRData" role="tabpanel" aria-labelledby="NCRData-tab">
+		<table class="table table-bordered" id="NCRDataTbl">
+			<thead>
+				<tr>
+					<th>NCR Number</th>
+					<th>Part Number</th>
+					<th>Description</th>
+					<th>Serial Number</th>
+					<th>Status</th>
+					<th>Received Date</th>
+					<th>Remarks</th>
+					<th>Attachments</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</div>
+</div>
+
+
+
+@section Scripts {
+	
+
+	<script>
+		var RMC_datatable;
+		var BuikdAssignment_datatable;
+		var NCR_datatable;
+		var InspectionReportUsrDataForList = [];
+		var InspectionReportDataList = [];
+		var buildPartsTable;
+
+		var accessRecordTable = null;
+		var inspectionReportTable = null;
+
+		function getSelectedVendor() {
+			return $('#vendorFilter').val();
+		}
+
+		function loadVendorFilter() {
+			$.getJSON('/MSAccess/GetVendorList', function (vendors) {
+				var select = $('#vendorFilter');
+				vendors.forEach(function (v) {
+					select.append('<option value="' + v + '">' + v + '</option>');
+				});
+			});
+		}
+
+		function reloadFilteredTabs() {
+			getInspectionRecordData();
+			GetInspectionReportDataList();
+			getRMDatatable();
+			getBuildAssignmentDatatable();
+			getNCRDatatable();
+		}
+
+		$(document).ready(function () {
+			loadVendorFilter();
+			GetInspectionReportDataList();
+			getInspectionRecordData();
+			getRMDatatable();
+			getBuildAssignmentDatatable();
+			getNCRDatatable();
+			loadUniquePartsData('');
+
+			$('#vendorFilter').on('change', function () {
+				reloadFilteredTabs();
+			});
+
+			$('#showUploadModal').click(function () {
+				$('#uploadForm').dialog({
+					modal: true,
+					title: "Upload Document",
+					width: 400,
+					fixed: true,
+					draggable: false,
+					close: function () {
+						$('#document').val('');
+						$('#resultMessage').text('');
+					},
+					create: function () {
+						var closeButton = $(this).siblings('.ui-dialog-titlebar').find('.ui-dialog-titlebar-close');
+						closeButton.html('✖');
+					}
+				});
+			});
+
+			$('#uploadButton').click(uploadDocument);
+
+			$('a[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
+				$($.fn.dataTable.tables(true)).DataTable().columns.adjust();
+				if (accessRecordTable) {
+					accessRecordTable.fixedHeader.adjust();
+				}
+				if (inspectionReportTable) {
+					inspectionReportTable.fixedHeader.adjust();
+				}
+			});
+		});
+
+		function uploadDocument() {
+			var formData = new FormData();
+			var fileInput = $('#document')[0].files[0];
+
+			if (fileInput) {
+				document.getElementById("uploadButton").disabled = true;
+				var fileName = fileInput.name;
+				var fileExtension = fileName.split('.').pop().toLowerCase();
+				var allowedExtensions = ['accdb'];
+
+				formData.append("document", fileInput);
+
+				$.ajax({
+					url: '/MSAccess/UploadDocument',
+					type: 'POST',
+					data: formData,
+					contentType: false,
+					processData: false,
+					success: function (response) {
+						document.getElementById("uploadButton").disabled = false;
+						if (response.success === true) {
+							bootbox.alert({
+								message: "Uploaded successfully",
+								callback: function () {
+									window.location.reload();
+								}
+							});
+						}
+						else {
+							bootbox.alert("Error saving file");
+							console.log(response.msg);
+						}
+						$('#uploadForm').dialog("close");
+						$('#document').val('');
+					},
+					error: function (error) {
+						document.getElementById("uploadButton").disabled = false;
+						console.log(error);
+						$('#resultMessage').text("Error uploading file.");
+					}
+				});
+
+			} else {
+				bootbox.alert("Select a file");
+			}
+		}
+
+		function getInspectionRecordData() {
+			$.ajax({
+				type: "GET",
+				url: "/MSAccess/GetAccessUploadList?vendorCode=" + encodeURIComponent(getSelectedVendor()),
+				success: function (data) {
+					InspectionReportUsrDataForList = JSON.parse(data);
+					GetInspectionUsrUploadList();
+				}
+			});
+		}
+
+		function GetInspectionReportDataList() {
+			$.ajax({
+				type: "GET",
+				url: "/MSAccess/GetInspectionReportDataList?vendorCode=" + encodeURIComponent(getSelectedVendor()),
+				success: function (data) {
+					InspectionReportDataList = JSON.parse(data);
+					GetInspectionDataList();
+				}
+			});
+		}
+
+		function GetInspectionUsrUploadList() {
+			try {
+				if ($.fn.DataTable.isDataTable('#AccessRecordTbl')) {
+					$('#AccessRecordTbl').DataTable().destroy();
+				}
+				$('#AccessRecordTbl tbody').empty();
+			} catch (e) { }
+
+			accessRecordTable = $("#AccessRecordTbl").DataTable({
+				scrollY: 510,
+				scrollCollapse: true,
+				paging: false,
+				autoWidth: false,
+				stateSave: true,
+				searching: true,
+				fixedHeader: true,
+				dom: 'frtip',
+				data: InspectionReportUsrDataForList,
+				order: [[2, "desc"]],
+				columns: [
+					{
+						data: null,
+						className: 'sl-no',
+						render: function (data, type, row, meta) {
+							return meta.row + meta.settings._iDisplayStart + 1;
+						}
+					},
+					{ data: 'File_Name' },
+					{
+						data: 'File_UpdatedOn',
+						render: function (data, type, row) {
+							if (!data) return '';
+
+							if (type === 'display' || type === 'filter') {
+								return moment(data).format("DD-MMM-YY hh:mm A");
+							}
+
+							return data;
+						}
+					},
+					{ data: 'File_Updatedby' },
+					{ data: 'VendorCode', defaultContent: '' },
+					{
+						data: 'download_link',
+						render: function (data, type, row, meta) {
+							return `<a class='btn btn-small btn-success' href="${data}">Download .zip file</a>`;
+						},
+						orderable: false,
+						className: 'text-center'
+					}
+				]
+			});
+		}
+
+		function GetInspectionDataList() {
+			try {
+				if ($.fn.DataTable.isDataTable('#InspectionReportData')) {
+					$('#InspectionReportData').DataTable().destroy();
+				}
+				$('#InspectionReportData tbody').empty();
+			} catch (e) { }
+
+			inspectionReportTable = $("#InspectionReportData").DataTable({
+				scrollY: 510,
+				data: InspectionReportDataList,
+				paging: false,
+				autoWidth: true,
+				searching: true,
+				stateSave: true,
+				dom: 'Bfrtip',
+				buttons: [{
+					extend: 'excel',
+					title: 'BATL Inspection Reports'
+				}],
+				columns: [
+					{
+						data: null,
+						className: 'sl-no',
+						render: function (data, type, row, meta) {
+							return meta.row + meta.settings._iDisplayStart + 1;
+						}
+					},
+					{ data: 'Draw_part_no' },
+					{ data: 'modRespName' },
+					{ data: 'parent_partno' },
+					{
+						data: 'Serial_No',
+						className: 'serial-no-column',
+						render: function (data) {
+							if (!data) return '';
+							var serials = data.split(',').filter(function (s) { return s.trim() !== ''; });
+							var pills = serials.map(function (s) {
+								return '<span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark">' + s.trim() + '</span>';
+							}).join('');
+							if (serials.length > 6) {
+								return '<div class="serial-pills-wrap collapsed">' + pills + '</div>' +
+									'<span class="serial-toggle" onclick="toggleSerials(this)">+ Show more</span>';
+							}
+							return '<div class="serial-pills-wrap">' + pills + '</div>';
+						}
+					},
+					{ data: 'UpdatedRevision' },
+					{ data: 'UpdatedQty' },
+					{ data: 'Job_No' },
+					{
+						data: 'RMC_Number',
+						render: function (data, type, row, meta) {
+							if (data) {
+								return `<span onclick="getRMCData('${data}')" style="color: blue; text-decoration: underline; cursor: pointer;">${data}</span>`;
+							} else {
+								return '';
+							}
+						},
+						className: 'text-center rmc-column'
+					},
+					{
+						data: 'RMC_Status',
+						className: 'text-center',
+						render: function (data, type, row) {
+							if (type === 'display') {
+								if (data === 'Valid') {
+									return `<span class="badge" style="background-color:#198754;">Valid</span>`;
+								} else if (data === 'Not In RMC Data') {
+									return `<span class="badge" style="background-color:#842029;color:#fff;">Not In RMC Data</span>`;
+								} else {
+									return `<span class="badge" style="background-color:#6c757d;color:#fff;">No RMC</span>`;
+								}
+							}
+							return data;
+						}
+					},
+					{ data: 'Remarks' },
+					{ data: 'File_Name' },
+					{ data: 'zipFileName' },
+					{
+						data: 'File_Location',
+						render: function (data, type, row, meta) {
+							return `<button class='btn btn-small btn-success' onclick="window.open('${data}', '_blank')">Open File</button>`;
+						},
+						orderable: false,
+						className: 'text-center'
+					}
+				]
+			});
+		}
+
+		function getRMCData(rmcNumber) {
+			rmcNumber = rmcNumber.trim();
+			var urlinput = "/MSAccess/RMC_Data?RMC_Number=" + rmcNumber;
+			$.get(urlinput).done(function (response) {
+				bootbox.dialog({
+					title: "Raw Material Details",
+					message: response,
+					size: 'extra-large',
+					closeButton: true
+				});
+			});
+		}
+
+		function toggleSerials(el) {
+			var wrap = $(el).prev('.serial-pills-wrap');
+			if (wrap.hasClass('collapsed')) {
+				wrap.removeClass('collapsed');
+				el.textContent = '- Show less';
+			} else {
+				wrap.addClass('collapsed');
+				el.textContent = '+ Show more';
+			}
+		}
+
+		function getRMDatatable() {
+			if (RMC_datatable) {
+				RMC_datatable.destroy();
+				$('#RMDataTbl tbody').empty();
+			}
+			RMC_datatable = $('#RMDataTbl').DataTable({
+				autoWidth: true,
+				scrollY: 510,
+				paging: false,
+				dom: 'Bfrtip',
+				buttons: [{
+					extend: 'excel',
+					title: 'RMC Data'
+				}],
+				ajax: {
+					url: '/MSAccess/GetRMJsonData?vendorCode=' + encodeURIComponent(getSelectedVendor()),
+					type: 'GET',
+					dataSrc: ''
+				},
+				columns: [
+					{
+						data: 'RMC_Number',
+						render: function (data, type, row) {
+							return `<span onclick="getRMCData('${data}')" style="color: blue; text-decoration: underline; cursor: pointer;">${data}</span>`;
+						}
+					},
+					{ data: 'Raw_Material_Name' },
+					{ data: 'Heat_No' },
+					{ data: 'Batch_No' }
+				]
+			});
+		}
+
+		function getBuildAssignmentDatatable() {
+			if (BuikdAssignment_datatable) {
+				BuikdAssignment_datatable.destroy();
+				$('#BuildAssignmentDataTbl tbody').empty();
+			}
+			BuikdAssignment_datatable = $('#BuildAssignmentDataTbl').DataTable({
+				autoWidth: true,
+				scrollY: 510,
+				paging: false,
+				dom: 'Bfrtip',
+				buttons: [{
+					extend: 'excel',
+					title: 'Build Assignment Data'
+				}],
+				ajax: {
+					url: '/MSAccess/GetBuildAssignmentJsonData?vendorCode=' + encodeURIComponent(getSelectedVendor()),
+					type: 'GET',
+					dataSrc: ''
+				},
+				columns: [
+					{ data: 'engine_build_name' },
+					{ data: 'parent_part_no' },
+					{ data: 'draw_part_no' },
+					{ data: 'revision' },
+					{ data: 'serial_number' },
+					{ data: 'quantity' }
+				]
+			});
+		}
+
+		function getNCRDatatable() {
+			if (NCR_datatable) {
+				NCR_datatable.destroy();
+				$('#NCRDataTbl tbody').empty();
+			}
+			NCR_datatable = $('#NCRDataTbl').DataTable({
+				autoWidth: true,
+				scrollY: 510,
+				paging: false,
+				dom: 'Bfrtip',
+				buttons: [{
+					extend: 'excel',
+					title: 'NCR Data'
+				}],
+				ajax: {
+					url: '/MSAccess/GetNCRJsonData?vendorCode=' + encodeURIComponent(getSelectedVendor()),
+					type: 'GET',
+					dataSrc: ''
+				},
+				columns: [
+					{ data: 'ncr_number', defaultContent: '' },
+					{ data: 'draw_part_no', defaultContent: '' },
+					{ data: 'part_description', defaultContent: '' },
+					{
+						data: 'serial_number',
+						defaultContent: '',
+						render: function (data) {
+							if (!data) return '';
+							var pills = data.split(',').map(function (s) {
+								s = s.trim();
+								if (!s) return '';
+								return '<span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark">' + s + '</span>';
+							}).join('');
+							return '<div class="serial-pills-wrap">' + pills + '</div>';
+						}
+					},
+					{ data: 'report_status', defaultContent: '' },
+					{
+						data: 'received_date',
+						defaultContent: '',
+						render: function (data, type, row) {
+							if (!data) return '';
+							if (type === 'display' || type === 'filter') {
+								return moment(data).format("DD-MMM-YY");
+							}
+							return data;
+						}
+					},
+					{ data: 'remarks', defaultContent: '' },
+					{
+						data: 'attachments',
+						defaultContent: '',
+						orderable: false,
+						render: function (data, type, row) {
+							if (!data || data.length === 0) return '<span class="text-muted">No files</span>';
+							var links = data.map(function (att) {
+								var filePath = '/uploads/InspectionReportImports/NCR/' + att.original_filename;
+								return `<a href="${filePath}" target="_blank" title="${att.content_type || ''}">${att.original_filename}</a>`;
+							});
+							return links.join('<br/>');
+						}
+					}
+				]
+			});
+		}
+
+		var currentSelectedBuild = '';
+		var buildPartsDataTable = null;
+
+		function loadUniquePartsData(buildName = '') {
+			var url = '/MSAccess/DistictPartList';
+			if (buildName) {
+				url += '?buildName=' + encodeURIComponent(buildName);
+			}
+
+			$.ajax({
+				type: "GET",
+				url: url,
+				success: function (data) {
+					$('#tab-uniqueBuildAssignedParts').html(data);
+
+					if (buildPartsTable) {
+						buildPartsTable.destroy();
+						buildPartsTable = null;
+					}
+
+					var actualSelectedBuild = '';
+					if (buildName) {
+						actualSelectedBuild = buildName;
+					} else {
+						var firstPill = $('.build-pill:first');
+						if (firstPill.length > 0) {
+							actualSelectedBuild = firstPill.data('build-name');
+						}
+					}
+
+					currentSelectedBuild = actualSelectedBuild;
+					if (currentSelectedBuild !== '') {
+						document.getElementById('selectedBuildName').innerText = currentSelectedBuild;
+					} else {
+						document.getElementById('selectedBuildName').innerText = 'None Selected';
+					}
+
+					buildPartsTable = $('#buildPartsTable').DataTable({
+						scrollY: 400,
+						scrollCollapse: true,
+						scrollX: false,
+						paging: false,
+						searching: true,
+						info: true,
+						autoWidth: false,
+						fixedHeader: true,
+						dom: 'Bfrtip',
+						buttons: [{
+							extend: 'excel',
+							title: 'Build Parts - ' + (actualSelectedBuild || 'Selected Build')
+						}]
+					});
+
+					$('.build-name-link').click(function (e) {
+						e.preventDefault();
+
+						$('.build-pill').removeClass('active');
+						$(this).closest('.build-pill').addClass('active');
+
+						var selectedBuild = $(this).data('build-name');
+						currentSelectedBuild = selectedBuild;
+
+						document.getElementById('selectedBuildName').innerText = selectedBuild;
+
+						loadUniquePartsData(selectedBuild);
+					});
+
+					if (actualSelectedBuild) {
+						$('.build-pill[data-build-name="' + actualSelectedBuild + '"]').addClass('active');
+					}
+				},
+				error: function (error) {
+					console.log('Error loading unique parts data:', error);
+					$('#tab-uniqueBuildAssignedParts').html('<div class="alert alert-danger">Error loading data. Please try again.</div>');
+					document.getElementById('selectedBuildName').innerText = 'Error Loading';
+				}
+			});
+		}
+	</script>
+}
+

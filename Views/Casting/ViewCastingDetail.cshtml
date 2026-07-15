@@ -1,0 +1,256 @@
+﻿@model MPCRS.ViewModels.CastingViewModel
+@using MPCRS.Utilities;
+@using System.Data;
+@{
+    ViewData["Title"] = "Casting Details";
+    var CastingWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Write);
+    var CastingWriteReceipts = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Write_Receipts);
+    var DeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Delete);
+}
+<link href="~/vendors/choices/choices.min.css" rel="stylesheet" />
+<input type="hidden" id="GlobalCastingDbkey" value="@Model.castingDetailViewModel.CastingDbkey" />
+<input type="hidden" id="isCustomAccess" value="@ViewBag.customAccess" />
+<div class="row">
+    <div class="col-5 card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-7">
+                    <h4>Casting Order Detail</h4>
+                </div>
+                <div class="col-md-5">
+                    @{
+                        if (CastingWriteAccess)
+                        {
+                            <i class="text-primary uil uil-edit fs-2 float-end" style="cursor:pointer" onclick="CreateEditCastingOrder(@Model.castingDetailViewModel.CastingDbkey)" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Casting"></i>
+                        }
+                    }
+           
+                </div>
+                <table class="table table-sm table-bordered table-hover table-primary">
+                    <tr>
+                        <th>Demand Number</th>
+                        <td>@Model.castingDetailViewModel.DemandNumber</td>
+                    </tr>
+                    <tr>
+                        <th>Order Date</th>
+                        <td>@Model.castingDetailViewModel.OrderDate.Value.ToString("dd-MM-yyyy")</td>
+                    </tr>
+                    <tr>
+                        <th>Vendors</th>
+                        <td>@Model.castingDetailViewModel.VendorsNames</td>
+                    </tr>
+             @*       <tr>
+                        <th>Qty</th>
+                        <td>@Model.castingDetailViewModel.TotalQty</td>
+                    </tr>*@
+                    <tr>
+                        <th>Delivery Date</th>
+                        <td>
+                            @{
+                                if (@Model.castingDetailViewModel.DeliveryDate != null)
+                                {
+                                    <p>@Model.castingDetailViewModel.DeliveryDate.Value.ToString("dd-MM-yyyy")</p>
+                                }
+                            }
+
+                        </td>
+                       
+                    </tr>
+@*                    <tr>
+                        <th>Raw Material</th>
+                        <td>@Model.castingDetailViewModel.RawMaterial</td>
+                    </tr>*@
+                    <tr>
+                        <th>Status</th>
+                        <td>@Model.castingDetailViewModel.OrderStatus</td>
+                    </tr>
+                </table>
+            </div>
+            <hr />
+            <div class="row">
+                <div class="col-md-7">
+                    <h4>Items</h4>
+                </div>
+                <div class="col-md-5">
+                    @{
+                        if (CastingWriteAccess)
+                        {
+                            <i class="text-primary uil uil-edit fs-2 float-end" style="cursor:pointer" onclick="EditCastingItems(@Model.castingDetailViewModel.CastingDbkey)" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Items"></i>
+                        }
+                    }
+                
+                </div>
+
+                <table class="table table-sm table-bordered table-hover table-warning">
+                    <thead>
+                        <tr>
+                            <th>Part/Vendor</th>
+                            <th>Qty</th>
+                            @*<th>Vendor</th>*@
+                            <th>Order Number</th>
+                            <th>Remarks</th>
+                            <th>Received</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            foreach (var item in Model.CastingItemViewModel)
+                            {
+                                <tr>
+                                    <td><b>@item.PartName</b><br />@item.Vendor_Name</td>
+                                    <td>@item.OrderQty</td>
+                                    @*<td>@item.Vendor_Name</td>*@
+                                    <td>@item.OrderNumber</td>
+                                    <td>@item.ItemDescription</td>
+                                    <td>@item.SumReceivedQty</td>
+                                    <td>@(item.OrderQty - item.SumReceivedQty)</td>
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+
+    </div>
+    <div class="col-7">
+        <div class="row">
+            <div class="col-6">
+                <h4>Receipts</h4>
+            </div>
+            <div class="col-6">
+                @{
+                    if (CastingWriteReceipts)
+                    {
+                        <a href="#" class="text-primary float-end" onclick="CastingReceipt(@Model.castingDetailViewModel.CastingDbkey,'')"><b>Create New Receipt</b></a>
+                    }
+                }    
+            </div>
+        </div>
+        <hr />
+        <div class="row">
+            <div class="col-12">
+                <div class="accordion" id="accordionExample">
+                    @{
+                        foreach (var item in Model.castingReceiptViewModel.Select(r=> new {r.ReceiptGuid,r.ReceiptNumber,r.ReceiptDate,r.CastingDbkey }).Distinct().ToList())
+                        {
+                            var headerID = "heading_" + @item.ReceiptGuid;
+                            var CollapseID = "#collapse_" + @item.ReceiptGuid;
+                            var CollapseIDidentity = "collapse_" + @item.ReceiptGuid;
+                            <div class="accordion-item border-top border-300">
+                                <h2 class="accordion-header" id="@headerID">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="@CollapseID" aria-expanded="true" aria-controls="@CollapseIDidentity">
+                                       @item.ReceiptNumber | @item.ReceiptDate.Value.ToString("dd-MM-yyyy")
+                                    </button>
+                                </h2>
+                                <div class="accordion-collapse collapse" id="@CollapseIDidentity" aria-labelledby="headerID" data-bs-parent="#accordionExample">
+                                    <div class="accordion-body pt-0">
+                                         <table class="table table-sm table-hover table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Part</th>
+                                                    <th>Received Qty</th>
+                                                    <th></th>
+                                                </tr>
+                                             </thead>
+                                             <tbody>
+                                             @{
+                                                     foreach (var rcpitems in Model.castingReceiptViewModel.Where(x=>x.ReceiptGuid == item.ReceiptGuid))
+                                                     {
+                                                         <tr>
+                                                                 <td>
+                                                                <b>@rcpitems.PartName</b>
+                                                                 <p class="m-0 p-0">@rcpitems.Vendor_Name</p>
+                                                                 </td>
+                                                                  <td>@rcpitems.Qty</td>
+                                                            <td><a href="#" class="text-primary" onclick="CastingReceiptItemSplits(@rcpitems.CastingDbkey,@rcpitems.CastingReceiptDbkey)"><b>Additional Info</b></a></td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                        @{
+                                            if (CastingWriteReceipts)
+                                            {
+                                                <a href="#" onclick="CastingReceipt(@item.CastingDbkey,'@item.ReceiptGuid')">Edit</a>
+                                            }
+
+                                            if (DeleteAccess)
+                                            {
+                                                <a href="#" class="float-end text-danger" onclick="DeleteCastingComponents(this,'@item.ReceiptGuid','CastingReceipts')">Remove</a>
+                                            }
+
+                                        }
+
+
+                                     
+                                    </div>
+
+                                </div>
+                            </div>
+                        }
+                }
+                </div>
+
+
+      @*          <div class="accordion" id="accordionExample">
+                   
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingTwo">
+
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                No:RCP/2024/001 |  Date: 20/02/2024
+
+                            </button>
+                        </h2>
+                        <div class="accordion-collapse collapse" id="collapseTwo" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+                            <div class="accordion-body pt-0">
+                                <strong>This is the second item&apos;s accordion body.</strong>
+                                It is hidden by default, until the collapse plugin adds the appropriate classes that we use to style each element. These classes control the overall appearance, as well as the showing and hiding via CSS transitions. You can modify any of this with custom CSS or overriding our default variables. It&apos;s also worth noting that just about any HTML can go within the <code>.accordion-body</code>, though the transition does limit overflow.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingThree">
+
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                No:RCP/2024/001   |   Date: 20/02/2024
+
+                            </button>
+                        </h2>
+                        <div class="accordion-collapse collapse" id="collapseThree" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+                            <div class="accordion-body pt-0">
+                                <strong>This is the third item&apos;s accordion body.</strong> It is hidden by default, until the collapse plugin adds the appropriate classes that we use to style each element. These classes control the overall appearance, as well as the showing and hiding via CSS transitions. You can modify any of this with custom CSS or overriding our default variables. It&apos;s also worth noting that just about any HTML can go within the <code>.accordion-body</code>, though the transition does limit overflow.
+                            </div>
+                        </div>
+                    </div>
+                </div>*@
+
+
+            </div>
+
+          
+
+
+        </div>
+    </div>
+</div>
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/mpi/casting.js" asp-append-version="true"></script>
+    <script src="~/vendors/choices/choices.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            if (document.getElementById("isCustomAccess").value == "true") {
+                document.getElementById("navbarTop").innerHTML = "";
+            }
+        });
+    </script>
+
+}

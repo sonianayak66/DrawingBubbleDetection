@@ -1,0 +1,85 @@
+﻿@model List<MPCRS.ViewModels.ExtractedFilesVM>
+@using System.IO;
+@using MPCRS.Utilities
+@using Newtonsoft.Json
+
+@{
+    var hasDownloadPermission = UserData.IsAuthorized(User, Constants.UserPermissions.MPLDocuments_Download);
+    var hasDownloadwithoutWaterMarkPermission = UserData.IsAuthorized(User, Constants.UserPermissions.Download_WO_waterMark);
+    Layout = null;
+}
+
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>File Name</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+
+        @foreach (var file in Model)
+        {
+            var extension = System.IO.Path.GetExtension(file.FileName).ToLower();
+            if (extension == ".pdf" || extension == ".tiff" || extension == ".tif")
+            {
+                <tr>
+                    <td class="p-2">@file.FileName</td>
+                    <td class="p-2" style="display: flex; align-items: center; gap: 10px;">
+                        @{
+                            // if (extension == ".pdf")
+                            // {
+                            // 	@if (hasDownloadPermission)
+                            // 	{
+                            // 		// <a title="Download File" href="/DownloadFiles/AddWatermark/?path=@file.FilePath&fileName=@file.FileName&originalFileName=@file.FileName" style="margin-right:10px;"><i class="fas fa-download"></i></a>
+                            // 		<a title="Download File" href="/DownloadFiles/DownloadExtractedFile/?Path=@file.FilePath&fileName=@file.FileName&docId=@file.docId" style="margin-right:10px;"><i class="fas fa-download"></i></a>
+                            // 	}
+                            // 	<a href="#" title="View File" onclick="viewExtractedFiles('@file.FilePath','@file.FileName','@file.FileName')"><i class="fa-solid fa-file"></i></a>
+                            // }
+                            // else if (extension == ".tiff" || extension == ".tif")
+                            // {
+                            // 	@if (hasDownloadPermission)
+                            // 	{
+                            // 		<a title="Download File" href="/DownloadFiles/DownloadExtractedFile/?Path=@file.FilePath&fileName=@file.FileName&docId=@file.docId" style="margin-right:10px;"><i class="fas fa-download"></i></a>
+                            // 	}
+                            // 	<a href="#" title="View File" onclick="viewExtractedFiles('@file.FilePath','@file.FileName','@file.FileName')"><i class="fa-solid fa-file"></i></a>
+                            // }
+                            
+                            // if (hasDownloadPermission)
+                            // {
+                            //     <a title="Download File" href="/DownloadFiles/DownloadExtractedFile/?Path=@file.FilePath&fileName=@file.FileName&docId=@file.docId" style="margin-right:10px;"><i class="fas fa-download"></i></a>
+                            // }
+                            // if (hasDownloadwithoutWaterMarkPermission)
+                            // {
+                            //     <a title="Download File w/o watermark" href="/DownloadFiles/DownloadExtractedFileWithoutWaterMark/?Path=@file.FilePath&fileName=@file.FileName&docId=@file.docId" style="margin-right:10px;"><i class="fas fa-solid fa-circle-down"></i></a>
+                            // }
+                            <a href="#" title="View File" onclick="viewExtractedFiles('@file.FilePath','@file.FileName','@file.docId')"><i class="fa-solid fa-file"></i></a>
+                            if (hasDownloadPermission)
+                            {
+                                if (hasDownloadwithoutWaterMarkPermission)
+                                {
+                                    <div class="dropdown font-sans-serif">
+                                        <a class="fas fa-download  dropdown-toggle text-primary dropdown-toggle" id="dropdownMenuLink" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="margin-right:20px;"></a>
+                                        <div class="dropdown-menu dropdown-menu-end py-0" aria-labelledby="dropdownMenuLink">
+                                            <a class="dropdown-item" title="Download file" href="/DownloadFiles/DownloadExtractedFile/?Path=@file.FilePath&fileName=@file.FileName&docId=@file.docId">Download</a>
+                                            <a class="dropdown-item" title="Download file w/o watermark" href="/DownloadFiles/DownloadExtractedFileWithoutWaterMark/?Path=@file.FilePath&fileName=@file.FileName&docId=@file.docId">Download w/o watermark</a>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <a title="Download File" href="/DownloadFiles/DownloadExtractedFile/?Path=@file.FilePath&fileName=@file.FileName&docId=@file.docId" style="margin-right:20px;"><i class="fas fa-download"></i></a>
+                                }
+                            }
+                           
+                        }
+
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+

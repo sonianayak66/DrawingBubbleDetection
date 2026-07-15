@@ -1,0 +1,343 @@
+﻿@using MPCRS.Utilities;
+@model IEnumerable<MPCRS.ViewModels.DocAccessInfo>
+
+
+@{
+	var departmentList = Masters.GetMasterDropDownList(Constants.MetaMasterCode.Departments, true);
+	var roleList = Masters.GetRolesDropDownList();
+}
+
+<style>
+	.table > tbody > tr > td:first-child {
+		padding-left: 2px !important;
+	}
+
+	.table > :not(caption) > * > * {
+		padding: 0.2rem 0.2rem;
+	}
+
+	.select2-container {
+		z-index: 1061 !important;
+	}
+
+		.select2-container .select2-dropdown {
+			z-index: 1061 !important;
+		}
+</style>
+
+
+<div class="row">
+	<div class="col-10">
+		<b>Access Rights for Folder : @Model.FirstOrDefault().Refrence_Title</b>
+	</div>
+	<div class="col-2">
+		<button class="btn btn-primary btn-sm mb-1" type="button" onclick="SubmitUserFolderAccess()">Save</button>
+	</div>
+</div>
+
+<div class="row align-items-center gx-2 gy-1 mb-2">
+	<div class="col-auto">
+		<div class="form-check m-0">
+			<input class="form-check-input" type="checkbox" id="internalOnly">
+			<label class="form-check-label" for="internalOnly">Internal Employee</label>
+		</div>
+	</div>
+
+	<div class="col">
+		<label class="form-label form-label-compact mb-1">DEPARTMENTS</label>
+		<select id="deptFilter"
+				class="form-select form-select-sm multiselect"
+				multiple
+				asp-items="@departmentList">
+		</select>
+	</div>
+
+	<div class="col">
+		<label class="form-label form-label-compact mb-1">ROLES</label>
+		<select id="roleFilter"
+				class="form-select form-select-sm multiselect"
+				multiple
+				asp-items="@roleList">
+		</select>
+	</div>
+</div>
+
+
+
+<input type="text" id="foldersaccess" onkeyup="filterthisTable()" class="form-control form-sm" placeholder="Search">
+<table class="table table-bordered">
+	<thead>
+		<tr>
+			<th scope="col">
+				User
+			</th>
+			<th scope="col">
+				Read Access
+				<input type="checkbox" style="width:18px!important;height:18px!important" onchange="UpdateBulkAccessRights(this,'user_readaccess')" />
+			</th>
+			<th scope="col">
+				Write Access
+				<input type="checkbox" style="width:18px!important;height:18px!important" onchange="UpdateBulkAccessRights(this,'user_writeaccess')" />
+			</th>
+			<th scope="col">
+				Download Access
+				<input type="checkbox" style="width:18px!important;height:18px!important" onchange="UpdateBulkAccessRights(this,'user_downloadaccess')" />
+			</th>
+		</tr>
+	</thead>
+	<tbody id="AccessRightTable">
+		@foreach (var item in Model.Select((x, i) => new { Data = x, Index = i + 1 }))
+		{
+			<tr>
+				<td scope="row">
+					@Html.Raw(item.Data.UserName)
+					@* <input type="hidden" class="accessdataclss" data-UserDbkey="@item.Data.UserDbkey" data-configdbkey="@item.Data.doc_config_dbkey" data-folerid="@item.Data.Document_Dbkey"> *@
+
+					<input type="hidden"
+						   class="accessdataclss"
+						   data-UserDbkey="@item.Data.UserDbkey"
+						   data-configdbkey="@item.Data.doc_config_dbkey"
+						   data-folerid="@item.Data.Document_Dbkey"
+						   data-employeetype="@item.Data.employeeType"
+						   data-departmentname="@item.Data.departmentName"
+						   data-roles="@item.Data.Roles">
+				</td>
+				<td class="text-center">
+					<div class="form-check form-switch text-center">
+						<input class="form-check-input user_readaccess" id="@item.Data.doc_config_dbkey" type="checkbox" @(item.Data.ReadAccess == true ? "Checked" : "") />
+					</div>
+				</td>
+				<td class="text-center">
+					<div class="form-check form-switch text-center">
+						<input class="form-check-input user_writeaccess" id="@item.Data.doc_config_dbkey" type="checkbox" @(item.Data.WriteAccess == true ? "Checked" : "") />
+					</div>
+				</td>
+				<td class="text-center">
+					<div class="form-check form-switch text-center">
+						<input class="form-check-input user_downloadaccess" id="@item.Data.doc_config_dbkey" type="checkbox" @(item.Data.DownloadAccess == true ? "Checked" : "") />
+					</div>
+				</td>
+
+			</tr>
+		}
+
+	</tbody>
+</table>
+
+
+	<script >
+
+		$(document).ready(function () {
+		applySelect2();
+
+		// fire filtering whenever any control changes
+		$('#internalOnly').on('change', applyFilters);
+		$('#deptFilter').on('change', applyFilters);
+		$('#roleFilter').on('change', applyFilters);
+
+		// your search input already calls filterthisTable() on keyup -> just delegate to applyFilters
+		applyFilters(); // initial render
+	});
+
+	function applySelect2() {
+		$('.multiselect').select2({
+			width: '100%',
+			placeholder: 'Select...',
+			
+		});
+	}
+
+	// Make the search box reuse the same logic
+	function filterthisTable() {
+		applyFilters();
+	}
+
+	// Helper: get selected option **text** (not value) from a Select2/multi-select
+	// We use TEXT because your rows store names in data-attributes (e.g., data-roles="Order_Module,Approver")
+	function getSelectedOptionTexts(selector) {
+		return $(selector).find('option:selected')
+			.map(function () { return ($(this).text() || '').trim().toLowerCase(); })
+			.get();
+	}
+
+	// The unified filter pass (checkbox + two multiselects + free text)
+	function applyFilters() {
+		var internalOnly = $('#internalOnly').is(':checked');
+
+		// selected lists (OR within each list)
+		var deptSelected = getSelectedOptionTexts('#deptFilter'); // e.g., ["qa","turbine"]
+		var roleSelected = getSelectedOptionTexts('#roleFilter'); // e.g., ["order_module","approver"]
+
+		// free-text search (optional)
+		var q = ($('#foldersaccess').val() || '').toLowerCase().trim();
+
+		var $rows = $('#AccessRightTable tr');
+
+		$rows.each(function () {
+			var $tr = $(this);
+			var $meta = $tr.find('.accessdataclss');
+			if ($meta.length === 0) { $tr.show(); return; }
+
+			var empType = (($meta.data('employeetype') || '') + '').trim().toLowerCase();
+			var dept    = (($meta.data('departmentname') || '') + '').trim().toLowerCase();
+			var roles   = (($meta.data('roles') || '') + '').toLowerCase();
+
+			// roles are comma-separated -> Set for O(1) lookups
+			var roleSet = new Set(roles.split(',').map(function (s) { return s.trim(); }).filter(Boolean));
+
+			// 1) Internal-only checkbox
+			var empMatch  = !internalOnly || empType === 'internal employee';
+
+			// 2) Departments: OR within selection (empty selection == pass)
+			var deptMatch = (deptSelected.length === 0) || (deptSelected.indexOf(dept) !== -1);
+
+			// 3) Roles: OR within selection (empty selection == pass)
+			var roleMatch = (roleSelected.length === 0) ||
+							roleSelected.some(function (r) { return roleSet.has(r); });
+
+			// 4) Free text (search all visible text in the row)
+			var searchMatch = (q === '') || ($tr.text().toLowerCase().indexOf(q) > -1);
+
+			var show = empMatch && deptMatch && roleMatch && searchMatch;
+			$tr.toggle(show);
+		});
+
+		// Optional: clear header "select all" checkboxes because the visible set changed
+		// $('thead input[type=checkbox]').prop('checked', false);
+	}
+
+	function UpdateBulkAccessRights(checkboxall, clsname) {
+			var checkboxes = document.getElementsByClassName(clsname);
+			for (var i = 0; i < checkboxes.length; i++) {
+				var bx = checkboxes[i];
+				if (bx.closest('tr').style.display != "none") {
+					checkboxes[i].checked = checkboxall.checked;
+
+					// If bulk-setting write or download -> ensure read is also checked
+					if (checkboxall.checked && (clsname === "user_writeaccess" || clsname === "user_downloadaccess")) {
+						$(bx).closest("tr").find(".user_readaccess").prop("checked", true);
+					}
+				}
+			}
+		}
+
+
+		// function SubmitUserFolderAccess(){
+
+		// 	var accessarray = new Array();
+		// 	var table = document.getElementById("AccessRightTable");
+		// 	var rows_ = table.getElementsByTagName("tr");
+
+		// 	var useracess_data = document.getElementsByClassName("accessdataclss");
+		// 	var user_readaccess = document.getElementsByClassName("user_readaccess");
+		// 	var user_writeaccess = document.getElementsByClassName("user_writeaccess");
+		// 	var user_downloadaccess = document.getElementsByClassName("user_downloadaccess");
+
+		// 	for (var i = 0; i < rows_.length; i++) {
+		// 		var items = {};
+		// 		items.doc_config_dbkey = useracess_data[i].getAttribute('data-configdbkey');
+		// 		items.UserDbkey = useracess_data[i].getAttribute('data-UserDbkey');
+		// 		items.Document_Dbkey = useracess_data[i].getAttribute('data-folerid');
+		// 		items.ReadAccess = user_readaccess[i].checked;
+		// 		items.WriteAccess = user_writeaccess[i].checked;
+		// 		items.DownloadAccess = user_downloadaccess[i].checked;
+		// 		accessarray.push(items);
+		// 	}
+
+		// 	$.ajax({
+		// 		type: "POST",
+		// 		url: '/DocManager/SaveAccessDetail',
+		// 		async: false,
+		// 		data: {
+		// 			usraccessdata: JSON.stringify(accessarray),
+		// 		},
+		// 		cache: false,
+		// 		success: function (data) {
+		// 			bootbox.alert({
+		// 				message: "Saved Succesfully",
+		// 				callback: function () {
+
+		// 				}
+		// 			});
+		// 		}
+		// 	});
+
+		// }
+
+			function SubmitUserFolderAccess() {
+
+		bootbox.confirm({
+			title: "Confirm Access Changes",
+			message: `
+			<div style="text-align:left;">
+			  <p><b>Please confirm before saving.</b></p>
+			  <p>Changes will apply to the selected folder and all its subfolders.</p>
+			  <p>If the user doesn't have access to a parent folder, it may still appear for navigation, but its contents will not be visible.</p>
+			</div>
+			`,
+			buttons: {
+				confirm: {
+					label: "Yes, Save",
+					className: "btn-primary"
+				},
+				cancel: {
+					label: "Cancel",
+					className: "btn-secondary"
+				}	
+			},
+			callback: function (result) {
+				if (!result) return;
+
+				var accessarray = [];
+				var table = document.getElementById("AccessRightTable");
+				var rows_ = table.getElementsByTagName("tr");
+
+				var useracess_data = document.getElementsByClassName("accessdataclss");
+				var user_readaccess = document.getElementsByClassName("user_readaccess");
+				var user_writeaccess = document.getElementsByClassName("user_writeaccess");
+				var user_downloadaccess = document.getElementsByClassName("user_downloadaccess");
+
+				for (var i = 0; i < rows_.length; i++) {
+					var items = {};
+					items.doc_config_dbkey = useracess_data[i].getAttribute('data-configdbkey');
+					items.UserDbkey = useracess_data[i].getAttribute('data-UserDbkey');
+					items.Document_Dbkey = useracess_data[i].getAttribute('data-folerid');
+					items.ReadAccess = user_readaccess[i].checked;
+					items.WriteAccess = user_writeaccess[i].checked;
+					items.DownloadAccess = user_downloadaccess[i].checked;
+					accessarray.push(items);
+				}
+
+				$.ajax({
+					type: "POST",
+					url: '/DocManager/SaveAccessDetail',
+					async: false,
+					data: {
+						usraccessdata: JSON.stringify(accessarray),
+					},
+					cache: false,
+					success: function (data) {
+						bootbox.alert({
+							message: "Saved Successfully"
+						});
+					},
+					error: function () {
+						bootbox.alert({
+							message: "An error occurred while saving access details."
+						});
+					}
+				});
+			}
+		});
+	}
+
+		$(document).on("change", ".user_writeaccess", function () {
+			if (this.checked) {
+				// find the corresponding read checkbox in the same row and check it
+				$(this).closest("tr").find(".user_readaccess").prop("checked", true);
+			}
+		});
+
+
+
+	</script>

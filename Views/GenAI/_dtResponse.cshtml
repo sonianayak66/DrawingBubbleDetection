@@ -1,0 +1,39 @@
+﻿@using System.Data
+@model System.Data.DataTable
+
+<style>
+    /* CSS styles for the compact table */
+    #dataTable {
+        width: 100%;
+        border-collapse: collapse; /* Collapse borders for a compact look */
+        font-size: 12px; /* Small font size */
+    }
+
+        #dataTable th, #dataTable td {
+            border: 1px solid #ddd; /* Add borders to cells */
+            padding: 6px; /* Padding inside cells */
+            text-align: left; /* Align text to the left */
+        }
+</style>
+<label>Total count of rows : @Model.Rows.Count </label>
+<table id="dataTable" class="display table" style="width:100%">
+    <thead>
+        <tr>
+            @foreach (DataColumn col in Model.Columns)
+            {
+                <th>@col.ColumnName</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (DataRow row in Model.Rows)
+        {
+            <tr>
+                @foreach (DataColumn col in Model.Columns)
+                {
+                    <td>@row[col.ColumnName]</td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>

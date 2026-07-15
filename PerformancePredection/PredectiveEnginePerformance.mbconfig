@@ -1,0 +1,650 @@
+﻿{
+  "TrainingTime": 600,
+  "Scenario": "Regression",
+  "DataSource": {
+    "Type": "TabularFile",
+    "Version": 1,
+    "FilePath": "D:\\Downloads\\Training Data\\Training Data\\TD2 - Copy.csv",
+    "Delimiter": ",",
+    "DecimalMarker": ".",
+    "HasHeader": true,
+    "ColumnProperties": [
+      {
+        "ColumnName": "P1",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "T1",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "P2",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "T2",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "P2B",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "P3",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "T3",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "T5",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "P6",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "T6",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "P6B",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "T6B",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "NH",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "NL",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "WF",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      },
+      {
+        "ColumnName": "XG",
+        "ColumnPurpose": "Label",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 2
+      }
+    ]
+  },
+  "Environment": {
+    "Type": "LocalCPU",
+    "Version": 1
+  },
+  "RunHistory": {
+    "Version": 1,
+    "Type": "Result",
+    "Trials": [
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastForestRegression",
+        "Score": 0.99916453657552673,
+        "RuntimeInSeconds": 1.25
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": -0.69903534639911546,
+        "RuntimeInSeconds": 0.29199999570846558
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": -2.7358871140520007,
+        "RuntimeInSeconds": 0.34299999475479126
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LbfgsPoissonRegressionRegression",
+        "Score": 0.99790759170683518,
+        "RuntimeInSeconds": 0.99900001287460327
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "SdcaRegression",
+        "Score": 0.96323179224003608,
+        "RuntimeInSeconds": 0.2630000114440918
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LightGbmRegression",
+        "Score": 0.99418866213689494,
+        "RuntimeInSeconds": 0.24300000071525574
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastForestRegression",
+        "Score": 0.99928388778970911,
+        "RuntimeInSeconds": 0.37299999594688416
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": 0.99776753007487584,
+        "RuntimeInSeconds": 0.26199999451637268
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": 0.9625782602118963,
+        "RuntimeInSeconds": 0.27799999713897705
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LbfgsPoissonRegressionRegression",
+        "Score": 0.9979731869702394,
+        "RuntimeInSeconds": 0.76700001955032349
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "SdcaRegression",
+        "Score": 0.58126591505446612,
+        "RuntimeInSeconds": 0.21600000560283661
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LightGbmRegression",
+        "Score": 0.99593046969320553,
+        "RuntimeInSeconds": 0.11999999731779099
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastForestRegression",
+        "Score": 0.99930878772574261,
+        "RuntimeInSeconds": 0.46799999475479126
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": -0.52486954715291345,
+        "RuntimeInSeconds": 0.23999999463558197
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": -2.8519249844371211,
+        "RuntimeInSeconds": 0.29199999570846558
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LbfgsPoissonRegressionRegression",
+        "Score": 0.99798338656718766,
+        "RuntimeInSeconds": 0.70099997520446777
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "SdcaRegression",
+        "Score": 0.97972494906754493,
+        "RuntimeInSeconds": 0.21199999749660492
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LightGbmRegression",
+        "Score": 0.999140138433907,
+        "RuntimeInSeconds": 0.17900000512599945
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastForestRegression",
+        "Score": 0.99929118217789914,
+        "RuntimeInSeconds": 2.9470000267028809
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": 0.999439823157316,
+        "RuntimeInSeconds": 0.40599998831748962
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": 0.99735806994188692,
+        "RuntimeInSeconds": 0.296999990940094
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LbfgsPoissonRegressionRegression",
+        "Score": 0.99795206108462176,
+        "RuntimeInSeconds": 0.60399997234344482
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "SdcaRegression",
+        "Score": 0.81816752583395436,
+        "RuntimeInSeconds": 0.23299999535083771
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LightGbmRegression",
+        "Score": 0.99918448629955181,
+        "RuntimeInSeconds": 0.14900000393390656
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastForestRegression",
+        "Score": 0.99917528207014761,
+        "RuntimeInSeconds": 0.28299999237060547
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": 0.99783449124788792,
+        "RuntimeInSeconds": 1.0379999876022339
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": -2.4954382089421738,
+        "RuntimeInSeconds": 0.70899999141693115
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LbfgsPoissonRegressionRegression",
+        "Score": 0.99762939736156708,
+        "RuntimeInSeconds": 0.68000000715255737
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "SdcaRegression",
+        "Score": 0.97975402685849122,
+        "RuntimeInSeconds": 0.16699999570846558
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LightGbmRegression",
+        "Score": 0.1523925215708839,
+        "RuntimeInSeconds": 0.14200000464916229
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastForestRegression",
+        "Score": 0.99894211789730591,
+        "RuntimeInSeconds": 0.35100001096725464
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": 0.99396810951463654,
+        "RuntimeInSeconds": 0.27900001406669617
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": 0.99889432540275491,
+        "RuntimeInSeconds": 0.29600000381469727
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LbfgsPoissonRegressionRegression",
+        "Score": 0.99705550246017294,
+        "RuntimeInSeconds": 0.5820000171661377
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "SdcaRegression",
+        "Score": -0.0017599447517910871,
+        "RuntimeInSeconds": 0.32899999618530273
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LightGbmRegression",
+        "Score": 0.99970026610472429,
+        "RuntimeInSeconds": 1.4259999990463257
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastForestRegression",
+        "Score": 0.9992940692493385,
+        "RuntimeInSeconds": 4.0209999084472656
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": 0.99981823754176213,
+        "RuntimeInSeconds": 0.8399999737739563
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": -2.8961089466217063,
+        "RuntimeInSeconds": 0.38199999928474426
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LightGbmRegression",
+        "Score": 0.99957500985353409,
+        "RuntimeInSeconds": 1.1269999742507935
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "SdcaRegression",
+        "Score": 0.9796414486971442,
+        "RuntimeInSeconds": 0.16599999368190765
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": -2.0774746782456393,
+        "RuntimeInSeconds": 0.367000013589859
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": 0.99432522953603664,
+        "RuntimeInSeconds": 0.37700000405311584
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastForestRegression",
+        "Score": 0.99931566211289768,
+        "RuntimeInSeconds": 4.0830001831054688
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LbfgsPoissonRegressionRegression",
+        "Score": 0.99759144727145344,
+        "RuntimeInSeconds": 0.75700002908706665
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LightGbmRegression",
+        "Score": 0.99969029335690962,
+        "RuntimeInSeconds": 8.5299997329711914
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "SdcaRegression",
+        "Score": -1.0641757308919093,
+        "RuntimeInSeconds": 0.23499999940395355
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": 0.99967859912301593,
+        "RuntimeInSeconds": 14.932999610900879
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": 0.99957958830893445,
+        "RuntimeInSeconds": 1.2109999656677246
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastForestRegression",
+        "Score": 0.99932502535890544,
+        "RuntimeInSeconds": 214.80599975585938
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LightGbmRegression",
+        "Score": 0.999242091504908,
+        "RuntimeInSeconds": 0.89999997615814209
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "SdcaRegression",
+        "Score": 0.97991784334666532,
+        "RuntimeInSeconds": 0.15299999713897705
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": 0.99987310090288084,
+        "RuntimeInSeconds": 7.6999998092651367
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": 0.99917117649095188,
+        "RuntimeInSeconds": 0.79199999570846558
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastForestRegression",
+        "Score": 0.99931161721333528,
+        "RuntimeInSeconds": 55.858001708984375
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LbfgsPoissonRegressionRegression",
+        "Score": 0.99721242092783613,
+        "RuntimeInSeconds": 0.55400002002716064
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "LightGbmRegression",
+        "Score": 0.99980981503124022,
+        "RuntimeInSeconds": 3.5739998817443848
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "SdcaRegression",
+        "Score": 0.86071793698806642,
+        "RuntimeInSeconds": 0.30000001192092896
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": 0.99976094735882326,
+        "RuntimeInSeconds": 59.382999420166016
+      },
+      {
+        "Version": 0,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": -1.0714224063924247,
+        "RuntimeInSeconds": 20.24799919128418
+      }
+    ],
+    "Pipeline": {
+      "parameter": {
+        "0": {
+          "OutputColumnNames": [
+            "P1",
+            "T1",
+            "P2",
+            "T2",
+            "P2B",
+            "P3",
+            "T3",
+            "T5",
+            "P6",
+            "T6",
+            "P6B",
+            "T6B",
+            "NH",
+            "NL",
+            "WF"
+          ],
+          "InputColumnNames": [
+            "P1",
+            "T1",
+            "P2",
+            "T2",
+            "P2B",
+            "P3",
+            "T3",
+            "T5",
+            "P6",
+            "T6",
+            "P6B",
+            "T6B",
+            "NH",
+            "NL",
+            "WF"
+          ]
+        },
+        "1": {
+          "InputColumnNames": [
+            "P1",
+            "T1",
+            "P2",
+            "T2",
+            "P2B",
+            "P3",
+            "T3",
+            "T5",
+            "P6",
+            "T6",
+            "P6B",
+            "T6B",
+            "NH",
+            "NL",
+            "WF"
+          ],
+          "OutputColumnName": "Features"
+        },
+        "2": {
+          "NumberOfLeaves": 61,
+          "MinimumExampleCountPerLeaf": 126,
+          "NumberOfTrees": 485,
+          "MaximumBinCountPerFeature": 1022,
+          "FeatureFraction": 0.9376616075101446,
+          "LearningRate": 0.99999977667298645,
+          "LabelColumnName": "XG",
+          "FeatureColumnName": "Features"
+        }
+      },
+      "estimators": [
+        "ReplaceMissingValues",
+        "Concatenate",
+        "FastTreeRegression"
+      ]
+    },
+    "MetricName": "RSquared"
+  },
+  "Type": "TrainingConfig",
+  "Version": 2
+}

@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build --no-restore)",
+      "Bash(xargs grep:*)",
+      "Bash(find /c/Users/dell/source/repos/SHRAM_V2 -name *.sql -type f)",
+      "Bash(grep -i \"\\\\.cs$\")",
+      "Bash(grep -E \"\\\\.\\(cs|sql|js|jsx\\)$\")",
+      "Bash(grep -r sp_ION /c/Users/dell/source/repos/SHRAM_V2 --include=*.cs --include=*.sql)",
+      "Bash(npm install:*)",
+      "Bash(grep -n \"lineHeight.*1\\\\.6\\\\|line-height.*1\\\\.6\" /c/Users/dell/source/repos/SHRAM_V2/taskplanner/src/modules/shared/components/Common/*.jsx)",
+      "Bash(find /c/Users/dell/source/repos/SHRAM_V2/ViewModels -name \"*.cs\" -exec grep -l \"SaveInitialAssignment\\\\|SaveRemarks\\\\|MarkAsComplete\\\\|ForwardToNextStage\" {} \\\\;)",
+      "Bash(grep -n \"class Save\\\\|class Mark\\\\|class Forward\\\\|class Refer\\\\|class StartRework\" /c/Users/dell/source/repos/SHRAM_V2/ViewModels/*.cs)",
+      "Bash(grep -n \"OutwardION\\\\|outward\\\\|Outward\" /c/Users/dell/source/repos/SHRAM_V2/taskplanner/src/modules/ION/views/*.jsx)",
+      "Bash(dotnet build:*)",
+      "Bash(npx vite:*)",
+      "Bash(npm run:*)",
+      "Bash(ls -la /c/Users/dell/source/repos/SHRAM_V2/ViewModels/*NCR* /c/Users/dell/source/repos/SHRAM_V2/ViewModels/*Inspection*)",
+      "Read(//d/interns Buuble detection/**)",
+      "Read(//d//**)",
+      "Bash(grep -E \"\\\\.\\(py|txt|bat|sh|md|env\\)$|^__init__\")",
+      "Bash(cp \"D:/interns Buuble detection/Method 1/DrawingBubbleService/DrawingBubble/\"*.py \"C:/Users/dell/source/repos/SHRAM_V2/DrawingBubbleService_M1/\")",
+      "Bash(cp \"D:/interns Buuble detection/Method 1/DrawingBubbleService/DrawingBubble/requirements.txt\" \"C:/Users/dell/source/repos/SHRAM_V2/DrawingBubbleService_M1/\")",
+      "Bash(cp \"D:/interns Buuble detection/Method 1/DrawingBubbleService/DrawingBubble/README.md\" \"C:/Users/dell/source/repos/SHRAM_V2/DrawingBubbleService_M1/\")",
+      "Bash(cp \"D:/interns Buuble detection/Method 2/DrawingBubbleServiceUpdated/app/\"*.py \"C:/Users/dell/source/repos/SHRAM_V2/DrawingBubbleService_M2/app/\")",
+      "Bash(cp \"D:/interns Buuble detection/Method 2/DrawingBubbleServiceUpdated/requirements.txt\" \"C:/Users/dell/source/repos/SHRAM_V2/DrawingBubbleService_M2/\")",
+      "Bash(cp -r \"D:/interns Buuble detection/Method 2/DrawingBubbleServiceUpdated/wheels\" \"C:/Users/dell/source/repos/SHRAM_V2/DrawingBubbleService_M2/wheels\")",
+      "Bash(mkdir -p \"C:/Users/dell/source/repos/SHRAM_V2/DrawingBubbleService_M1/wheels\")",
+      "Bash(\"C:/Users/dell/AppData/Local/Programs/Python/Python312/python.exe\" -m pip download -r requirements.txt -d ./wheels --only-binary=:all:)"
+    ]
+  }
+}

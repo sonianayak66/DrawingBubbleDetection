@@ -1,0 +1,925 @@
+﻿@model MPCRS.ViewModels.NCRvm
+@using System.Data
+@using MPCRS.Utilities
+@using MPCRS.ViewModels;
+
+@{
+	ViewData["Title"] = "NCRReport";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+
+	var DocTypeList = MPCRS.Utilities.Masters.GetMasterDropDownList(MPCRS.Utilities.Constants.MetaMasterCode.DocumentType, false);
+	var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.NCR_Write);
+	var NCRDocumentTypeList = Masters.GetMaster_General("NCR_Document_Type");
+	var partsList = MPCRS.Utilities.Masters.GetEnginePartList_NeedTobeRefactored();
+	var vendorsList = MPCRS.Utilities.Masters.GetVendorsList();
+	var RevisionList = MPCRS.Utilities.Masters.RevisionList();
+	var EngineList = Masters.GetEngineList();
+	var ReceivedFromList = Masters.GetMaster_General("NCR_Received_From");
+	List<SelectListItem> StatusList = new List<SelectListItem>();
+	StatusList.Add(new SelectListItem() { Text = "Select", Value = "" });
+	StatusList.Add(new SelectListItem() { Text = "In Progress", Value = "In Progress" });
+	StatusList.Add(new SelectListItem() { Text = "Cleared", Value = "Cleared" });
+	StatusList.Add(new SelectListItem() { Text = "Comments", Value = "Comments" });
+
+	// var NCR_Status = Masters.Get_NCR_StatusDropdown();
+	var NCR_Status = Masters.GetMaster_General_SameValueAsText("NCR_Status");
+	var NCR_Report_Status = Masters.GetMaster_General_SameValueAsText("NCR_Report_Status");
+	//bool MarkedForRework = Model.nonConformanceReport_Items.Any(x => (x.Rework_Status == 1 || x.Rework_Status == 2));
+	bool MarkedForRework = Model.nonConformanceReport_Items.Any(x => x.Module_ReworkType == 1 || x.Module_ReworkType == 2 ||
+												x.TAS_ReworkType == 1 || x.TAS_ReworkType == 2 ||
+												x.STRESS_ReworkType == 1 || x.STRESS_ReworkType == 2 ||
+												x.PO_ReworkType == 1 || x.PO_ReworkType == 2);
+	var rawmaterialList = MPCRS.Utilities.Masters.GetMaterialList();
+}
+
+<style>
+	.field-validation-error {
+		color: red;
+	}
+
+	.tox .tox-toolbar {
+		position: relative;
+		float: right;
+	}
+
+	.table > :not(caption) > * > * {
+		padding: 0rem .0rem;
+		background-color: #fff;
+	}
+
+	.tox:not(.tox-tinymce-inline) .tox-editor-header {
+		padding: 0px 0;
+	}
+
+	.tox .tox-editor-header {
+		margin-bottom: 0rem;
+	}
+
+	.formControlNoBorder {
+		border: none;
+	}
+
+
+
+	.tox .tox-statusbar__text-container {
+		display: none;
+		flex: 1 1 auto;
+		justify-content: flex-end;
+		overflow: hidden;
+	}
+
+	.tox {
+		border: none !important; /* Remove any border */
+	}
+
+
+		.tox .tox-collection--list .tox-collection__group {
+			border-bottom-width: 0;
+			border-color: #e3e3e3;
+			border-left-width: 0;
+			border-right-width: 0;
+			border-style: solid;
+			border-top-width: 1px;
+			padding: 0px 0;
+		}
+</style>
+<style>
+	/* Enhanced Table Styling */
+	.table-bordered th {
+		background-color: #f8f9fa;
+		font-weight: 600;
+		padding: 12px 8px;
+		border: 1px solid #dee2e6;
+		text-align: center;
+		vertical-align: middle;
+	}
+
+	.table-bordered td {
+		padding: 8px;
+		border: 1px solid #dee2e6;
+		vertical-align: middle;
+	}
+
+	/* Uniform Input Styling - BUT exclude TinyMCE textareas */
+	.form-control-square:not(.Dimension),
+	.form-select-square {
+		height: 45px !important;
+		padding: 8px 12px;
+		border: 1px solid #ced4da;
+		border-radius: 4px;
+		font-size: 14px;
+		background-color: #fff;
+		transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+	}
+
+	/* Special styling for TinyMCE textareas */
+	.form-control-square.Dimension {
+		min-height: 80px !important;
+		padding: 8px 12px;
+		border: 1px solid #ced4da;
+		border-radius: 4px;
+		font-size: 14px;
+		background-color: #fff;
+		resize: vertical;
+	}
+
+	.form-control-square:focus,
+	.form-select-square:focus {
+		border-color: #80bdff;
+		outline: 0;
+		box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+	}
+
+	/* TinyMCE Container Styling */
+	.tox-tinymce {
+		min-height: 80px !important;
+		border: 1px solid #ced4da !important;
+		border-radius: 4px !important;
+	}
+
+	.tox .tox-edit-area__iframe {
+		min-height: 60px !important;
+	}
+
+	/* Fix TinyMCE font consistency issues */
+	.tox .tox-edit-area__iframe {
+		font-family: inherit !important;
+	}
+
+	/* Ensure consistent font styling in TinyMCE content */
+	#itemsTbl .tox-tinymce p,
+	#itemsTbl .tox-tinymce span,
+	#itemsTbl .tox-tinymce div {
+		font-size: 14px !important;
+		font-weight: normal !important;
+		font-family: inherit !important;
+		line-height: 1.2 !important;
+	}
+
+	/* Override any bold formatting that might be applied */
+	#itemsTbl .tox-editor-container * {
+		font-weight: normal !important;
+		font-size: 14px !important;
+	}
+
+	/* Prevent TinyMCE from applying default paragraph styling */
+	.tox-tinymce p {
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+</style>
+<style>
+	/* Serial Number Engine Mapping Pills */
+	.mapping-pills-container {
+		min-height: 40px;
+		padding: 8px;
+		background-color: #f8f9fa;
+		border: 1px solid #dee2e6;
+		border-radius: 4px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		align-items: center;
+	}
+
+	.mapping-pill {
+		display: inline-flex;
+		align-items: center;
+		padding: 4px 10px;
+		background-color: #ffffff;
+		color: #495057;
+		border: 1px solid #ced4da;
+		border-radius: 12px;
+		font-size: 12px;
+		font-weight: 500;
+		box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+		transition: all 0.2s ease;
+		line-height: 1.2;
+	}
+
+		.mapping-pill:hover {
+			background-color: #e9ecef;
+			border-color: #adb5bd;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+			transform: translateY(-1px);
+		}
+
+		.mapping-pill .serial-part {
+			font-weight: 600;
+			margin-right: 2px;
+			color: #212529;
+		}
+
+		.mapping-pill .engine-part {
+			font-weight: 400;
+			color: #495057;
+		}
+
+		.mapping-pill .separator {
+			margin: 0 4px;
+			opacity: 1;
+			font-size: 11px;
+			color: #495057;
+		}
+
+	/* Modal Table Styling */
+	#mappingTable tbody tr:hover {
+		background-color: #f8f9fa;
+	}
+
+	#mappingTable .form-select-sm {
+		height: 38px;
+	}
+</style>
+
+<div class="col-12">
+	<div class="row">
+		<div class="col-8">
+			<h3>@(Model.nonConformanceReportVM.Id == 0 ? "Create" : "Edit") NCR</h3>
+		</div>
+
+		<div class="col-4 pull-right">
+			<a class="btn btn-secondary float-end" href="/NCR/Index">Back</a>
+			@if (Permission_Write)
+			{
+				<input type="button" class="btn btn-primary float-end" style="margin-right:10px;" value="Save" onclick="SubmitReport()" />
+			}
+
+		</div>
+	</div>
+</div>
+<hr />
+<div class="row">
+
+
+	<form id="NCR" class="needs-validation" novalidate="novalidate">
+		<div class="row">
+			<input data-field="Id" class="form-control" asp-for="nonConformanceReportVM.Id" type="hidden">
+			<input data-field="NCRGuid" class="form-control" id="NCRGuid" asp-for="nonConformanceReportVM.NCRGuid" type="hidden">
+			@*  <input data-field="Module_Responsibilty" asp-for="nonConformanceReportVM.Module_Responsibilty" type="hidden" />
+            <input data-field="AssignedUserGuid" asp-for="nonConformanceReportVM.AssignedUserGuid" type="hidden" />
+            <input data-field="ModuleAssignedBy" asp-for="nonConformanceReportVM.ModuleAssignedBy" type="hidden" />
+            <input data-field="ModuleAssignedOn" asp-for="nonConformanceReportVM.ModuleAssignedOn" type="hidden" /> *@
+
+			<div class="col-5">
+				<div class="form-group row">
+					<div class="col-md-12">
+						<label asp-for="nonConformanceReportVM.Engine_Part_Dbkey">Part No</label>
+						<select data-field="Engine_Part_Dbkey" asp-for="nonConformanceReportVM.Engine_Part_Dbkey" class="form-select form-select-sm searchable" asp-items="@partsList" onchange="FillRawMaterial()"></select>
+						<span asp-validation-for="nonConformanceReportVM.Engine_Part_Dbkey"></span>
+					</div>
+				</div>
+
+				<div class="form-group row">
+					<div class="col-md-12">
+						<div class="form-floating mb-2">
+							<input data-field="ReferenceNumber" class="form-control" asp-for="nonConformanceReportVM.ReferenceNumber" placeholder="">
+							<label asp-for="nonConformanceReportVM.ReferenceNumber">NCR No.</label>
+						</div>
+					</div>
+					@*
+                    <div class="col-md-6">
+                    <div class="form-floating mb-2">
+                    <select data-field="Module_Responsibilty" asp-for="nonConformanceReportVM.Module_Responsibilty" class="form-select form-select-sm" asp-items="Model.nonConformanceReportVM.Module_ResponsibilityList"></select>
+                    <label class="form-check-label" asp-for="nonConformanceReportVM.Module_Responsibilty">Module</label>
+                    </div>
+                    </div>
+                    *@
+				</div>
+				<div class="form-group row">
+					<div class="col-md-12">
+						<div class="form-floating mb-2">
+							<input data-field="SerialNumber" class="form-control" asp-for="nonConformanceReportVM.SerialNumber" placeholder="">
+							<label asp-for="nonConformanceReportVM.SerialNumber"></label>
+						</div>
+					</div>
+				</div>
+				<div class="form-group row">
+					<div class="col-md-12">
+						<label asp-for="nonConformanceReportVM.Vendor">Contractor</label>
+						<select data-field="Vendor" asp-for="nonConformanceReportVM.Vendor" class="form-select form-select-sm searchable" asp-items="@vendorsList"></select>
+						<span asp-validation-for="nonConformanceReportVM.Vendor"></span>
+					</div>
+				</div>
+				<div class="form-group row">
+					<div class="col-md-12">
+						<label asp-for="nonConformanceReportVM.RawMaterial">Raw Material</label>
+						<select data-field="RawMaterial" asp-for="nonConformanceReportVM.RawMaterial" class="form-select form-select-sm searchable" asp-items="@rawmaterialList"></select>
+						<span asp-validation-for="nonConformanceReportVM.RawMaterial"></span>
+					</div>
+				</div>
+
+			</div>
+			<div class="col-7 mt-4">
+
+				<div class="form-group row">
+					<div class="col-3">
+						<div class="form-floating mb-2">
+							<select data-field="Revision" asp-for="nonConformanceReportVM.Revision" class="form-select form-select-sm" asp-items="@RevisionList"></select>
+							<label asp-for="nonConformanceReportVM.Revision"></label>
+						</div>
+					</div>
+
+					<div class="col-3">
+						<div class="form-floating mb-2">
+							<input data-field="Qty" class="form-control" asp-for="nonConformanceReportVM.Qty" type="number" placeholder="">
+							<label asp-for="nonConformanceReportVM.Qty"></label>
+						</div>
+					</div>
+					<div class="col-3">
+						<div class="form-floating mb-2">
+							<input data-field="JobCard" class="form-control" asp-for="nonConformanceReportVM.JobCard" placeholder="">
+							<label asp-for="nonConformanceReportVM.JobCard">Job Card/Contract no</label>
+						</div>
+					</div>
+					<div class="col-3">
+						<div class="form-floating mb-2">
+							<input data-field="DARno" class="form-control" asp-for="nonConformanceReportVM.DARno" placeholder="">
+							<label asp-for="nonConformanceReportVM.DARno">DAR no</label>
+						</div>
+					</div>
+				</div>
+
+				<div class="form-group row">
+					<div class="col-md-3">
+						<div class="form-floating mb-2">
+							<input data-field="ReceivedDate" class="form-control" asp-for="nonConformanceReportVM.ReceivedDate" type="date">
+							<label asp-for="nonConformanceReportVM.ReceivedDate">NCR Date</label>
+						</div>
+					</div>
+
+					<div class="col-md-3">
+						<div class="form-floating mb-2">
+							<select data-field="ReceivedFrom" asp-for="nonConformanceReportVM.ReceivedFrom" class="form-select form-select-sm" asp-items="@ReceivedFromList"></select>
+							<label asp-for="nonConformanceReportVM.ReceivedFrom"></label>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="form-floating mb-2">
+							<select data-field="ComitteeReferred" class="form-select form-select-sm" asp-for="nonConformanceReportVM.ComitteeReferred" name="ComitteeReferred">
+								<option value="">Select</option>
+								<option value="L1">L1</option>
+								<option value="L2">L2</option>
+							</select>
+							<label asp-for="nonConformanceReportVM.ComitteeReferred"></label>
+						</div>
+					</div>
+
+					<div class="col-md-3">
+						<div class="form-floating mb-2">
+							<select data-field="ReportStatus" class="form-select" asp-for="nonConformanceReportVM.ReportStatus" name="ReportStatus" asp-items="@NCR_Report_Status"></select>
+							<label asp-for="nonConformanceReportVM.ReportStatus"></label>
+						</div>
+					</div>
+				</div>
+
+				<div class="form-group row" style="display:none;">
+					<div class="col-md-3">
+						<div class="form-floating mb-2">
+							<select data-field="Module" asp-for="nonConformanceReportVM.Module" class="form-select form-select-sm" asp-items="@StatusList"></select>
+							<label asp-for="nonConformanceReportVM.Module"></label>
+						</div>
+					</div>
+
+					<div class="col-md-3">
+						<div class="form-floating mb-2">
+							<select data-field="Stress" asp-for="nonConformanceReportVM.Stress" class="form-select form-select-sm" asp-items="@StatusList"></select>
+							<label asp-for="nonConformanceReportVM.Stress"></label>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="form-floating mb-2">
+							<select data-field="Chair" asp-for="nonConformanceReportVM.Chair" class="form-select form-select-sm" asp-items="@StatusList"></select>
+							<label asp-for="nonConformanceReportVM.Chair"></label>
+						</div>
+					</div>
+
+					<div class="col-md-3">
+						<div class="form-floating mb-2">
+							<select data-field="Tas" asp-for="nonConformanceReportVM.Tas" class="form-select form-select-sm" asp-items="@StatusList"></select>
+							<label asp-for="nonConformanceReportVM.Tas"></label>
+						</div>
+					</div>
+				</div>
+
+
+				<div class="form-group row" style="margin-top:10px!important">
+					<div class="col-md-6">
+						<div class="form-floating mb-2">
+							<select data-field="Stage_Final" class="form-select form-select-sm" asp-for="nonConformanceReportVM.Stage_Final" name="Stage_Final">
+								<option value="">Select</option>
+								<option value="Stage">Stage</option>
+								<option value="Final">Final</option>
+							</select>
+							<label asp-for="nonConformanceReportVM.Stage_Final"></label>
+						</div>
+					</div>
+
+					<div class="col-6">
+						<div class="form-floating mb-2">
+							<input data-field="Inspection_Report_No" class="form-control" asp-for="nonConformanceReportVM.Inspection_Report_No" placeholder="">
+							<label asp-for="nonConformanceReportVM.Inspection_Report_No">Inspection Report No</label>
+						</div>
+					</div>
+
+
+				</div>
+
+
+				<div class="form-group row">
+					<div class="col-md-12">
+						<div class="form-floating mb-2">
+							<textarea data-field="Remarks" class="form-control" asp-for="nonConformanceReportVM.Remarks" name="Remarks" rows="4"></textarea>
+							<label class="form-label" asp-for="nonConformanceReportVM.Remarks">Remarks</label>
+						</div>
+					</div>
+				</div>
+				<!-- Row 5: ECM fields (two columns) -->
+				<div class="form-group row">
+					<div class="col-md-6">
+						<label asp-for="nonConformanceReportVM.ECM_TR_NO">ECM Trial/Rework No</label>
+						<input asp-for="nonConformanceReportVM.ECM_TR_NO"
+							   class="form-control"
+							   data-field="ECM_TR_NO"
+							    />
+					</div>
+
+					<div class="col-md-6">
+						<label asp-for="nonConformanceReportVM.ECM_No">ECM No</label>
+						<input asp-for="nonConformanceReportVM.ECM_No"
+							   class="form-control"
+							   data-field="ECM_No"
+							   />
+					</div>
+				</div>
+
+
+
+
+				<!-- Serial Number - Engine Mapping Pills Display -->
+				<div class="form-group row">
+					<div class="col-md-12">
+						<label class="form-label">
+							<i class="bi bi-diagram-3"></i> Serial Number - Engine Mapping
+						</label>
+						<div id="mappingPillsContainer" class="mapping-pills-container">
+							<span class="text-muted"><em>No mappings yet. Use context menu on Serial Number field to map.</em></span>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</form>
+</div>
+<hr />
+<h5>Attachments</h5>
+<details>
+	<summary>Click here</summary>
+	<div class="col-6">
+		<div id="Attachment-display" class="Attachment-display">
+			@{
+				attachmentData attData = new attachmentData();
+				attData.sourceAttachTable = "NonConformanceReport";
+				attData.sourceAttachTableKey = Model.nonConformanceReportVM.Id;
+			}
+			<partial name="../Attachment/GetAttachments" model="@attData">
+		</div>
+		<div>
+			<input type="hidden" name="Source_table_key" value="@Model.nonConformanceReportVM.Id" />
+			<input type="hidden" name="Source_table" value="NonConformanceReport" />
+			<select class="form-select form-select-sm mb-2" name="Attachment_type" asp-items="@DocTypeList"></select>
+			<input type="file" name="uploadeddocument" onchange="GlobalUploadFile(this)" />
+			<input type="hidden" name="deleteAccess" value="true" />
+		</div>
+	</div>
+
+
+</details>
+<hr />
+@{
+	var serialNoList = new List<string>();
+	if (!string.IsNullOrEmpty(Model.nonConformanceReportVM.SerialNumber))
+	{
+		serialNoList = Model.nonConformanceReportVM.SerialNumber.Split(',').Select(s => s.Trim()).ToList();
+
+	}
+	List<SelectListItem> selectListItems = new List<SelectListItem>();
+	foreach (var item in serialNoList)
+	{
+		selectListItems.Add(new SelectListItem() { Text = item, Value = item });
+	}
+
+	if (Model.nonConformanceReportVM.Id > 0)
+	{
+
+		<div class="row">
+			@if (!string.IsNullOrEmpty(Model.nonConformanceReportVM.SerialNumber))
+			{
+				<div class="col-12">
+					<table class="table table-bordered ">
+						<thead>
+							<tr>
+								<th>SlNo.</th>
+								<th style="width:10%">Serial No in Insp Rep</th>
+								<th style="width:10%">Drg Zone</th>
+								<th style="width:10%">Serial Number</th>
+								<th style="width:25%">Drawing Dimension</th>
+								<th style="width:25%">Actual Dimension</th>
+								@if (MarkedForRework)
+								{
+									<th style="width:25%">Rework Dimension</th>
+								}
+								<th style="width:10%">Reason/Analysis</th>
+
+								@* <th style="width:10%">Engine</th>*@
+								<th style="width:10%">Module Referred</th>
+
+								<th style="width:5%"></th>
+
+							</tr>
+						</thead>
+						<tbody id="tblbody">
+							<tr style="display:none">
+								<td style="padding:1px">
+									<input data-field="SlNo" class="form-control form-control-square SlNo formControlNoBorder" type="text" placeholder="" rows="5" />
+								</td>
+								<td style="padding:1px">
+									<input data-field="Serial_No_in_Inspection_Rep" class="form-control form-control-square DrgZone formControlNoBorder" type="text" placeholder="" rows="5" />
+								</td>
+								<td style="padding:1px">
+									<input data-field="DrgZone" class="form-control form-control-square DrgZone formControlNoBorder" rows="5" />
+								</td>
+								<td style="padding:1px">
+									<input data-field="NCRItemkey" type="hidden" value="0" />
+									@* <input data-field="SerialNumber" class="form-control form-control-square SerialNumber"> *@
+									<select data-field="SerialNumber" class="form-select form-select-square" asp-items="@selectListItems"></select>
+
+								</td>
+
+								<td style="padding:1px">
+									<textarea data-field="DrawingDimension"></textarea>
+								</td>
+								<td style="padding:1px">
+									<textarea data-field="ActualDimension"></textarea>
+								</td>
+								@if (MarkedForRework)
+								{
+									<td style="padding:1px">
+										<textarea data-field="Rework_Dimension"></textarea>
+									</td>
+
+								}
+
+								<td style="padding:1px">
+									<textarea data-field="Deviation_Reason_Analysis" class="form-control Deviation_Reason_Analysis formControlNoBorder" type="text" rows="5" ></textarea>
+								</td>
+
+
+								@* <td style="padding:1px">
+                    <div class="gd-t-container">
+                    <input data-field="DrawingDimension" class="form-control form-control-square DrawingDimension">
+                    <div id="symbolDropdown"></div>
+
+
+                    </td>
+                    <td style="padding:1px">
+                    <div class="gd-t-container">
+                    <input data-field="ActualDimension" class="form-control form-control-square ActualDimension">
+                    <div class="symbolDropdown"></div>
+                    </div>
+                    </td>*@
+
+
+								@*<td style="padding:1px">
+									<input data-field="Engine" class="form-control form-control-square EngineName formControlNoBorder" type="text" placeholder="" ondblclick="autofillallenginename(this)" rows="5" />
+								</td>*@
+								<td style="padding:10px"><label data-field="ModuleRefered" class="ModuleRefered"></label></td>
+
+								<td style="padding:1px;padding-left:2px; padding-right:2px;"><i data-value="0" class="fa fa-trash" onclick="removeRow(this)" style="color:red;cursor:pointer"></i></td>
+							</tr>
+							@{
+								int uniqIdforDims = 1;
+								foreach (var nonConformanceReport_Item in Model.nonConformanceReport_Items)
+								{
+
+									<tr>
+										<td style="padding:1px">
+											<input data-field="SlNo" asp-for="@nonConformanceReport_Item.SlNo" class="form-control form-control-square SlNo formControlNoBorder" type="text" placeholder="" rows="5" />
+										</td>
+										<td style="padding:1px">
+											<input data-field="Serial_No_in_Inspection_Rep" asp-for="@nonConformanceReport_Item.Serial_No_in_Inspection_Rep" class="form-control form-control-square DrgZone formControlNoBorder" type="text" placeholder="" rows="5" />
+										</td>
+										<td style="padding:1px">
+											<input data-field="DrgZone" class="form-control form-control-square DrgZone formControlNoBorder" asp-for="@nonConformanceReport_Item.DrgZone" rows="4" />
+										</td>
+										<td style="padding:1px">
+											<input data-field="NCRItemkey" type="hidden" asp-for="@nonConformanceReport_Item.NCRItemKey" />
+											<select data-field="SerialNumber" class="form-select form-select-square formControlNoBorder" asp-items="@selectListItems" asp-for="@nonConformanceReport_Item.SerialNumber"></select>
+										</td>
+
+										<td> <textarea data-field="DrawingDimension" class="form-control form-control-square DrawingDimension Dimension formControlNoBorder" asp-for="@nonConformanceReport_Item.DrawingDimension" id="DrawingDimension_@uniqIdforDims"></textarea> </td>
+
+										<td> <textarea data-field="ActualDimension" class="form-control form-control-square ActualDimension Dimension formControlNoBorder" asp-for="@nonConformanceReport_Item.ActualDimension" id="ActualDimension_@uniqIdforDims"></textarea> </td>
+
+										@if (MarkedForRework)
+										{
+											<td>
+												@if (nonConformanceReport_Item.Module_ReworkType == 1 || nonConformanceReport_Item.Module_ReworkType == 2 ||
+																		nonConformanceReport_Item.TAS_ReworkType == 1 || nonConformanceReport_Item.TAS_ReworkType == 2 ||
+																		nonConformanceReport_Item.STRESS_ReworkType == 1 || nonConformanceReport_Item.STRESS_ReworkType == 2 ||
+																		nonConformanceReport_Item.PO_ReworkType == 1 || nonConformanceReport_Item.PO_ReworkType == 2)
+												{
+													<textarea data-field="Rework_Dimension" class="form-control form-control-square Rework_Dimension Dimension formControlNoBorder" asp-for="@nonConformanceReport_Item.Rework_Dimension" id="Rework_Dimension_@uniqIdforDims"></textarea>
+
+												}
+												else
+												{
+													<label class="d-flex justify-content-center align-item-center" style="font-size:xx-large">-</label>
+												}
+											</td>
+										}
+										@*  <td style="padding:1px">
+                    <div class="gd-t-container">
+                    <input data-field="DrawingDimension" class="form-control form-control-square DrawingDimension" asp-for="@nonConformanceReport_Item.DrawingDimension">
+                    <div class="symbolDropdown"></div>
+                    </div>
+                    </td>
+
+                    <td style="padding:1px">
+                    <div class="gd-t-container">
+                    <input data-field="ActualDimension" class="form-control form-control-square ActualDimension" asp-for="@nonConformanceReport_Item.ActualDimension">
+                    <div class="symbolDropdown"></div>
+                    </div>
+                    </td>*@
+										<td style="padding:1px">
+											<textarea data-field="Deviation_Reason_Analysis"
+													  class="form-control Deviation_Reason_Analysis formControlNoBorder"
+													  asp-for="@nonConformanceReport_Item.Deviation_Reason_Analysis"
+													  rows="5">
+											</textarea>
+										</td>
+
+										@* <td style="padding:1px">
+                                            <input data-field="Engine" class="form-control form-control-square EngineName formControlNoBorder" type="text" asp-for="@nonConformanceReport_Item.Engine" placeholder="" ondblclick="autofillallenginename(this)" rows="4" /> 
+                                        </td>*@
+										<td style="padding:10px">
+											<label data-field="ModuleRefered" class="ModuleRefered">@Model.nonConformanceReportVM.Module_Responsibilty_String</label>
+										</td>
+
+										<td style="padding:1px;padding-left:2px; padding-right:2px;"><i class="fa fa-trash" data-value="@nonConformanceReport_Item.NCRItemKey" onclick="removeRow(this)" style="color:red;cursor:pointer"></i></td>
+									</tr>
+									uniqIdforDims++;
+								}
+							}
+						</tbody>
+						<tfoot>
+							<tr>
+								<td style="padding:2px" colspan="9">
+									<a class="btn btn-sm btn-small btn-primary" onclick="addRow()">Add</a>
+								</td>
+
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			}
+
+
+
+		</div>
+	}
+}
+
+
+
+
+@section scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+	<script src="~/mpi/ncr.js" asp-append-version="true"></script>
+	<script src="~/vendors/tinymce/tinymce.min.js"></script>
+	<script>
+		$(document).ready(function () {
+			applySelect2();
+			applyTextAreaContextMenu();
+			applySymbolsContextMenu();
+			initializeTinyMCE(".Dimension");
+			 loadMappingPills();
+		});
+
+		document.addEventListener('contextmenu', function (e) {
+			e.preventDefault(); // Prevent the default context menu from showing
+		});
+		function initializeTinyMCE(clss) {
+			tinymce.init({
+				selector: clss,
+				height: 50,
+				branding: false,
+				toolbar: false, // No toolbar
+				menubar: false, // No menubar
+				plugins: 'table | contextmenu', // Load table and context menu plugin
+				contextmenu: 'inserttable | Straightness | Dia | Flatness | Circularity | Cylindricity | Perpendicularity | Parallelism | Symmetry | TRunout | Concentricity |  Angularity | Position | CRunout | PSurface | PLine | Datum | MMC | LMC | RFS | Degree', // Add custom option to the context menu
+				//  statusbar: false, // Hide the status bar
+				setup: function (editor) {
+						   editor.on('init', function () {
+							const body = editor.getBody();
+							body.style.lineHeight = '1.3';
+							body.style.fontSize = '14px';
+							body.style.padding = '2px 8px';
+							body.style.margin = '0';
+							body.style.paddingTop = '0';
+							body.style.fontWeight = 'normal'; // Add this
+							body.style.fontFamily = 'inherit'; // Add this
+						});
+						function insertWithClass(character) {
+							editor.insertContent(`<span style="font-size: 14px!important; font-weight: normal!important;">${character}</span>`);
+						}
+					// Add a custom context menu option
+					editor.ui.registry.addMenuItem('Straightness', {
+						text: 'Straightness : ⏤',
+						onAction: function () {
+							const specialCharacter = '⏤';
+							editor.insertContent(specialCharacter);
+						}
+					});
+
+					editor.ui.registry.addMenuItem('Dia', {
+						text: 'Dia : ⌀',
+						onAction: function () {
+							// const specialCharacter = '⌀';
+							// editor.insertContent(specialCharacter);
+							insertWithClass('⌀');
+						}
+					});
+
+					editor.ui.registry.addMenuItem('Flatness', {
+						text: 'Flatness : ▱',
+						onAction: function () {
+							//const specialCharacter = '▱';
+							//editor.insertContent(specialCharacter);
+							insertWithClass('▱');
+						}
+					});
+
+					editor.ui.registry.addMenuItem('Circularity', {
+						text: 'Circularity : ◯',
+						onAction: function () {
+							const specialCharacter = '◯';
+							editor.insertContent(specialCharacter);
+						}
+					});
+
+					editor.ui.registry.addMenuItem('Cylindricity', {
+						text: 'Cylindricity : ⌭',
+						onAction: function () {
+							//const specialCharacter = '⌭';
+							//editor.insertContent(specialCharacter);
+							insertWithClass('⌭');
+						}
+					});
+
+					editor.ui.registry.addMenuItem('Perpendicularity', {
+						text: 'Perpendicularity : ⟂',
+						onAction: function () {
+							const specialCharacter = '⟂';
+							editor.insertContent(specialCharacter);
+
+						}
+					});
+
+					editor.ui.registry.addMenuItem('Parallelism', {
+						text: 'Parallelism : //',
+						onAction: function () {
+							const specialCharacter = '//';
+							editor.insertContent(specialCharacter);
+						}
+					});
+
+					editor.ui.registry.addMenuItem('Symmetry', {
+						text: 'Symmetry : ⌯',
+						onAction: function () {
+							//const specialCharacter = '⌯';
+							//editor.insertContent(specialCharacter);
+							insertWithClass('⌯');
+						}
+					});
+
+
+					editor.ui.registry.addMenuItem('TRunout', {
+						text: 'Total Runout : ⌰',
+						onAction: function () {
+							//const specialCharacter = '⌰';
+							//editor.insertContent(specialCharacter);
+							insertWithClass('⌰');
+						}
+					});
+
+					editor.ui.registry.addMenuItem('Concentricity', {
+						text: 'Concentricity : ⊙',
+						onAction: function () {
+							//const specialCharacter = '⊙';
+							//editor.insertContent(specialCharacter);
+							insertWithClass('⊙');
+						}
+					});
+
+
+					editor.ui.registry.addMenuItem('Angularity', {
+						text: 'Angularity : ∠',
+						onAction: function () {
+							const specialCharacter = '∠';
+							editor.insertContent(specialCharacter);
+						}
+					});
+
+					editor.ui.registry.addMenuItem('Position', {
+						text: 'Position : ⌖',
+						onAction: function () {
+							//const specialCharacter = '⌖';
+							//editor.insertContent(specialCharacter);
+							insertWithClass('⌖');
+						}
+					});
+
+					editor.ui.registry.addMenuItem('CRunout', {
+						text: 'Circular Runout : ↗',
+						onAction: function () {
+							const specialCharacter = '↗';
+							editor.insertContent(specialCharacter);
+						}
+					});
+
+					editor.ui.registry.addMenuItem('PSurface', {
+						text: 'Profile of a Surface : ⌓',
+						onAction: function () {
+							const specialCharacter = '⌓';
+							editor.insertContent(specialCharacter);
+						}
+					});
+
+					editor.ui.registry.addMenuItem('PLine', {
+						text: 'Profile of a Line : ⌒',
+						onAction: function () {
+							const specialCharacter = '⌒';
+							editor.insertContent(specialCharacter);
+						}
+					});
+
+					editor.ui.registry.addMenuItem('Datum', {
+						text: 'Datum : ⌷',
+						onAction: function () {
+							const specialCharacter = '⌷';
+							editor.insertContent(specialCharacter);
+						}
+					});
+
+					editor.ui.registry.addMenuItem('MMC', {
+						text: 'Maximum Material Condition (MMC) : Ⓜ',
+						onAction: function () {
+							const specialCharacter = 'Ⓜ';
+							editor.insertContent(specialCharacter);
+						}
+					});
+
+					editor.ui.registry.addMenuItem('LMC', {
+						text: 'Least Material Condition (LMC) : Ⓛ',
+						onAction: function () {
+							const specialCharacter = 'Ⓛ';
+							editor.insertContent(specialCharacter);
+						}
+					});
+
+					editor.ui.registry.addMenuItem('RFS', {
+						text: 'Regardless of Feature Size (RFS) : Ⓡ',
+						onAction: function () {
+							const specialCharacter = 'Ⓡ';
+							editor.insertContent(specialCharacter);
+						}
+					});
+
+
+					editor.on('contextmenu', function (e) {
+						const target = e.target;
+						if (target.nodeName !== 'TEXTAREA') {
+							e.preventDefault();
+						}
+					});
+
+					editor.ui.registry.addMenuItem('Degree', {
+						text: 'Degree : °',
+						onAction: function () {
+							const specialCharacter = '°';
+							editor.insertContent(specialCharacter);
+						}
+					});
+				}
+			});
+
+		}
+
+
+	</script>
+
+}

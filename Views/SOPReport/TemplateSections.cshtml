@@ -1,0 +1,114 @@
+﻿@model List<MPCRS.ViewModels.SOPReportTemplateVM>
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "TemplateSections";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Write);
+    var Permission_read = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Read);
+}
+
+
+<div class="page-header">
+    <div class="row">
+        <div class="col-md-10">
+            <h3>SOP Report Section Templates</h3>
+        </div>
+        <div class="col-md-1 pull-right">
+            @{
+                if (Permission_Write)
+                {
+                    <a class="btn btn-primary" href="/SOPReport/Template">Create</a>
+                }
+            }
+        </div>
+        <div class="col-md-1 pull-right">
+            <a class="btn btn-secondary" href="/Home/Index">Back</a>
+        </div>
+    </div>
+</div>
+
+<hr />
+
+<div class="col-md-12 col-sm-12 col-lg-12 divc">
+    @*<input type="hidden" value="@item.Id" id="baseid" />*@
+    <table class="table table-bordered table-hover table-sm fs--1 mb-2" id="EngineBuildtbl">
+        <thead>
+            <tr>
+                <th data-sortable="true" scope="col">Section Header</th>
+                <th data-sortable="true" scope="col">Display Order</th>
+                <th data-sortable="true" scope="col">Accessible Users</th>
+                <th data-sortable="true" scope="col">PageBreak Before</th>
+                <th data-sortable="true" scope="col">PageBreak After</th>
+                <th data-sortable="true" scope="col">Active</th>
+                <th> Action </th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                foreach (var item in Model.OrderBy(x=>x.DisplayOrder))
+                {
+      
+                    <tr>
+                        <td>@item.SectionHeader</td>
+                        <td>@item.DisplayOrder</td>
+                        <td>
+                            @{
+                                if ( @item.UsersList != null)
+                                {
+                                    foreach (var user in @item.UsersList.Split(","))
+                                    {
+                                        <span class="badge badge-phoenix fs--2 badge-phoenix-github bg-700 #6d7a8a">
+                                            <span class="badge-label">@user</span>
+                                          </span>
+                                        <br />
+                                    }
+                                }
+                           }
+                        </td>
+                         <td>@item.PageBreakAfter</td>
+                        <td>@item.PageBreakAfter</td>
+                        <td>@item.isActive</td>
+                        <td>
+                            <div class="font-sans-serif btn-reveal-trigger position-static">
+                                <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs--2" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs--2"></span></button>
+                                <div class="dropdown-menu dropdown-menu-end py-2">
+                                    <a class="dropdown-item" href="/SOPReport/Template?Guid=@item.TemplateSectionGuid">@(Permission_Write == true?"Edit" : "View")</a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+
+    <script>
+        $(document).ready(function () {
+            $('#EngineBuildtbl').DataTable({
+                fixedHeader: true,
+                paging: false,
+                ordering:false,
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem(
+                        'DataTables_' + settings.sInstance,
+                        JSON.stringify(data)
+                    );
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                },
+            });
+        });
+
+    </script>
+
+    }

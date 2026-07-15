@@ -1,0 +1,84 @@
+﻿@model List<MPCRS.ViewModels.ACSNStepSummary>
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    Layout = null;
+    var seriesList = Model.Where(x => x.Series != null).Select(x => x.Series).Distinct().ToList();
+    var stepList = Model.Select(x => x.Master_Name).Distinct().ToList();
+    <div class="col-12" >
+        <table class="table table-bordered table-hover table-sm" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Step</th>
+                    <th>Count</th>
+                    @{
+                        foreach (var item in seriesList)
+                        {
+                            <th>@item</th>
+                        }
+                    }
+                </tr>
+            </thead>
+
+            <tbody>
+                @{
+                    foreach (var step in stepList)
+                    {
+                        var stepCount = Model.Where(x => x.Master_Name == step && x.ItemsCount != null).Sum(x => x.ItemsCount);
+                        <tr>
+                            <td style="padding-left:5px">@step</td>
+                            <td style="text-align:right; padding-right:25px" >@stepCount</td>
+                            @{
+                                foreach (var item in seriesList)
+                                {
+                                    var SetpSeriesCount = Model.Where(x => x.Series == item && x.Master_Name == step).Select(x => x.ItemsCount).FirstOrDefault();
+                                    var displayCount = SetpSeriesCount == null ? 0 : SetpSeriesCount;
+                                    <td>
+                                        <div class="row">
+                                            <div class="col-2 text-center">
+                                                @displayCount
+                                            </div>
+                                            <div class="col-8">
+                                                <progress value="@displayCount.ToString()" max="@stepCount.ToString()"></progress>
+                                            </div>
+                                        </div>
+                                    </td>
+                                }
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+            <tfoot>
+                @{
+                    var totalCount = Model.Where(x => x.ItemsCount != null).Sum(x => x.ItemsCount);
+                    <tr>
+                        <th style="padding-left:5px">Total</th>
+                        <th style="text-align:right; padding-right:25px">@totalCount</th>
+                        @{
+                            foreach (var item in seriesList)
+                            {
+                                var SetpSeriesCount = Model.Where(x => x.Series == item).Select(x => x.ItemsCount).FirstOrDefault();
+                                var displayCount = SetpSeriesCount == null ? 0 : SetpSeriesCount;
+                                <th>
+                                    <div class="row">
+                                        <div class="col-2 text-center">
+                                            @displayCount
+                                        </div>
+                                        <div class="col-8">
+                                            <progress value="@displayCount.ToString()" max="@totalCount.ToString()"></progress>
+                                        </div>
+                                    </div>
+                                </th>
+                            }
+                        }
+                    </tr>
+                }
+
+            </tfoot>
+
+        </table>
+    </div>
+   
+}

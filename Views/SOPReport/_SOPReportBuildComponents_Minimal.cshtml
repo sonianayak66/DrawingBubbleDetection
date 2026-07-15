@@ -1,0 +1,39 @@
+﻿@model IEnumerable<MPCRS.ViewModels.EngineBuildComponents>
+@using MPCRS.Utilities;
+@using MPCRS.ViewModels
+
+
+<table class="table table-condensed table-sm">
+    <thead>
+        <tr>
+            <th class="text-center">Drawing No</th>
+            <th>Description</th>
+            <th>Part/Assy</th>
+            <th>Rev</th>
+            <th>Qty</th>
+            <th>Material</th>
+            <th>Job Card/Contract No</th>
+            <th>Part/Assy SL.No</th>
+            <th>Module Resp</th>
+            <th>Remarks</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Draw_part_no</td>
+                <td>@item.Description</td>
+                <td>@item.Type_Part_Name</td>
+                <td>@item.SOP_BuildPartRevision</td>
+                @* <td>@item.Qty_per_Engine</td> *@
+                <td>@item.SOP_BuildPartQtyPerEngine</td>
+                <td>@item.Material_name</td>
+                <td>@item.SOP_BuildPartJobCard</td>
+                <td>@item.SOP_BuildPartSerialNumber</td>
+                <td>@item.PartModuleRes</td>
+                <td>@item.SOP_BuildPartRemarks</td>
+            </tr>
+        }
+    </tbody>
+</table>

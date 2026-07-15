@@ -1,0 +1,447 @@
+﻿-- Metadata:
+-- Default Data Type: varchar(max) unless otherwise specified.
+-- Naming Conventions: 
+--  - "_Dbkey": Indicates a primary key or a unique identifier.
+--  - "is_active": Bit type, 1 means active, 0 means inactive.
+
+-- Centralized Definitions:
+-- 1. Master_Name: A general classification used across different tables for categorization.
+-- 2. BL_Engine_Dbkey: Refers to the baseline engine's unique identifier, used in various engine-related tables.
+-- 3. ACSN: Airworthiness Certificate Serial Number, a unique identifier for certification records.
+
+
+-- Table: Vendors
+-- Purpose: Stores vendor details including name, contact information, and address.
+CREATE TABLE Vendors (
+    Vendor_Dbkey int PRIMARY KEY, -- Unique identifier for each vendor
+    Vendor_Name, -- Name of the vendor
+    Vendor_Email, -- Email address of the vendor
+    Vendor_Contact, -- Contact person and phone number(s)
+    Vendor_Address text -- Full address of the vendor, stored as text for flexibility
+);
+
+-- Table: Master_General
+-- Purpose: A general-purpose table to categorize various items across different modules.
+CREATE TABLE Master_General (
+    Master_Dbkey int PRIMARY KEY, -- Unique identifier
+    Master_Name -- General category name, such as module names or other classifications
+);
+
+-- Table: MetaMaster
+-- Purpose: Stores metadata for various masters used across the system.
+CREATE TABLE MetaMaster (
+    Id int PRIMARY KEY, -- Unique identifier
+    MasterGUID, -- Globally unique identifier for the master record
+    MasterType, -- Type/category of the master record
+    DisplayText -- Text to be displayed in UI for this master
+);
+
+-- Table: Master_Rawmaterials
+-- Purpose: Stores information about raw materials, including their status and composition details.
+CREATE TABLE Master_Rawmaterials (
+    Raw_material_Dbkey int PRIMARY KEY, -- Unique identifier for each raw material
+    is_active bit, -- 1 means active, 0 means inactive
+    Raw_material_Name -- Composite name of the raw material including type and specifications (e.g., Bar, Sheet, Pipe)
+);
+
+-- Table: AspNetUsers
+-- Purpose: Stores user information including credentials and identification for system access.
+CREATE TABLE AspNetUsers (
+    Id nvarchar(450) PRIMARY KEY, -- Unique identifier for each user
+    UserName nvarchar(256), -- Username for system access
+    Email nvarchar(256), -- User email address
+    OldUserDbkey int -- Foreign key used in many other tables to link user records
+);
+
+-- Table: Project
+-- Purpose: Stores project details including associated engines, dates, and cost estimates.
+CREATE TABLE Project (
+    Project_Dbkey int PRIMARY KEY, -- Unique identifier for each project
+    Title, -- Title of the project
+    Display_title, -- Display name for the project, can be different from the title
+    Description, -- Brief description of the project
+    DOS date, -- Date of sanction
+    EDO date, -- Expected date of sanction
+    Project_Number, -- Unique project identifier
+    No_of_Engines float, -- Number of engines associated with the project
+    Unique_Name, -- Unique name for the project
+    BL_Engine_Dbkey int, -- Foreign key to Base_Line_Engines table; can be used to join with Base_Line_Engines.BL_Engine_Dbkey
+    EstimatedCost float -- Estimated cost of the project
+);
+
+-- Table: ACSN
+-- Purpose: Tracks ACSN (Airworthiness Certificate Serial Number) records and associated modules.
+CREATE TABLE ACSN (
+    acsnKey int PRIMARY KEY, -- Unique identifier for each ACSN record
+    SerialNumber int, -- Serial number of the ACSN
+    Series, -- Series of the ACSN, e.g., T-Series, New Drawing
+    ReceivedDate date, -- Date when the ACSN was received
+    ModuleRefNum, -- Module reference number
+    PartDbKey int, -- Foreign key to Engine_Parts_Master table
+    DrawingNumber, -- Drawing number associated with the ACSN
+    Description, -- Brief description of the ACSN record
+    Module int, -- Foreign key to Master_General table for module classification
+    ExistingRevision, -- Current revision number
+    NewRevision, -- New revision number
+    Remarks text, -- Additional remarks about the ACSN
+    ACSNnum, -- ACSN number
+    ACSN_Status -- Status of the ACSN, e.g., Closed, Open
+);
+
+-- Table: ACSNItems
+-- Purpose: Stores items related to ACSN, including status updates and actions taken.
+CREATE TABLE ACSNItems (
+    ACSNStatusKey int PRIMARY KEY, -- Unique identifier for each ACSN item
+    acsnKey int, -- Foreign key to ACSN table
+    acsnStatus, -- Current status of the ACSN item
+    acsnStepId int, -- Foreign key to Master_General table for status step classification
+    StartDate date, -- Date when the ACSN item was started
+    EndDate date, -- Date when the ACSN item was completed
+    Remarks text, -- Additional remarks about the ACSN item
+    isActiveStatus bit -- 1 means active, 0 means inactive
+);
+
+-- Table: Base_Line_Engines
+-- Purpose: Stores baseline engine details including title, description, and status.
+CREATE TABLE Base_Line_Engines (
+    BL_Engine_Dbkey int PRIMARY KEY, -- Unique identifier for each baseline engine
+    Engine_Title, -- Name/title of the baseline engine
+    Engine_Description, -- Description of the baseline engine
+    is_active bit, -- 1 means active, 0 means inactive
+    Revision_date datetime -- Date of the last revision
+);
+
+-- Table: CastingDetails
+-- Purpose: Tracks casting orders including order type, status, and associated details.
+CREATE TABLE CastingDetails (
+    CastingDbkey int PRIMARY KEY, -- Unique identifier for each casting order
+    castingGUID, -- Globally unique identifier for the casting record
+    OrderType, -- Type of the order, e.g., Casting, Forging, Pyro
+    DemandNumber, -- Demand number associated with the order
+    OrderDate date, -- Date when the order was placed
+    Remarks text, -- Additional remarks about the order
+    MMGOrderNumber, -- Internal order number
+    Isdeleted bit, -- 0 means not deleted, 1 means deleted
+    OrderStatus, -- Status of the order, e.g., Open, InProgress, Completed
+    OrderNumbers, -- Numbers associated with the order
+    DemandingOfficer int, -- Foreign key to AspNetUsers table
+    DemandDesc text -- Description of the demand
+);
+
+-- Table: CastingItems
+-- Purpose: Stores items related to casting orders, including part details and quantities.
+CREATE TABLE CastingItems (
+    CastingItemKey int PRIMARY KEY, -- Unique identifier for each casting item
+    CastingDbkey int, -- Foreign key to CastingDetails table
+    EnginePartDbkey int, -- Foreign key to Engine_Parts_Master table
+    PartName, -- Name of the part
+    GTREDrgNo, -- Drawing number assigned by GTRE
+    ItemDescription text, -- Description of the item
+    OrderQty float, -- Quantity ordered
+    Vendor int, -- Foreign key to Vendors table
+    OrderNumber, -- Number associated with the order
+    Isdeleted bit, -- 1 means deleted, rest means active
+    DeliveryDate date, -- Expected delivery date
+    RawMaterial int -- Foreign key to Master_Rawmaterials table
+);
+
+-- Table: Casting_MaterialIssue
+-- Purpose: Tracks the issuance of casting materials to vendors.
+CREATE TABLE Casting_MaterialIssue (
+    IssueDbKey int PRIMARY KEY, -- Unique identifier for each material issue
+    VendorKey int, -- Foreign key to Vendors table
+    IssueDate date, -- Date when the material was issued
+    Reference, -- Reference number for the issue
+    Issue_type -- Type of issue, e.g., Casting
+);
+
+-- Table: Casting_MaterialIssue_Items
+-- Purpose: Stores items issued as part of casting material issues.
+CREATE TABLE Casting_MaterialIssue_Items (
+    IssueItemKey int PRIMARY KEY, -- Unique identifier for each issue item
+    IssueDbKey int, -- Foreign key to Casting_MaterialIssue table
+    QtySplitKey int, -- Key for splitting quantities in issue
+    IssueQty int, -- Quantity issued
+    IssueSlNos, -- Serial numbers associated with the issued item
+    ForEngine -- Engine for which the material is issued
+);
+
+-- Table: CastingReceiptQtySplit
+-- Purpose: Tracks quantity splits for casting receipts.
+CREATE TABLE CastingReceiptQtySplit (
+    QtySplitKey int PRIMARY KEY, -- Unique identifier for each quantity split
+    ReceiptsItemSplitKey int, -- Foreign key for receipt item split
+    SplitQty int, -- Quantity split
+    StatusRemarks, -- Status remarks for the split
+    Remarks text, -- Additional remarks about the split
+    SerialNos text -- Serial numbers associated with the split
+);
+
+-- Table: CastingReceiptsItemSplit
+-- Purpose: Tracks individual items received as part of casting receipts.
+CREATE TABLE CastingReceiptsItemSplit (
+    Id int PRIMARY KEY, -- Unique identifier for each receipt item
+    SerialNumber, -- Serial number associated with the item
+    BatchNumber, -- Batch number associated with the item
+    HeatNumber, -- Heat number associated with the item
+    Attachments, -- Attachments related to the item
+    UpdatedBy int, -- Foreign key to AspNetUsers table
+    UpdatedOn datetime, -- Date and time when the item was last updated
+    Revision, -- Revision number associated with the item
+    Status, -- Status of the item
+    Isdeleted bit, -- 1 means deleted, rest means active
+    OrderItemKey int, -- Foreign key to CastingItems table
+    ReceiptNumber, -- Receipt number associated with the item
+    ReceiptDate date, -- Date when the item was received
+    ReceiptGuid, -- Globally unique identifier for the receipt
+    Remarks text, -- Additional remarks about the item
+    VendorDrawingNo -- Drawing number provided by the vendor
+);
+
+-- Table: Engine_Parts_Master
+-- Purpose: Master list of engine parts, including their types, quantities, and associated modules.
+CREATE TABLE Engine_Parts_Master (
+    Engine_Part_Dbkey int PRIMARY KEY, -- Unique identifier for each engine part
+    Engine_Dbkey int, -- Foreign key to Base_Line_Engines table
+    Type_Dbkey int, -- Foreign key to Master_Part_Types table
+    Draw_part_no, -- Drawing part number
+    Revision, -- Revision number of the part
+    Quantity float, -- Quantity of the part
+    Manufacturing_Duration float, -- Time required to manufacture the part
+    Description text, -- Description of the part
+    Comments text, -- Additional comments about the part
+    Raw_Material int, -- Foreign key to Master_Rawmaterials table
+    Module_Responsibility int, -- Foreign key to Master_General table
+    Parent_id int -- Parent key to maintain hierarchical relationships
+);
+
+-- Table: Master_Part_Types
+-- Purpose: Stores types of parts used in engines.
+CREATE TABLE Master_Part_Types (
+    Type_Dbkey int PRIMARY KEY, -- Unique identifier for each part type
+    Type_Part_Name -- Name of the part type
+);
+
+-- Table: Engine_Parts_Usage
+-- Purpose: Tracks the usage of engine parts across different baseline engines.
+CREATE TABLE Engine_Parts_Usage (
+    Part_relation_dbkey int PRIMARY KEY, -- Unique identifier for each part relation
+    BL_Engine_Dbkey int, -- Foreign key to Base_Line_Engines table
+    Engine_Part_Dbkey int, -- Foreign key to Engine_Parts_Master table
+    Parent_id int, -- Parent key to maintain hierarchical relationships
+    is_active bit, -- 1 means active, 0 means inactive
+    Revision, -- Revision number of the part
+    Qty_per_Engine int, -- Quantity of the part per engine
+    Description text, -- Description of the part
+    Comments text, -- Additional comments about the part
+    Reporting_Parent int, -- Key for reporting parent part
+    Part_Remarks text, -- Remarks about the part
+    ReportDisplayOrder float, -- Display order for the report
+    Module_Responsibility int, -- Foreign key to Master_General table
+    Raw_Material int, -- Foreign key to Master_Rawmaterials table
+    Execution_Resp, -- Responsible entity for execution
+    Execution_Resp_additionalLevel, -- Additional level of execution responsibility
+    Collaborators text, -- Collaborating entities
+    ManufacturingComments text, -- Comments related to manufacturing
+    ForSopOnly bit -- 1 means return as Yes, else No
+);
+
+-- Table: EngineBuilds
+-- Purpose: Tracks engine builds (SOPs) including associated baseline engines and build details.
+CREATE TABLE EngineBuilds (
+    Id int PRIMARY KEY, -- Unique identifier for each build
+    BuildGuid, -- Globally unique identifier for the build
+    BaseLineEngineDbkey int, -- Foreign key to Base_Line_Engines table
+    BuildName, -- Name of the build (SOP)
+    BuildDate date, -- Date of the build
+    ReferenceNumber, -- Reference number associated with the build
+    Description text -- Description of the build
+);
+
+-- Table: EngineBuildComponents
+-- Purpose: Tracks components used in engine builds, including quantities and revisions.
+CREATE TABLE EngineBuildComponents (
+    Id int PRIMARY KEY, -- Unique identifier for each build component
+    BuildDbkey int, -- Foreign key to EngineBuilds table
+    BaseLineEngineDbkey int, -- Foreign key to Base_Line_Engines table
+    PartRelationKey int, -- Foreign key to Engine_Parts_Usage table
+    EnginePartDbkey int, -- Foreign key to Engine_Parts_Master table
+    ParentId int, -- Parent key to maintain hierarchical relationships
+    IsActive bit, -- 1 means active, 0 means inactive
+    Revision, -- Revision number of the component
+    QtyPerEngine int, -- Quantity of the component per engine
+    Description text, -- Description of the component
+    JobCard, -- Job card number associated with the component
+    ContractNumber, -- Contract number associated with the component
+    SerialNumber, -- Serial number associated with the component
+    Remarks text, -- Additional remarks about the component
+    DrawingNumber, -- Drawing number associated with the component
+    SchemeNumber, -- Scheme number associated with the component
+    UpdatedBy int, -- Foreign key to AspNetUsers table
+    UpdatedOn datetime, -- Date and time when the component was last updated
+    IsReplaced bit -- 1 means replaced, 0 means not replaced
+);
+
+-- Table: Material_Issue_Note
+-- Purpose: Tracks material issues, including the purpose, quantity, and vendor details.
+CREATE TABLE Material_Issue_Note (
+    Issue_Dbkey int PRIMARY KEY, -- Unique identifier for each material issue
+    Demand_No, -- Demand number associated with the issue
+    Order_Ref_No, -- Reference number of the order
+    Order_Ref_Date date, -- Date of the order reference
+    Vendor int, -- Foreign key to Vendors table
+    Total_Qty float, -- Total quantity issued
+    Total_Cost float, -- Total cost of the issued materials
+    Returnable, -- Whether the material is returnable or not
+    Issue_Purpose int -- Foreign key to Master_General table for issue purpose classification
+);
+
+-- Table: Material_Issue_Items
+-- Purpose: Stores items issued as part of material issues, including quantities and part details.
+CREATE TABLE Material_Issue_Items (
+    Issue_Item_Dbkey int PRIMARY KEY, -- Unique identifier for each issue item
+    Issue_Dbkey int, -- Foreign key to Material_Issue_Note table
+    Raw_material_Dbkey int, -- Foreign key to Master_Rawmaterials table
+    Drawing_no, -- Drawing number associated with the item
+    Description text, -- Description of the item
+    Engine_Part_Dbkey int, -- Foreign key to Engine_Parts_Master table
+    Qty float, -- Quantity issued
+    Size, -- Size of the item
+    Denom, -- Denomination of the item
+    Qty_Issue float, -- Quantity issued
+    Weight_Kg float, -- Weight of the item in kilograms
+    JobCardNumber, -- Job card number associated with the item
+    JCFileName, -- File name of the job card
+    SerialNo -- Serial number associated with the item
+);
+
+-- Table: Material_Issue_Items_Parts
+-- Purpose: Tracks parts associated with material issue items.
+CREATE TABLE Material_Issue_Items_Parts (
+    Material_Issue_Items_Parts_Dbkey int PRIMARY KEY, -- Unique identifier for each issue item part
+    Issue_Dbkey int, -- Foreign key to Material_Issue_Note table
+    Issue_Item_Dbkey int, -- Foreign key to Material_Issue_Items table
+    Engine_Part_Dbkey int, -- Foreign key to Engine_Parts_Master table
+    Part_Name -- Name of the part
+);
+
+-- Table: Material_IssueItems_Split
+-- Purpose: Tracks splits in material issue items.
+CREATE TABLE Material_IssueItems_Split (
+    split_issue_id int PRIMARY KEY, -- Unique identifier for each split issue
+    Issue_Item_Dbkey int, -- Foreign key to Material_Issue_Items table
+    Issue_Dbkey int, -- Foreign key to Material_Issue_Note table
+    SplitId int -- Identifier for the split
+);
+
+-- Table: NonConformanceReport
+-- Purpose: Tracks non-conformance reports (NCRs), including associated parts and vendors.
+CREATE TABLE NonConformanceReport (
+    Id int PRIMARY KEY, -- Unique identifier for each NCR
+    NCRGuid, -- Globally unique identifier for the NCR
+    ReferenceNumber, -- Reference number associated with the NCR
+    ReceivedDate date, -- Date when the NCR was received
+    ReceivedFrom int, -- Foreign key to Master_General table
+    ComitteeReferred, -- Committee referred for the NCR, e.g., L1, L2
+    ReportStatus, -- Status of the report, e.g., In Process, Cleared, Rejected
+    Remarks text, -- Additional remarks about the NCR
+    Engine_Part_Dbkey int, -- Foreign key to Engine_Parts_Master table
+    Vendor int, -- Foreign key to Vendors table
+    SerialNumber, -- Serial number associated with the NCR
+    Revision, -- Revision number associated with the NCR
+    Qty int, -- Quantity associated with the NCR
+    Module, -- Module associated with the NCR, e.g., In Process, Cleared, Comments
+    Stress, -- Stress level associated with the NCR, e.g., In Process, Cleared, Comments
+    Chair, -- Chair position associated with the NCR, e.g., In Process, Cleared, Comments
+    Tas, -- Task associated with the NCR, e.g., In Process, Cleared, Comments
+    Module_Responsibilty int -- Foreign key to Master_General table for module responsibility classification
+);
+
+-- Table: Procurement_Demands
+-- Purpose: Tracks procurement demands, including project heads, descriptions, and statuses.
+CREATE TABLE Procurement_Demands (
+    DemandDbKey int PRIMARY KEY, -- Unique identifier for each demand
+    Project_Head, -- Project head associated with the demand
+    Demand_No, -- Demand number
+    Item_Description text, -- Description of the item demanded
+    UOM, -- Unit of measurement, e.g., Each, Kg, Service, NA
+    Item_Type, -- Type of item, e.g., RM, SER, LRU, BOI, Service, Parts
+    EstimatedCost numeric(18, 5), -- Estimated cost of the demand
+    TenderMode, -- Tender mode for the demand
+    DemandingOfficer int, -- Foreign key to AspNetUsers table
+    StatusDate date, -- Date when the status was last updated
+    CurrentStatus, -- Current status of the demand, e.g., TD approval, AD approval, DO initiation
+    DO_Review bit, -- 1 means DO reviewed, 0 means not reviewed
+    EstimatedOrderDate datetime, -- Estimated order date
+    Delivery_Schedule int, -- Delivery schedule associated with the demand
+    Planned_Date_of_receipt datetime, -- Planned date of receipt for the demand
+    Remarks text, -- Additional remarks about the demand
+    MMG_File_No, -- MMG file number associated with the demand
+    ActualCost numeric(18, 5), -- Actual cost of the demand
+    Vendor_Dbkey int, -- Foreign key to Vendors table
+    IsShortClosure bit, -- 1 means short closed, 0 means not short closed
+    ShortClosedOn datetime, -- Date when the demand was short closed
+    ShortClosedBy int, -- Foreign key to AspNetUsers table
+    ShortCloseReason, -- Reason for short closure
+    OrderNumbers, -- Order numbers associated with the demand
+    OrderType -- Type of order associated with the demand
+);
+
+-- Table: Procurement_Demand_Items
+-- Purpose: Stores items associated with procurement demands, including quantities and types.
+CREATE TABLE Procurement_Demand_Items (
+    DemandItemKey int PRIMARY KEY, -- Unique identifier for each demand item
+    DemandDbKey int, -- Foreign key to Procurement_Demands table
+    ItemDbKey int, -- Foreign key to Master_Rawmaterials table
+    UOM, -- Unit of measurement for the item
+    Qty float, -- Quantity of the item demanded
+    Remarks text, -- Additional remarks about the item
+    Item_Code, -- Code associated with the item
+    Engine_Part_Dbkey int, -- Foreign key to Engine_Parts_Master table
+    Item_Sub_Type, -- Sub-type of the item
+    height, -- Height of the item
+    ShortCloseQty float, -- Quantity short closed
+    MMGOrderNumber -- MMG order number associated with the item
+);
+
+-- Table: Procurement_Demand_MileStone
+-- Purpose: Tracks milestones associated with procurement demands.
+CREATE TABLE Procurement_Demand_MileStone (
+    MilestoneDbKey int PRIMARY KEY, -- Unique identifier for each milestone
+    DemandDbkey int, -- Foreign key to Procurement_Demands table
+    DemandItemDbKey int, -- Foreign key to Procurement_Demand_Items table
+    Milestone int, -- Milestone number
+    DeliveryDate date, -- Date of the milestone delivery
+    Qty float -- Quantity associated with the milestone
+);
+
+-- Table: Procurement_Demand_Receipts
+-- Purpose: Tracks receipts associated with procurement demands, including inventory and receipt numbers.
+CREATE TABLE Procurement_Demand_Receipts (
+    Receipt_dbkey int PRIMARY KEY, -- Unique identifier for each receipt
+    Receipt_Date date, -- Date of the receipt
+    Receipt_No, -- Receipt number
+    DemandDbKey int, -- Foreign key to Procurement_Demands table
+    DemandItemKey int, -- Foreign key to Procurement_Demand_Items table
+    Physical_inventory float, -- Physical inventory quantity
+    Receiving_inventory float, -- Receiving inventory quantity    
+    Index_No int, -- Index number associated with the receipt
+    breadth numeric(18, 0) -- Breadth of the item received
+);
+
+-- Table: Procurement_ReceiptItemSplit
+-- Purpose: Tracks splits in procurement receipt items.
+CREATE TABLE Procurement_ReceiptItemSplit (
+    SplitId int PRIMARY KEY, -- Unique identifier for each receipt item split
+    Receipt_dbkey int, -- Foreign key to Procurement_Demand_Receipts table
+    Measurement float, -- Measurement of the split item
+    UOM, -- Unit of measurement for the split item
+    Material_Reference_No text, -- Reference number for the material
+    Heat_No, -- Heat number associated with the split item
+    Batch_No, -- Batch number associated with the split item   
+    Attachment_Db_Key text, -- Attachment database key associated with the split item
+    Measurement_breadth float, -- Measurement breadth of the split item
+    Weight float, -- Weight of the split item
+    AdditionalinfoJson text, -- Additional information in JSON format
+    Revision -- Revision number associated with the split item
+);

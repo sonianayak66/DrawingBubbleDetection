@@ -1,0 +1,949 @@
+﻿@model MPCRS.ViewModels.DashboardSOPVM
+
+@{
+    var summary = Model.Summary ?? new MPCRS.ViewModels.SOPSummary();
+    var sectionsByBuild = Model.SectionCompletionByBuild ?? new List<MPCRS.ViewModels.SOPSectionCompletionByBuild>();
+    var buildsByEngine = Model.BuildsByEngine ?? new List<MPCRS.ViewModels.SOPBuildsByEngine>();
+}
+
+<style>
+    /* Base KPI styles (in case Procurement hasn't loaded) */
+    .dashboard-kpi-card {
+        background: #fff;
+        border-radius: 6px;
+        padding: 0.675rem;
+        border: 2px solid;
+        transition: all 0.3s ease;
+        min-height: 200px;
+        height: auto;
+        max-height: 250px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        display: flex;
+        flex-direction: column;
+    }
+
+        .dashboard-kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+        }
+
+    .kpi-bg-icon {
+        position: absolute;
+        right: -5px;
+        bottom: -10px;
+        font-size: 85px;
+        opacity: 0.06;
+        pointer-events: none;
+    }
+
+    .kpi-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .kpi-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 0.35rem;
+    }
+
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .kpi-sublabel {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+        line-height: 1.2;
+    }
+
+    .kpi-detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.35rem;
+        font-size: 0.95rem;
+    }
+
+    .kpi-text {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .kpi-value-sm {
+        font-weight: 600;
+        color: #212529;
+        font-size: 0.95rem;
+    }
+
+    .kpi-highlight-compact {
+        font-size: 0.95rem;
+        color: #212529;
+        font-weight: 600;
+        padding: 0.35rem 0.5rem;
+        background: rgba(0,0,0,0.03);
+        border-radius: 3px;
+        margin-top: auto;
+        margin-bottom: 0.35rem;
+        text-align: center;
+    }
+
+    .kpi-action-hint {
+        font-size: 0.85rem;
+        color: #adb5bd;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        margin-top: auto;
+    }
+
+    .dashboard-kpi-card:hover .kpi-action-hint {
+        opacity: 1;
+    }
+
+    .kpi-source {
+        font-size: 0.65rem;
+        color: #94a3b8;
+        position: absolute;
+        bottom: 4px;
+        left: 8px;
+        font-style: italic;
+    }
+
+    .badge-xs {
+        font-size: 0.85rem;
+        padding: 0.15rem 0.35rem;
+        font-weight: 600;
+    }
+    /* SOP Section Colors */
+    .border-sop-blue {
+        border-color: #1e40af !important;
+    }
+
+    .border-sop-teal {
+        border-color: #0f766e !important;
+    }
+
+    .border-sop-indigo {
+        border-color: #4338ca !important;
+    }
+
+    .border-sop-slate {
+        border-color: #475569 !important;
+    }
+
+    .text-sop-blue {
+        color: #1e40af !important;
+    }
+
+    .text-sop-teal {
+        color: #0f766e !important;
+    }
+
+    .text-sop-indigo {
+        color: #4338ca !important;
+    }
+
+    .text-sop-slate {
+        color: #475569 !important;
+    }
+
+    /* Section completion bar */
+    .section-completion-bar {
+        display: flex;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #f1f5f9;
+        margin: 0.3rem 0;
+    }
+
+    .seg-completed {
+        background: #22c55e;
+    }
+
+    .seg-reviewed {
+        background: #3b82f6;
+    }
+
+    .seg-pending {
+        background: #e2e8f0;
+    }
+
+    /* Build completion rows in KPI card */
+    .build-completion-row {
+        margin-bottom: 0.3rem;
+    }
+
+    .build-completion-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 1px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .build-progress {
+        display: flex;
+        height: 5px;
+        border-radius: 3px;
+        overflow: hidden;
+        background: #f1f5f9;
+    }
+
+        .build-progress .completed-bar {
+            background: #22c55e;
+        }
+
+        .build-progress .reviewed-bar {
+            background: #3b82f6;
+        }
+
+    /* Activity timeline */
+    .activity-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.8rem;
+    }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+    .activity-time {
+        font-size: 0.8rem;
+        color: #94a3b8;
+    }
+
+    .activity-user {
+        font-weight: 600;
+        color: #334155;
+        font-size: 0.85rem;
+    }
+
+    .activity-event {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+</style>
+
+<!-- ============================================ -->
+<!-- ROW 1: KPI CARDS (4 cards)                   -->
+<!-- ============================================ -->
+<div class="row mb-3 g-2">
+
+    <!-- Card 1: Engine Builds Overview -->
+    <div class="col-12 col-md-6 col-xl-3 mb-2">
+        <div class="dashboard-kpi-card border-sop-blue clickable h-100"
+             data-bs-toggle="modal" data-bs-target="#sopBuildsModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <i class="uil uil-layers kpi-bg-icon" style="color: #1e40af;"></i>
+            <div class="kpi-content">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="kpi-label">SOP BUILDS</div>
+                        <div class="kpi-value text-sop-blue">@summary.TotalBuilds</div>
+                        <div class="kpi-sublabel">Total Engine Builds</div>
+                    </div>
+                    <div class="text-end" style="font-size: 0.85rem; line-height: 1.6;">
+                        <span class="text-muted">Active:</span> <span class="fw-bold text-primary">@summary.InProgressBuilds</span><br />
+                        <span class="text-muted">Done:</span> <span class="fw-bold text-success">@summary.CompletedBuilds</span>
+                    </div>
+                </div>
+
+                @if (Model.BuildsByStatus != null && Model.BuildsByStatus.Any())
+                {
+                    <div class="kpi-highlight-compact">
+                        @foreach (var s in Model.BuildsByStatus.Take(4))
+                        {
+                            <span class="badge badge-xs bg-light text-dark me-1">@s.Status: @s.BuildCount</span>
+                        }
+                    </div>
+                }
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+                <span class="kpi-source">Source: EngineBuilds</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: SOP Section Completion -->
+    <div class="col-12 col-md-6 col-xl-3 mb-2">
+        <div class="dashboard-kpi-card border-sop-teal clickable h-100"
+             data-bs-toggle="modal" data-bs-target="#sopSectionsModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <i class="uil uil-check-square kpi-bg-icon" style="color: #0f766e;"></i>
+            <div class="kpi-content">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="kpi-label">SECTION STATUS</div>
+                        <div class="kpi-value text-sop-teal">@summary.CompletedSections</div>
+                        <div class="kpi-sublabel">Sections Completed</div>
+                    </div>
+                    <div class="text-end" style="font-size: 0.85rem; line-height: 1.6;">
+                        <span class="text-muted">Reviewed:</span> <span class="fw-bold text-primary">@summary.ReviewedSections</span><br />
+                        <span class="text-muted">Total:</span> <span class="fw-bold">@summary.TotalBuildSections</span>
+                    </div>
+                </div>
+
+                <!-- Completion bar -->
+                @{
+                    var secTotal = summary.TotalBuildSections > 0 ? summary.TotalBuildSections : 1;
+                    var secCompPct = (summary.CompletedSections * 100.0 / secTotal);
+                    var secRevPct = (summary.ReviewedSections * 100.0 / secTotal);
+                    var secPendPct = 100.0 - secCompPct;
+                }
+                <div class="section-completion-bar">
+                    <div class="seg seg-completed" style="width: @secCompPct.ToString("F1")%" title="Completed: @summary.CompletedSections"></div>
+                    <div class="seg seg-pending" style="width: @secPendPct.ToString("F1")%" title="Pending"></div>
+                </div>
+
+                <!-- Per-build mini progress (top 3) -->
+                @if (sectionsByBuild.Any())
+                {
+                    @foreach (var build in sectionsByBuild.OrderByDescending(x => x.TotalSections).Take(3))
+                    {
+                        var bTotal = build.TotalSections > 0 ? build.TotalSections : 1;
+                        var bCompPct = (build.CompletedSections * 100.0 / bTotal);
+                        <div class="build-completion-row">
+                            <div class="build-completion-label">
+                                <span>@build.BuildName</span>
+                                <span>@build.CompletedSections/@build.TotalSections</span>
+                            </div>
+                            <div class="build-progress">
+                                <div class="completed-bar" style="width: @bCompPct.ToString("F0")%"></div>
+                            </div>
+                        </div>
+                    }
+                }
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+                <span class="kpi-source">Source: SOP_BuildReportSection</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Documents & Templates -->
+    <div class="col-12 col-md-6 col-xl-3 mb-2">
+        <div class="dashboard-kpi-card border-sop-indigo clickable h-100"
+             data-bs-toggle="modal" data-bs-target="#sopDocumentsModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <i class="uil uil-file-alt kpi-bg-icon" style="color: #4338ca;"></i>
+            <div class="kpi-content">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="kpi-label">DOCUMENTS</div>
+                        <div class="kpi-value text-sop-indigo">@summary.TotalDocuments</div>
+                        <div class="kpi-sublabel">Uploaded Documents</div>
+                    </div>
+                    <div class="text-end" style="font-size: 0.85rem; line-height: 1.6;">
+                        <span class="text-muted">Templates:</span> <span class="fw-bold">@summary.TotalTemplateSections</span>
+                    </div>
+                </div>
+
+                @if (Model.DocumentSummary != null && Model.DocumentSummary.Any())
+                {
+                    <div style="margin-top: 0.4rem;">
+                        @foreach (var doc in Model.DocumentSummary.Take(3))
+                        {
+                            <div class="kpi-detail-row">
+                                <span class="kpi-text" title="@doc.BuildName">@(doc.BuildName.Length > 18 ? doc.BuildName.Substring(0, 18) + "..." : doc.BuildName)</span>
+                                <span class="kpi-value-sm">@doc.DocumentCount docs</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+                <span class="kpi-source">Source: SOP_ReportTemplate_Document</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Recent Activity -->
+    <div class="col-12 col-md-6 col-xl-3 mb-2">
+        <div class="dashboard-kpi-card border-sop-slate clickable h-100"
+             data-bs-toggle="modal" data-bs-target="#sopActivityModal"
+             style="position: relative; overflow: hidden; cursor: pointer;">
+            <i class="uil uil-history kpi-bg-icon" style="color: #475569;"></i>
+            <div class="kpi-content">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="kpi-label">RECENT ACTIVITY</div>
+                        <div class="kpi-value text-sop-slate">@summary.RecentActivityCount</div>
+                        <div class="kpi-sublabel">Changes (Last 30 Days)</div>
+                    </div>
+                </div>
+
+                @if (Model.RecentActivity != null && Model.RecentActivity.Any())
+                {
+                    <div style="margin-top: 0.4rem;">
+                        @foreach (var act in Model.RecentActivity.Take(3))
+                        {
+                            <div class="kpi-detail-row">
+                                <span class="kpi-text">@(act.Event_Description?.Length > 25 ? act.Event_Description.Substring(0, 25) + "..." : act.Event_Description)</span>
+                                <span class="kpi-value-sm" style="font-size: 0.6rem;">@(act.Updated_On?.ToString("dd-MMM"))</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <div class="kpi-action-hint">
+                    <i class="uil uil-mouse-alt"></i> Click for details
+                </div>
+                <span class="kpi-source">Source: Audit_logs</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ROW 2: CHARTS (2 charts)                     -->
+<!-- ============================================ -->
+<div class="row mb-3">
+    <div class="col-12 col-lg-6 mb-3">
+        <div class="compact-card">
+            <div class="compact-card-header">
+                <h6 class="mb-0"><i class="uil uil-chart-pie me-1"></i>Build Status Distribution</h6>
+            </div>
+            <div class="compact-card-body">
+                <canvas id="sopBuildStatusChart" style="max-height: 230px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6 mb-3">
+        <div class="compact-card">
+            <div class="compact-card-header">
+                <h6 class="mb-0"><i class="uil uil-chart-bar me-1"></i>Builds by Baseline Engine</h6>
+            </div>
+            <div class="compact-card-body">
+                <canvas id="sopBuildsByEngineChart" style="max-height: 230px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ROW 3: TABLES                                -->
+<!-- ============================================ -->
+<div class="row mb-3">
+
+    <!-- Section Completion by Build -->
+    <div class="col-12 mb-3">
+        <div class="compact-card">
+            <div class="compact-card-header clickable" data-bs-toggle="collapse" data-bs-target="#sectionCompletionTable">
+                <h6 class="mb-0">
+                    <i class="uil uil-angle-down collapse-icon"></i>
+                    <i class="uil uil-check-square text-sop-teal me-1"></i>
+                    SOP Section Completion by Build
+                    <span class="badge ms-2" style="background: #0f766e;">@sectionsByBuild.Count Builds</span>
+                </h6>
+            </div>
+            <div id="sectionCompletionTable" class="collapse">
+                <div class="compact-card-body-table">
+                    <table class="table table-sm table-hover mb-0 modal-detail-table">
+                        <thead>
+                            <tr>
+                                <th>Build Name</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                                <th>Completed</th>
+                                <th>Reviewed</th>
+                                <th>Pending</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var build in sectionsByBuild.OrderByDescending(x => x.TotalSections))
+                            {
+                                var bsTotal = build.TotalSections > 0 ? build.TotalSections : 1;
+                                var compPct = (build.CompletedSections * 100.0 / bsTotal);
+                                <tr>
+                                    <td><strong>@build.BuildName</strong></td>
+                                    <td>
+                                        <span class="badge @(build.BuildStatus == "In Progress" ? "bg-primary" : build.BuildStatus == "Completed" ? "bg-success" : "bg-secondary") badge-xs">
+                                            @build.BuildStatus
+                                        </span>
+                                    </td>
+                                    <td>@build.TotalSections</td>
+                                    <td><span class="badge bg-success badge-xs">@build.CompletedSections</span></td>
+                                    <td><span class="badge bg-primary badge-xs">@build.ReviewedSections</span></td>
+                                    <td><span class="badge bg-warning text-dark badge-xs">@build.PendingSections</span></td>
+                                    <td style="width: 150px;">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-success" style="width: @compPct.ToString("F0")%;" role="progressbar"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Build Component Health -->
+    @if (Model.BuildComponentSummary != null && Model.BuildComponentSummary.Any())
+    {
+        <div class="col-12 mb-3">
+            <div class="compact-card">
+                <div class="compact-card-header clickable" data-bs-toggle="collapse" data-bs-target="#componentHealthTable">
+                    <h6 class="mb-0">
+                        <i class="uil uil-angle-down collapse-icon"></i>
+                        <i class="uil uil-puzzle-piece text-sop-blue me-1"></i>
+                        Build Component Health
+                        <span class="badge ms-2" style="background: #1e40af;">@Model.BuildComponentSummary.Count Builds</span>
+                    </h6>
+                </div>
+                <div id="componentHealthTable" class="collapse">
+                    <div class="compact-card-body-table">
+                        <table class="table table-sm table-hover mb-0 modal-detail-table">
+                            <thead>
+                                <tr>
+                                    <th>Build Name</th>
+                                    <th>Status</th>
+                                    <th>Active</th>
+                                    <th>New</th>
+                                    <th>Updated</th>
+                                    <th>Replaced</th>
+                                    <th>Removed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var comp in Model.BuildComponentSummary.OrderByDescending(x => x.ActiveComponents))
+                                {
+                                    <tr>
+                                        <td><strong>@comp.BuildName</strong></td>
+                                        <td>
+                                            <span class="badge @(comp.Status == "In Progress" ? "bg-primary" : comp.Status == "Completed" ? "bg-success" : "bg-secondary") badge-xs">
+                                                @comp.Status
+                                            </span>
+                                        </td>
+                                        <td>@comp.ActiveComponents</td>
+                                        <td>
+                                            @if (comp.NewlyAdded > 0)
+                                            {
+                                                <span class="badge" style="background: #e67c29; color: #fff;">@comp.NewlyAdded</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">0</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (comp.Updated > 0)
+                                            {
+                                                <span class="badge" style="background: #0eb438; color: #fff;">@comp.Updated</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">0</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (comp.Replaced > 0)
+                                            {
+                                                <span class="badge" style="background: #800080; color: #fff;">@comp.Replaced</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">0</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (comp.Removed > 0)
+                                            {
+                                                <span class="badge bg-danger">@comp.Removed</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">0</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Recent Activity -->
+    @if (Model.RecentActivity != null && Model.RecentActivity.Any())
+    {
+        <div class="col-12 mb-3">
+            <div class="compact-card">
+                <div class="compact-card-header clickable" data-bs-toggle="collapse" data-bs-target="#recentActivityTable">
+                    <h6 class="mb-0">
+                        <i class="uil uil-angle-down collapse-icon"></i>
+                        <i class="uil uil-history text-sop-slate me-1"></i>
+                        Recent SOP Activity (Last 30 Days)
+                        <span class="badge bg-secondary ms-2">@Model.RecentActivity.Count</span>
+                    </h6>
+                </div>
+                <div id="recentActivityTable" class="collapse">
+                    <div class="compact-card-body-table">
+                        <table class="table table-sm table-hover mb-0 modal-detail-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>User</th>
+                                    <th>Event</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var act in Model.RecentActivity)
+                                {
+                                    <tr>
+                                        <td><small>@(act.Updated_On?.ToString("dd-MMM-yyyy HH:mm") ?? "-")</small></td>
+                                        <td><span class="activity-user">@act.UpdatedByName</span></td>
+                                        <td><small>@act.Event_Description</small></td>
+                                        <td><small class="text-muted">@act.Remarks</small></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ============================================ -->
+<!-- MODALS                                       -->
+<!-- ============================================ -->
+<!-- Modal 1: Builds Detail -->
+<div class="modal fade" id="sopBuildsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #eff6ff; border-bottom: 3px solid #1e40af;">
+                <h6 class="modal-title"><i class="uil uil-layers me-2"></i>SOP Engine Builds</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                @if (Model.BuildsByStatus != null)
+                {
+                    <div class="row g-2 mb-3">
+                        @foreach (var status in Model.BuildsByStatus)
+                        {
+                            <div class="col-auto">
+                                <span class="badge @(status.Status == "In Progress" ? "bg-primary" : status.Status == "Completed" ? "bg-success" : "bg-secondary") p-2">
+                                    @status.Status: @status.BuildCount
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+                <table class="table table-sm table-hover modal-detail-table">
+                    <thead>
+                        <tr>
+                            <th>Build Name</th>
+                            <th>Baseline Engine</th>
+                            <th>Build Date</th>
+                            <th>Reference</th>
+                            <th>Components</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.EngineBuilds != null)
+                        {
+                            @foreach (var build in Model.EngineBuilds)
+                            {
+                                <tr>
+                                    <td><strong>@build.BuildName</strong></td>
+                                    <td>@build.BaselineEngine</td>
+                                    <td>@(build.BuildDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                    <td>@build.ReferenceNumber</td>
+                                    <td><span class="badge bg-info">@build.ComponentCount</span></td>
+                                    <td>
+                                        <span class="badge @(build.Status == "In Progress" ? "bg-primary" : build.Status == "Completed" ? "bg-success" : "bg-secondary")">
+                                            @build.Status
+                                        </span>
+                                    </td>
+                                    <td>@(build.CreatedOn?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <small class="text-muted me-auto"><i class="uil uil-database-alt"></i> Source: EngineBuilds, Base_Line_Engine</small>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Section Completion Detail -->
+<div class="modal fade" id="sopSectionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #f0fdfa; border-bottom: 3px solid #0f766e;">
+                <h6 class="modal-title"><i class="uil uil-check-square me-2"></i>SOP Section Completion</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-auto"><span class="badge p-2 bg-success">Completed: @summary.CompletedSections</span></div>
+                    <div class="col-auto"><span class="badge p-2 bg-primary">Reviewed: @summary.ReviewedSections</span></div>
+                    <div class="col-auto"><span class="badge p-2 bg-secondary">Total: @summary.TotalBuildSections</span></div>
+                </div>
+
+                <table class="table table-sm table-hover modal-detail-table">
+                    <thead>
+                        <tr>
+                            <th>Build</th>
+                            <th>Status</th>
+                            <th>Completed</th>
+                            <th>Reviewed</th>
+                            <th>Pending</th>
+                            <th>Total</th>
+                            <th>Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var build in sectionsByBuild.OrderByDescending(x => x.TotalSections))
+                        {
+                            var bt = build.TotalSections > 0 ? build.TotalSections : 1;
+                            var cp = (build.CompletedSections * 100.0 / bt);
+                            <tr>
+                                <td><strong>@build.BuildName</strong></td>
+                                <td><span class="badge @(build.BuildStatus == "In Progress" ? "bg-primary" : "bg-success") badge-xs">@build.BuildStatus</span></td>
+                                <td><span class="badge bg-success">@build.CompletedSections</span></td>
+                                <td><span class="badge bg-primary">@build.ReviewedSections</span></td>
+                                <td><span class="badge bg-warning text-dark">@build.PendingSections</span></td>
+                                <td>@build.TotalSections</td>
+                                <td style="width: 120px;">
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-success" style="width: @cp.ToString("F0")%;" role="progressbar"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <small class="text-muted me-auto"><i class="uil uil-database-alt"></i> Source: SOP_BuildReportSection</small>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: Documents Detail -->
+<div class="modal fade" id="sopDocumentsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #eef2ff; border-bottom: 3px solid #4338ca;">
+                <h6 class="modal-title"><i class="uil uil-file-alt me-2"></i>SOP Documents Summary</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-sm table-hover modal-detail-table">
+                    <thead>
+                        <tr>
+                            <th>Build Name</th>
+                            <th>Documents</th>
+                            <th>Last Upload</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.DocumentSummary != null)
+                        {
+                            @foreach (var doc in Model.DocumentSummary)
+                            {
+                                <tr>
+                                    <td><strong>@doc.BuildName</strong></td>
+                                    <td><span class="badge" style="background: #4338ca;">@doc.DocumentCount</span></td>
+                                    <td>@(doc.LastUploadDate?.ToString("dd-MMM-yyyy") ?? "-")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <small class="text-muted me-auto"><i class="uil uil-database-alt"></i> Source: SOP_ReportTemplate_Document</small>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 4: Activity Detail -->
+<div class="modal fade" id="sopActivityModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #f8fafc; border-bottom: 3px solid #475569;">
+                <h6 class="modal-title"><i class="uil uil-history me-2"></i>Recent SOP Activity (30 Days)</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-sm table-hover modal-detail-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>User</th>
+                            <th>Table</th>
+                            <th>Event</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.RecentActivity != null)
+                        {
+                            @foreach (var act in Model.RecentActivity)
+                            {
+                                <tr>
+                                    <td><small>@(act.Updated_On?.ToString("dd-MMM-yyyy HH:mm") ?? "-")</small></td>
+                                    <td><span class="activity-user">@act.UpdatedByName</span></td>
+                                    <td><small class="text-muted">@act.TableName</small></td>
+                                    <td><small>@act.Event_Description</small></td>
+                                    <td><small class="text-muted">@act.Remarks</small></td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <small class="text-muted me-auto"><i class="uil uil-database-alt"></i> Source: Audit_logs</small>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- JAVASCRIPT                                   -->
+<!-- ============================================ -->
+<script>
+    var sopChartData = {
+        buildsByStatus: @Html.Raw(Json.Serialize(Model.BuildsByStatus)),
+        buildsByEngine: @Html.Raw(Json.Serialize(Model.BuildsByEngine))
+    };
+
+    $(document).ready(function () {
+        renderSOPBuildStatusChart(sopChartData.buildsByStatus);
+        renderSOPBuildsByEngineChart(sopChartData.buildsByEngine);
+        initializeCollapsibleTables();
+
+        // Fix: Move modals to body for proper backdrop
+        $('#sopBuildsModal, #sopSectionsModal, #sopDocumentsModal, #sopActivityModal').each(function () {
+            $(this).appendTo('body');
+            $(this).on('shown.bs.modal', function () {
+                var backdrops = $('.modal-backdrop');
+                if (backdrops.length > 1) backdrops.not(':last').remove();
+            });
+            $(this).on('hidden.bs.modal', function () {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open').css({ 'overflow': '', 'padding-right': '' });
+            });
+        });
+    });
+
+    function renderSOPBuildStatusChart(data) {
+        if (!data || data.length === 0) return;
+        var canvas = document.getElementById('sopBuildStatusChart');
+        if (!canvas) return;
+
+        var statusColors = {
+            'In Progress': '#3b82f6',
+            'Completed': '#22c55e',
+            'Not Set': '#94a3b8',
+            'Draft': '#f59e0b',
+            'Cancelled': '#ef4444'
+        };
+
+        new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: data.map(function (x) { return x.status; }),
+                datasets: [{
+                    data: data.map(function (x) { return x.buildCount; }),
+                    backgroundColor: data.map(function (x) { return statusColors[x.status] || '#94a3b8'; }),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '55%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { boxWidth: 12, padding: 12, font: { size: 11 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                var total = ctx.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                                var pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                                return ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderSOPBuildsByEngineChart(data) {
+        if (!data || data.length === 0) return;
+        var canvas = document.getElementById('sopBuildsByEngineChart');
+        if (!canvas) return;
+
+        new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: data.map(function (x) { return x.engineName; }),
+                datasets: [{
+                    label: 'Builds',
+                    data: data.map(function (x) { return x.buildCount; }),
+                    backgroundColor: 'rgba(30, 64, 175, 0.6)',
+                    borderColor: 'rgba(30, 64, 175, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                }
+            }
+        });
+    }
+</script>

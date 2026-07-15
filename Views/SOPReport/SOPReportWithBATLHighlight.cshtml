@@ -1,0 +1,249 @@
+﻿@model MPCRS.ViewModels.SOPReportVM
+@using System.IO;
+@{
+    Layout = null;
+}
+<style>
+    .bg-mp {
+        background-color: #343b70 !important;
+    }
+
+    /* Highlight rows without BATL data */
+    .no-batl-data {
+        background-color: #f8d7da !important;
+        border-left: 4px solid #dc3545 !important;
+    }
+
+        .no-batl-data td {
+            background-color: #f8d7da !important;
+        }
+</style>
+
+<head>
+    <link rel="apple-touch-icon" sizes="180x180" href="~/assets/img/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="~/assets/img/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="~/assets/img/favicons/favicon-16x16.png">
+    <link rel="shortcut icon" type="image/x-icon" href="~/assets/img/favicons/favicon.ico">
+    <link rel="manifest" href="~/assets/img/favicons/manifest.json">
+    <script src="~/assets/js/config.js"></script>
+    <link href="~/fonts/gfonts/gfonts.css" rel="stylesheet" />
+    <link href="~/bundle/bundledstyles.min.css" asp-append-version="true" rel="stylesheet" />
+
+    <style type="text/css" id="basicStyles">
+        input.larger {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+
+    <style id="style_A4" media="print">
+        @@page {
+            size: A4 @ViewBag.orientation;
+            margin: 6mm 6mm 15mm 6mm;
+        }
+
+        a[href]:after {
+            content: none !important;
+        }
+
+        img[src]:after {
+            content: none !important;
+        }
+
+        .table-condensed > tfoot > tr > td {
+            border: none;
+        }
+
+        .table-condensed > thead > tr > th,
+        .table-condensed > tbody > tr > th,
+        .table-condensed > thead > tr > td,
+        .table-condensed > tbody > tr > td {
+            padding: 1.5px;
+            border: 1px solid #000000 !important;
+        }
+
+        .table-condensed {
+            border: none;
+        }
+
+        @@media print {
+            .noPrint {
+                display: none;
+            }
+            /* Ensure BATL highlighting shows in print */
+            .no-batl-data {
+                background-color: #f8d7da !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+                .no-batl-data td {
+                    background-color: #f8d7da !important;
+                }
+
+            .pagebreak {
+                clear: both;
+                page-break-before: always;
+            }
+
+            table {
+                page-break-inside: auto;
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            tfoot {
+                display: table-footer-group;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-white">
+    <!-- Navigation Bar (Hidden on Print) -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light noPrint" style="padding: 8px 16px;">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">SOP Report with data availability</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li style="margin-right:8px" class="nav-item">
+                        <label style="margin-top:8px; margin-right:4px">Filters:</label>
+                    </li>
+                    <li style="margin-right:8px" class="nav-item">
+                        <select id="filterExecResp" class="form-select form-select-sm" style="margin-top:6px; width:200px">
+                            <option value="">All Execution Resp.</option>
+                        </select>
+                    </li>
+                    <li style="margin-right:8px" class="nav-item">
+                        <select id="filterBATLStatus" class="form-select form-select-sm" style="margin-top:6px; width:180px">
+                            <option value="">All BATL Status</option>
+                            <option value="1">Has BATL Data</option>
+                            <option value="0">Missing BATL Data</option>
+                        </select>
+                    </li>
+                    <li style="margin-right:8px" class="nav-item">
+                        <button class="btn btn-sm btn-secondary" style="margin-top:6px" onclick="resetFilters()">Reset</button>
+                    </li>
+                    <li style="margin-right:8px" class="nav-item">
+                        <a class="nav-link active" aria-current="page" onclick="printDiv()" style="cursor:pointer">Print</a>
+                    </li>
+                    <li style="margin-right:8px" class="nav-item">
+                        <a class="nav-link active" aria-current="page" onclick="ExcelDownload('@Model.engineBuildsVM.BuildGuid')" style="cursor:pointer">Excel</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="col-md-12 col-sm-12 col-lg-12" id="PrintArea">
+        <div class="pagebreak displayTitle"></div>
+        <div class="text-center">
+            <h3>Build - @Model.engineBuildsVM.BuildName</h3>
+            <p style="color: #dc3545; font-weight: bold;">
+                <i class="fas fa-exclamation-triangle"></i>
+                Rows highlighted in red indicate missing BATL data
+            </p>
+            <br />
+        </div>
+        <div class="align-items-center">
+            @Html.Partial("_SOPReportBuilComponents_BATL.cshtml", Model.engineBuildComponents)
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/bundle/bundledjs.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Apply highlighting to rows without BATL data
+            highlightMissingBATLData();
+
+            // Populate filter dropdowns
+            populateFilters();
+
+            // Filter events
+            $('#filterExecResp').on('change', applyFilters);
+            $('#filterBATLStatus').on('change', applyFilters);
+        });
+
+        function highlightMissingBATLData() {
+            $('table tbody tr').each(function() {
+                var $row = $(this);
+                var hasBATL = $row.attr('data-has-batl');
+
+                if (hasBATL === '0') {
+                    $row.addClass('no-batl-data');
+                }
+            });
+        }
+
+        function populateFilters() {
+            var execResps = new Set();
+
+            $('table tbody tr').each(function() {
+                var execResp = $(this).attr('data-exec-resp');
+                if (execResp && execResp.trim() !== '') {
+                    var items = execResp.split(',').map(item => item.trim());
+                    items.forEach(item => {
+                        if (item) execResps.add(item);
+                    });
+                }
+            });
+
+            Array.from(execResps).sort().forEach(function(resp) {
+                $('#filterExecResp').append('<option value="' + resp + '">' + resp + '</option>');
+            });
+        }
+
+        function applyFilters() {
+            var execRespFilter = $('#filterExecResp').val();
+            var batlStatusFilter = $('#filterBATLStatus').val();
+
+            $('table tbody tr').each(function() {
+                var $row = $(this);
+                var execResp = $row.attr('data-exec-resp') || '';
+                var hasBATL = $row.attr('data-has-batl');
+
+                var showRow = true;
+
+                if (execRespFilter && execResp.indexOf(execRespFilter) === -1) {
+                    showRow = false;
+                }
+
+                if (batlStatusFilter && hasBATL !== batlStatusFilter) {
+                    showRow = false;
+                }
+
+                if (showRow) {
+                    $row.show();
+                } else {
+                    $row.hide();
+                }
+            });
+        }
+
+        function resetFilters() {
+            $('#filterExecResp').val('');
+            $('#filterBATLStatus').val('');
+            applyFilters();
+        }
+
+        function printDiv() {
+            window.print();
+        }
+
+        function ExcelDownload(buildguid) {
+            var dnlink = "/SOPReport/ExcelDownloadBATL?buildguid=" + buildguid;
+            window.open(dnlink, '_blank');
+        }
+    </script>
+</body>

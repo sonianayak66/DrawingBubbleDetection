@@ -1,0 +1,87 @@
+﻿@using MPCRS.Utilities
+@model List<MPCRS.ViewModels.Procurement_Demad_ReceiptDocumentsVM>
+@{
+   Layout = null;
+}
+
+<h5>Receipt Documents</h5>
+
+<table id="Receipt-Documents-Table" class="table table-bordered">
+    <thead>
+        <tr>
+            @{
+                if (ViewBag.demandKey == 0)
+                {
+                    <th>Demand #</th>
+                    <th>Demand Desc</th>
+                }
+            }
+            <th>Receipt #</th>
+            <th>Date</th>
+            <th>Item</th>
+            <th style="text-align:right; padding-right:12px; max-width:80px!important">Receipt Qty</th>
+            <th style="max-width:350px!important">Documents</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @{
+            foreach (var receiptItem in Model.Select(x => new { x.DemandDbKey, x.Demand_No, x.Item_Description,  x.Receipt_No, x.Receipt_Date, x.ItemName, x.Receiving_inventory }).Distinct().OrderBy(x=>x.Receipt_Date).ThenBy(x=>x.Receipt_No).ThenBy(x=>x.ItemName).ToList())
+            {
+                <tr>
+                    @{
+                        if (ViewBag.demandKey == 0)
+                        {
+                            <td>@receiptItem.Demand_No</td>
+                            <td>@receiptItem.Item_Description</td>
+                        }
+                    }
+                    <td>@receiptItem.Receipt_No</td>
+                    <td>@MPGlobals.GetFormattedDate(receiptItem.Receipt_Date) </td>
+                    <td>@receiptItem.ItemName</td>
+                    <td style="text-align:right; padding-right:12px; max-width:80px!important">@receiptItem.Receiving_inventory</td>
+                    <td style="max-width:350px!important">
+                        @{
+                            foreach (var item in Model.Where(x => x.Receipt_No == receiptItem.Receipt_No
+                                    && x.DemandDbKey == receiptItem.DemandDbKey
+                                    && x.Receipt_Date == receiptItem.Receipt_Date
+                                    && x.ItemName == receiptItem.ItemName 
+                                    && x.Receiving_inventory == receiptItem.Receiving_inventory).ToList())
+                            {
+                                //if (!string.IsNullOrEmpty(item.Attachments))
+                                //{
+                                //    string[] csvArray = item.Attachments.Split(',');
+                                //    foreach (string mapdoc in csvArray)
+                                //    {
+                                //        if (mapdoc.Trim() == item.Attachment_Db_Key.ToString())
+                                //        {
+                                //            var href = item.Attachment_location == null ? "#" : item.Attachment_location + item.Attachment_FileName;
+                                //            <a href="@href" target="_blank" class="badge badge-phoenix-success">
+                                //                @item.Master_Name
+                                //            </a>
+                                //        }
+                                //    }
+                                //}
+
+
+                                var href = item.Attachment_location == null ? "#" : item.Attachment_location + item.Attachment_FileName;
+                                <a href="@href" target="_blank" class="badge badge-phoenix-success">
+                                    @item.Master_Name
+                                </a>
+                              
+                             
+                        }
+                    }
+                    
+                    </td>
+                </tr>
+            }
+        } 
+
+    </tbody>
+
+</table>
+
+
+ 

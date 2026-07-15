@@ -1,0 +1,41 @@
+﻿@model List<MPCRS.Models.Procurement_ReceiptItemSplit>
+@{
+    Layout = null;
+
+
+        <table class="table  table-bordered table-hover table-condensed table-primary p-0 m-0">
+        <thead>
+        <tr>
+        <th>Weight</th>
+        <th>Reference No</th>
+        <th>Length</th>
+        <th>Breadth</th>
+        <th>Heat No.</th>
+        <th>Batch No.</th>
+        </tr>
+        </thead>
+            <tbody>
+                @{
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td  style="min-width:350px!important"><b>@item.Weight</b> </td>
+
+                            <td >@item.Material_Reference_No</td>
+                            <td >@item.Measurement</td>
+                            <td >@item.Measurement_breadth</td>
+                            <td >@item.Heat_No</td>
+                            <td >@item.Batch_No</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="col-12 text-center p-3">
+            <h4>Order information unavailable</h4>
+        </div>
+    }
+}

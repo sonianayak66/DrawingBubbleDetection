@@ -1,0 +1,147 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+	ViewBag.Title = "DemandStatusReport";
+}
+
+
+<div class="page-header">
+	<div class="col-12">
+		<div class="row">
+			<div class="col-md-10">
+				<h3>Demand Status Report</h3>
+			</div>
+			<div class="col-md-2 text-end">
+				<a href="/Report/ProcurementReports" style="margin-left: 4px;" class="btn btn-secondary  btn-smaller float-end">Back</a>
+			</div>
+		</div>
+	</div>
+</div>
+<hr />
+<div class="col-md-12 col-sm-12 col-lg-12">
+	<table id="DemandStatusReportTable" class="table table-bordered " style="width:100%">
+		<thead>
+			<tr>
+				<th>Project</th>
+				<th>Sl</th>
+				<th>Demand / MMG File No</th>
+				<th>Demanding officer</th>
+				<th>Vendor</th>
+				<th>Item Description</th>
+				<th>Est. Cost</th>
+				<th>Act. Cost</th>
+				<th>Diff. Cost</th>
+				<th>Status</th>
+				<th>Status Date</th>
+				<th>Short Closed</th>
+				<th>Remarks</th>
+			</tr>
+		</thead>
+	</table>
+</div>
+
+@section Scripts {
+
+	<script>
+
+		$(document).ready(function () {
+			GetDemandStatusReoprt();
+		});
+
+		var dataTable;
+		function GetDemandStatusReoprt() {
+
+			try {
+				dataTable.destroy();
+			} catch (e) {
+			}
+
+			dataTable = $("#DemandStatusReportTable").DataTable({
+				"ajax": {
+					"url": "/Report/GetDemandReportsData",
+					"type": "GET",
+					"dataSrc": "",
+					"datatype": "json"
+				},
+				dom: 'Bfrtip',
+				buttons: [
+					{ extend: 'excel', exportOptions: { grouped_array_index: [0], } },
+					{ extend: 'print', exportOptions: { grouped_array_index: [0], } },
+				],
+
+				responsive: true,
+				paging: false,
+				scrollY: (window.innerHeight * 0.6),
+				paging: false,
+				autoWidth: true,
+
+				"columns": [
+					{ "data": "Display_title" },
+					{ "data": "rowno" },
+					{ "data": "MMG_File_No" },
+					{ "data": "DemandOfficer" },
+					{ "data": "Vendor_Name" },
+					{ "data": "Item_Description" },
+					//   { "data": "EstimatedCost" },
+					{
+						"data": "EstimatedCost", render: function (data, type, row) {
+							return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(data);
+						}
+					},
+					{
+						"data": "ActualCost", render: function (data, type, row) {
+							return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(data);
+						}
+					},
+					{
+						"data": "CostDiff", render: function (data, type, row) {
+							return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(data);
+						}
+					},
+					{ "data": "CurrentStatus" },
+					{
+						"data": "StatusDate", render: function (data, type, row) {
+							if (type === 'display' || type === 'filter') {
+								return (moment(data).format("DD/MM/YYYY"));
+							}
+							return data;
+						}
+					},
+					{ "data": "IsShortClosure" },
+					{ "data": "remarks" }
+
+					,],
+
+
+				columnDefs: [
+					{
+						targets: 0,
+						visible: false,
+					}
+				],
+
+				drawCallback: function (settings) {
+					var api = this.api();
+					var rows = api.rows({ page: 'current' }).nodes();
+					var last = null;
+
+					api.column(0, { page: 'current' }).data().each(function (group, i) {
+						if (last !== group) {
+							$(rows).eq(i).before(
+								'<tr class="align-items-center text-center" style="background-color:#007bff38"  ><td colspan="12">' + group + '</td></tr>'
+							);
+							last = group;
+						}
+					});
+				}
+
+			});
+
+		}
+
+	</script>
+
+
+
+}

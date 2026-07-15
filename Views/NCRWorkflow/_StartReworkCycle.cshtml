@@ -1,0 +1,39 @@
+﻿@{
+    var modules = ViewBag.Modules as List<MPCRS.Models.Master_General>;
+    var workflowGuid = ViewBag.WorkflowGuid;
+}
+
+<style>
+    .ts-wrapper.multi .ts-control [data-value] {
+        background-image: none;
+    }
+
+    .ts-wrapper.multi .ts-control > div {
+        background-color: #e3e6ed;
+        color: black;
+    }
+</style>
+
+<div class="container-fluid">
+    <input type="hidden" id="reworkWorkflowGuid" value="@workflowGuid" />
+
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <label class="form-label"><strong>Select Module to Assign:</strong></label>
+            <select id="reworkModuleID" class="form-select">
+                <option value="">-- Select Module --</option>
+                @foreach (var module in modules)
+                {
+                    <option value="@module.Master_Dbkey">@module.Master_Name</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <label class="form-label"><strong>Select Users:</strong></label>
+            <select id="reworkUsersSelectList" class="form-select" multiple="multiple">
+            </select>
+        </div>
+    </div>
+</div>

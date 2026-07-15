@@ -1,0 +1,189 @@
+﻿@model List<MPCRS.ViewModels.EngineBuildsVM>
+@using MPCRS.Utilities
+@using System.Data
+@{
+    ViewData["Title"] = "Builds";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var Permission_Buid_Write = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Write);
+    var Permission_Buid_read = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Read);
+  
+    var baselineEngines = MPGlobals.GetDataForDatalist("[dbo].[GetBaseLineEngines]");
+}
+
+<div class="page-header">
+    <div class="row">
+        <div class="col-md-2">
+            <h3>Builds</h3>
+        </div>
+        <div class="col-md-2 text-right">
+            <b class="float-end">Baseline Engine</b>
+        </div>
+        <div class="col-md-3">
+            <div class="input-group">
+                <select class="form-control" id="baselineengine">
+                    @{
+                        <option value="0">All</option>
+                        foreach (DataRow item in baselineEngines.Rows)
+                        {
+                            <option value="@item["BL_Engine_Dbkey"]">@item["Engine_Title"]</option>
+                        }
+                    }
+                </select>
+                <span class="input-group-text" id="basic-addon2" style="cursor:pointer" onclick="CacheBaselineEngine()"><i class="uil uil-search"></i></span>
+            </div>
+        </div>
+
+        <div class="offset-2 col-md-3  float-end">
+            <a class="btn btn-secondary float-end" href="/Home/Index">Back</a>
+            @{
+                if (Permission_Buid_Write)
+                {
+                    <div class="btn-group dropstart float-end" style="margin-right:10px">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Create New Build</button>
+                        <div class="dropdown-menu">
+                            @{
+                                foreach (DataRow item in baselineEngines.Rows)
+                                {
+                                    <a class="dropdown-item" href="/SOPManagement/CreateEngineBuild?id=@item["BL_Engine_Dbkey"]&Etitle=@item["Engine_Title"]">@item["Engine_Title"]</a>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+    </div>
+</div>
+
+<hr />
+
+<div class="col-md-12 col-sm-12 col-lg-12" id="builds">
+</div>
+
+
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+  
+    <script>
+        $(document).ready(function () { 
+            var baselineengine = localStorage['baselineengine'] || 'defaultValue';
+
+            if (baselineengine != 'defaultValue') {
+                $("#baselineengine").val(baselineengine);
+                GetBuildsByBaselineEngine();
+            } else {
+                GetBuildsByBaselineEngine();
+            }
+
+        });
+
+
+        //function to cache baseline engine in js
+        function CacheBaselineEngine() {
+            var baselineengine = $("#baselineengine").val();
+            localStorage['baselineengine'] = baselineengine;
+            GetBuildsByBaselineEngine();
+        }
+
+
+        function GetBuildsByBaselineEngine() {
+            var baselineengine = $("#baselineengine").val();
+            $.ajax({
+                type: "GET",
+                url: "/SOPManagement/EngineBuilds",
+                data: { id: baselineengine },
+                success: function (data) {
+                    $("#builds").html(data);
+
+                    $('#EngineBuildtbl').DataTable({
+                        fixedHeader: true,
+                        dom: 'Bfrtip',
+                        stateSave: true,
+                        stateSaveCallback: function (settings, data) {
+                            localStorage.setItem(
+                                'DataTables_' + settings.sInstance,
+                                JSON.stringify(data)
+                            );
+                        },
+                        stateLoadCallback: function (settings) {
+                            return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                        },
+                        buttons: [
+                            {
+                                extend: 'excel'
+                            }
+                        ],
+                        order: []  
+                    });
+
+                }
+            });
+        }
+
+        function CloneSOPEngine(Id) {
+            bootbox.confirm("Are you sure you wish to Clone?", function (result) {
+                if (result) {
+                    $.ajax({
+                        type: "GET",
+                        url: "/SOPManagement/CloneSOPEngineBuild?Id=" + Id,
+                        success: function (data) {
+                            if (data.success) {
+                                bootbox.alert("Cloned Successfully");
+                               // window.location.reload();
+                            }
+                            else {
+                                bootbox.alert(data.msg)
+                            }
+                        }
+                    });
+                }
+                else {
+                    bootbox.alert("Clone Failed."); 
+                }
+            });
+        }
+
+
+        function DeleteBuild(Id) {
+            bootbox.confirm("Are you sure you wish to Delete?", function (result) {
+                if (result) {
+                    $.ajax({
+                        type: "GET",
+                        url: "/SOPManagement/DeleteBuild?Id=" + Id,
+                        success: function (data) {
+                            if (data.success) {
+                                bootbox.alert("Deleted Successfully");
+                                // window.location.reload();
+                            }
+                            else {
+                                bootbox.alert(data.msg)
+                            }
+                        }
+                    });
+                }
+                else {
+                    bootbox.alert("Delete Failed.");
+                }
+            });
+        }
+
+        function sopReportDocs(buildGuid) {
+           // console.log("start");
+            var url = '/SOPReport/SOP_Report_Temp_Docs?buildGuid=' + buildGuid;
+            $.get(url)
+                .done(function (response) {
+                    bootbox.dialog({
+                        title: 'Report Section Part-1',
+                        size: 'large',
+                        closeButton: true,
+                        message: response,
+                    });
+                });
+        }
+
+    </script>
+
+}

@@ -1,0 +1,77 @@
+﻿@model List<MPCRS.Models.ExceptionLog>
+@using MPCRS.Utilities
+
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-sm-10">
+                <h3>Exception Logs</h3>
+            </div>
+            <div class="col-sm-2 pull-right">
+                <a href="/Home" style="margin-right:4px" class="btn btn-secondary float-end ">Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+<hr/>
+<div class="col-md-12 col-sm-12 col-lg-12 divc">
+    
+    <table class="table table-bordered table-sm fs--1 mb-2" id="demandstbl">
+        <thead>
+            <tr>
+                <th data-sortable="true" scope="col">ErrorLine</th>
+                <th data-sortable="true" scope="col">ErrorMessage</th>
+                <th data-sortable="true" scope="col">ErrorNumber</th>
+                <th data-sortable="true" scope="col">ErrorProcedure</th>
+                <th data-sortable="true" scope="col">ErrorSeverity</th>
+                <th data-sortable="true" scope="col">ErrorState</th>
+                <th data-sortable="true" scope="col">DateErrorRaised</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.ErrorLine</td>
+                        <td>@item.ErrorMessage</td>
+                        <td>@item.ErrorNumber</td>
+                        <td>@item.ErrorProcedure</td>
+                        <td>@item.ErrorSeverity</td>
+                        <td>@item.ErrorState</td>
+                        <td>@item.DateErrorRaised</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+@section scripts {
+    <script type="text/javascript">
+
+    var ErrorDataList = [];
+    
+    $(document).ready(function () {
+        
+            dataTable = $("#demandstbl").DataTable({
+                scrollY: 350,
+                scrollX: true,
+                fixedColumns: {
+                    leftColumns: 1
+                },
+               
+                //responsive: true,
+                paging: false,
+                
+                dom: 'Bfrtip',
+                buttons: [{
+                    extend: 'excel',
+                    title: 'Exception Logs',
+                    exportOptions: {
+                        //columns: [0, 1, 2, 3, 4, 5, 6, 7, 8] //Your Colume value those you want
+                    }
+                }],
+            });
+    });
+    </script>
+}

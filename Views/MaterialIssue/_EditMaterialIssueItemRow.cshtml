@@ -1,0 +1,67 @@
+﻿@model MPCRS.ViewModels.Material_Issue_Items_VM
+@using MPCRS.Utilities
+@{
+    var item = Model;
+    Layout = null;
+}
+
+    <tr>
+        <td style="display:none">
+            <input hidden value="@item.Issue_Item_Dbkey" class="form-control form-control1 Issue_Item_Dbkey" />
+        </td>
+        <td style="width:15%!important">
+            <select class="Drawing_no" asp-for="@item.PartNumberKey" id="Parts_@item.Issue_Item_Dbkey" asp-items="item.PartsList"></select>
+        <input type="hidden" class="hdnPartNumberKey" value="@Html.Raw(Json.Serialize(@item.PartNumberKey))" />
+        </td>
+        <td style="width:5%!important"><input type="text" class="form-control form-control1 decimal Qty" onchange="TotalCalaculation()" asp-for="@item.Qty" /></td>
+        <td style="width:15%!important">
+            <select asp-items="item.RawMaetrialList" asp-for="@item.Raw_material_Dbkey" style="width:100%" class=" itemscls_MI Raw_material_Dbkey" onchange="FillRawMaterialParameters(this)"></select>
+             <input asp-for="Raw_material_Dbkey" type="hidden" class="hdnRawMaterialKey" />
+        </td>
+    <td style="width:12%!important">
+        <select asp-items="item.VendorsList" asp-for="@item.Vendor_Dbkey" class="form-control Vendor_Dbkey">
+            <option value="">Select Vendor</option>
+        </select>
+    </td>
+        <td style="width:10%!important">
+            <textarea asp-for="@item.SerialNo" class="form-control form-control1 SerialNo" rows="1" type="text"></textarea>
+        </td>
+        <td style="width:7%!important;">
+            <input asp-for="@item.Size" class="form-control form-control1 Size" type="text" />
+        </td>
+        <td style="width:5%!important">
+            <input asp-for="@item.Qty_Issue" class="form-control form-control1 decimal Qty_Issue" type="text" onchange="TotalCalaculation()" />
+        </td>
+        <td style="width:7%!important; display:none">
+            <input asp-for="@item.Heat_No" class="form-control form-control1 Heat_No" type="text" />
+        </td>
+        <td style="width:7%!important">
+            <input asp-for="@item.Weight_Kg" class="form-control form-control1 Weight_Kg" type="text" />
+        </td>
+        <td style="width:8%!important; display: none">
+            <input asp-for="@item.Amount" class="form-control form-control1 decimal Amount" type="text" onchange="TotalCalaculation()" />
+        </td>
+        <td style="width:7%!important">
+            <input asp-for="@item.JobCardNumber" class="form-control form-control1 JobCardNumber" type="text" />
+        </td>
+        <td style="width:3%!important" class="text-center">
+            <input type="file" onchange="UpdateJCUploadCtrlColour(this)" class="itemFiles" style="display:none" />
+
+            <input asp-for="@item.JCFileLocation" class="JCFileLocation" type="hidden" />
+            <input asp-for="@item.JCFileName" class="JCFileName" type="hidden" />
+            @{
+                if (item.JCFileLocation != null && item.JCFileName != null && item.JobCardNumber != null && item.JCFileLocation != "-")
+                {
+                    <a class="fa fa-upload" style="color:green;cursor:pointer" onclick="OpenFileDialog(this)"></a>
+                    <a href="@item.JCFileLocation" target="_blank">@item.JCFileName</a>
+                }
+                else
+                {
+                    <a class="fa fa-upload" style="color:royalblue;cursor:pointer" onclick="OpenFileDialog(this)"></a>
+                }
+            }
+
+        </td>
+        <td style="width:3%!important;display:none" class="text-center"> <a class="fa fa-tasks" style="color:royalblue;cursor:pointer" onclick="GetSplitItemMapping(@item.Issue_Item_Dbkey,0)"></a></td>
+        <td style="width:3%!important" class="text-center"><a class="fa fa-trash" style="color:red;cursor:pointer" onclick="DoInactive(@item.Issue_Item_Dbkey,this)"></a></td>
+    </tr>

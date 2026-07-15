@@ -1,0 +1,296 @@
+﻿@model MPCRS.ViewModels.CastingReceiptDetailViewModel
+@using System.Data;
+@using MPCRS.Utilities;
+
+<style>
+    .modal-xl {
+        width: 95% !important;
+    }
+</style>
+
+@{
+    Layout = null;
+    DataTable doctypes = MPGlobals.GetDataForDatalist("SELECT [Master_Dbkey],[Master_Name] FROM [dbo].[Master_General] where [Master_Type] = 'Procurement_Doument_Type'");
+    MPCRS.ViewModels.CastingReceiptSplitVM modelItem = Model.receiptSplitVM;
+    List<MPCRS.Models.CastingReceiptQtySplit> modelQty = Model.QtySplit;
+
+    var StatusRemarksList = MPCRS.Utilities.Masters.GetMasterDropDownList(Constants.MetaMasterCode.CastingReceiptItemRemarks);
+    var castingdelete = UserData.IsAuthorized(User, Constants.UserPermissions.Casting_Delete);
+}
+
+
+<div class="row col-12" style="min-height:450px!important">
+    <div class="col-8">
+        <form id="CastingSplitModelData" method="post">
+            <input asp-for="@modelItem.Id" class="Id" name="Id" type="hidden" />
+            <input asp-for="@modelItem.CastingDbkey" class="CastingDbkey" name="CastingDbkey" type="hidden" />
+            <input type="hidden" asp-for="@modelItem.Attachments" name="Attachments" />
+            <table class="table table-bordered  table-condensed table-sm">
+                <tbody>
+                    <tr>
+                        <td><b>Date</b></td>
+                        <td>
+                            <input class="form-control" asp-for="@modelItem.ReceiptDate" name="ReceiptDate" type="date" />
+                            <span asp-validation-for="@modelItem.ReceiptDate" class="text-danger"></span>
+                        </td>
+                        <td><b>Receipt Number</b></td>
+                        <td colspan="3">
+                            <input class="form-control" asp-for="@modelItem.ReceiptNumber" name="ReceiptNumber" />
+                            <span asp-validation-for="@modelItem.ReceiptNumber" class="text-danger"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><b>Part</b></td>
+                        <td colspan="3">
+                            <select class="form-select" asp-for="@modelItem.OrderItemKey" name="OrderItemKey">
+                                @foreach (var item in Model.CastingItemViewModel)
+                                {
+                                    <option value="@item.CastingItemKey">@item.PartName</option>
+                                }
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><b>Revision</b></td>
+                        <td>
+                            <input class="form-control" asp-for="@modelItem.Revision" name="Revision" />
+                            <span asp-validation-for="@modelItem.Revision" class="text-danger"></span>
+                        </td>
+                        <td><b>Batch No.</b></td>
+                        <td> <input class="form-control" asp-for="@modelItem.BatchNumber" name="BatchNumber" /> </td>
+                    </tr>
+                    <tr> 
+                        <td><b>Vendor Drg. No</b></td>
+                        <td> <input class="form-control" asp-for="@modelItem.VendorDrawingNo" name="VendorDrawingNo" /> </td>
+                        <td><b>Heat No.</b></td>
+                        <td> <input class="form-control" asp-for="@modelItem.HeatNumber" name="HeatNumber" /> </td>
+                    </tr>
+                  
+                    <tr>
+                        <td><b>Remarks</b></td>
+                        <td colspan="3"> <input class="form-control" asp-for="@modelItem.Remarks" name="Remarks" /> </td>
+                    </tr>
+
+                </tbody>
+            </table>
+
+            <table class="table table-bordered table-primary" id="Tbl_castingQtySplit">
+                <thead>
+                    <tr>                       
+                        <th>Status</th>
+                        <th style="width:100px!important">Quantity</th>
+                        <th>Serial Nos</th>
+                        <th style="width:50px!important"></th>
+                    </tr>
+                </thead>
+
+                <tbody id="Tbl_castingQtySplitBody">
+                    @{
+                        foreach (var item in Model.QtySplit)
+                        {
+                            <tr>
+                         
+                                <td class="p-0"> <select class="form-select" asp-for="@item.StatusRemarks" data-field="StatusRemarks" asp-items="@StatusRemarksList"></select> </td>
+                                <td class="p-0">
+                                    <input type="hidden" asp-for="@item.QtySplitKey" data-field="QtySplitKey" />
+                                    <input type="hidden" asp-for="@item.ReceiptsItemSplitKey" data-field="ReceiptsItemSplitKey" />
+                                    <input min="0" class="form-control" asp-for="@item.SplitQty" data-field="SplitQty" />
+                                </td>
+                                <td class="p-0"> <textarea class="form-control serialNoCtrl" asp-for="@item.SerialNos" data-field="SerialNos"></textarea></td>
+                                <td class="p-0">
+                                    <i class="text-warning uil uil-trash fs-1" style="cursor:pointer" onclick="delRow_CastingQtySplit(this)"></i>
+                                    <i class="text-success uil uil-plus fs-1" style="cursor:pointer" onclick="AddRow_CastingQtySplit()"></i>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody> 
+            </table> 
+            <hr />
+
+            <input class="btn btn-success btn-sm" type="button" value="Save" onclick="ValidateAndSaveSplitItemModel(@modelItem.CastingDbkey)" />
+
+        </form>
+    </div>
+
+    <div class="col-4">
+        <table class="table table-bordered" id="CastingSplitDocumentTable" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Documents</th>
+                </tr>
+            </thead>
+            <tbody id="CastingSplitDocTableBody">
+                <tr style="display:none">
+                    <td class="p-1 m-1">
+                        <div class="row col-12">
+                            <div class="col-10">
+                                <select class="form-select fileAttachmentType">
+                                    <option value="0">Select</option>
+                                    @foreach (DataRow drtype in doctypes.Rows)
+                                    {
+                                        <option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-2">
+                                <i class="uil uil-trash-alt fs-1 float-end" style="color:red; font-size:xx-small; cursor:pointer" onclick="DeleteUnsavedDocs(this)"></i>
+                            </div>
+                            <div class="col-12">
+                                <input type="text" class="splitUploadfileRefNum" placeholder="Reference Number" />
+                            </div>
+                            <div class="col-12">
+                                <input type="file" class="splitUploadFiles" />
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                @{
+                    @foreach (var item in Model.attachment)
+                    {
+                        <tr ondblclick="this.children[0].children[0].children[0].children[0].removeAttribute('disabled')">
+
+                            <td class="p-1 m-1">
+                                <div class="row col-12">
+                                    <div class="col-10">
+                                        <select asp-for="@item.File_DVD_Num" class="form-select" disabled onchange="UpdateDocumentType(@item.Attachment_Db_Key,this)">
+                                            <option value="0">Select</option>
+                                            @foreach (DataRow drtype in doctypes.Rows)
+                                            {
+                                                <option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-2">
+                                        @{
+                                            if (castingdelete)
+                                            {
+                                                <i class="uil uil-trash-alt fs-1" style="color:red;text-align:center; font-size:xx-small; cursor:pointer" onclick="DeleteCastingReceiptsDocs(@item.Attachment_Db_Key,@item.Source_table_key,this)"></i>
+                                            }
+                                        }
+                                    </div>
+                                    <div class="col-6">
+                                        @item.File_Revision
+                                    </div>
+                                    <div class="col-6">
+
+                                        @{
+                                            string fileNameDisplay = item.Orginal_File_Name;
+                                            if (item.Orginal_File_Name.Length > 15)
+                                            {
+                                                string firstPart = item.Orginal_File_Name.Substring(0, 7);
+                                                string lastPart = item.Orginal_File_Name.Substring(item.Orginal_File_Name.Length - 7);
+                                                fileNameDisplay = $"{firstPart}...{lastPart}";
+                                            }
+
+                                        }
+                                        <a target="_blank" href="@item.Attachment_location@item.Attachment_FileName">@fileNameDisplay</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td class="m-1 p-1" colspan="4"> <button onclick="CloneSplitDocumentRow()" class="btn btn-dark btn-sm">More Files</button> </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+</div>
+
+<script>
+    // ===== helper functions (add these if not already added earlier in the page) =====
+    function parseSerials(str) {
+        if (!str) return [];
+        return str.split(',')
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+    }
+
+    function getQtyForRow($row) {
+        const qty = parseInt($row.find('input[data-field="SplitQty"]').val(), 10);
+        return isNaN(qty) ? 0 : qty;
+    }
+
+    function showSerialError($ta, msg) {
+        let $msg = $ta.closest('td').find('.serial-err');
+        if ($msg.length === 0) {
+            $msg = $('<div class="serial-err text-danger small mt-1"></div>');
+            $ta.closest('td').append($msg);
+        }
+        $msg.text(msg);
+    }
+
+    function clearSerialError($ta) {
+        $ta.closest('td').find('.serial-err').remove();
+    }
+
+    function validateQtySerialEquality() {
+        let isValid = true;
+
+        $('#Tbl_castingQtySplitBody tr').each(function () {
+            const $row = $(this);
+            const qty = getQtyForRow($row);
+            const $ta = $row.find('textarea.serialNoCtrl');
+            const serials = parseSerials($ta.val());
+
+            clearSerialError($ta);
+            $ta.removeClass('is-invalid');
+
+            if (qty !== serials.length) {
+                isValid = false;
+                $ta.addClass('is-invalid');
+                showSerialError($ta, `Serial numbers must be exactly ${qty} (currently ${serials.length}).`);
+            }
+        });
+
+        return isValid;
+    }
+
+    // ===== THIS is what your button calls =====
+    function ValidateAndSaveSplitItemModel(castingDbkey) {
+
+        // block save if not equal
+        if (!validateQtySerialEquality()) return;
+
+        // call your REAL save method (from your external JS file)
+        // (this must exist in your project already)
+        window.SaveSplitItemModel(castingDbkey);
+    }
+</script>
+
+
+
+
+<script>
+
+
+    $(function () {
+        $.ajax({
+            url: '/SharedCall/GetMetaMasterJResult?type=CastingReceiptItemRemarks',
+            dataType: 'json',
+            success: function (response) {
+                var availableTags = response.map(function (item) {
+                    return item.DisplayText; // Assuming each object has a 'name' property
+                });
+                // Initialize autocomplete
+                $("#modelItem_Remarks").autocomplete({
+                    source: availableTags // Specify the source of the data
+                });
+
+                $("#modelItem_Remarks_QtyRejected").autocomplete({
+                    source: availableTags // Specify the source of the data
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error("Error fetching data:", error);
+            }
+        });
+    });
+</script>
+

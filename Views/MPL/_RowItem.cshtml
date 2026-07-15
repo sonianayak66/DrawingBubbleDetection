@@ -1,0 +1,64 @@
+﻿@model MPCRS.ViewModels.MPLReportData
+@{
+    Layout = null;
+
+    string style = Model.IsParent == "Yes" ? "font-weight: bold; font-size: 12px !important" : "";
+
+    string additionalClasses = Model.Collaborators == null ? string.Empty : Model.Collaborators;
+    if (!string.IsNullOrEmpty(additionalClasses)) {
+        additionalClasses = additionalClasses.Replace(' ', '-').Replace(',', ' ');
+    }
+    additionalClasses = additionalClasses + " Collabs ";
+
+    if (Model.Draw_part_no == "DUMMY")
+    {
+        style = style + ";display:none";
+    }
+
+    bool MPLWriteAccess = true;
+}
+
+
+<tr style="@style" class="@(Model.MainAssesmblyHeading+ " " +additionalClasses)Level@(Model.Level - Model.reducer)">
+    @for (int i = 1; i <= Model.MaxLevel; i++)
+    {
+        if (Model.Level - Model.reducer == i)
+        {
+            if (MPLWriteAccess)
+            {
+                <td style="cursor:pointer" onclick="AdditionalPartsInfo(@Model.Engine_Part_Dbkey,@Model.Part_relation_dbkey)">@Model.Draw_part_no</td>
+
+            }
+            else
+            {
+                <td style="cursor:pointer" >@Model.Draw_part_no</td>
+
+            }
+
+        }
+        else
+        {
+            <td></td>
+        }
+    }
+    <td>@Model.Description</td>
+    <td>@Model.Type_Part_Name</td>
+    <td class="text-center">@Model.Revision</td>
+    <td class="text-center">@Model.Qty_per_Engine</td>
+    <td>@Model.Material_name</td>
+    <td>@Model.PartModuleRes</td>
+    <td class="PartComments">@Model.Part_Remarks</td>
+    <td class="ManufacturingComments">@Model.ManufacturingComments</td>
+    <td class="noPrint " style="font-size: smaller;">
+        @Model.Collaborators    
+    </td>
+    <td class="MfgStatus" style="min-width:120px !important;">
+        @*<div class="progress writeaccess" style="cursor:pointer; margin:0px"  onclick="PartManfStatus(@Model.Part_relation_dbkey)">
+             <div class="progress-bar progress-bar-info progress-bar-striped active" style="width: @(Model.Per_VendorStatus)%"><span style="color:#000000">@Model.Per_VendorStatus%</span></div>
+        </div>*@
+         @Html.Raw(@Model.MfgStatus) 
+    </td>
+    <td class="noPrint writeaccess">
+        <input style="max-width: 60px !important;margin-left: @((Model.Level*6)+"px")" class="@Model.MainAssesmblyHeading" data-content="@Model.Part_relation_dbkey" data-type="Part" id="@Model.Engine_Part_Dbkey" type="number" value="@Model.ReportDisplayOrder" />
+    </td>
+</tr>

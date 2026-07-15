@@ -1,0 +1,121 @@
+{
+  "offset": 0,
+  "limit": 5,
+  "endOfRecords": true,
+  "count": 1,
+  "results": [
+    {
+      "key": 3532,
+      "nameKey": 75396,
+      "datasetKey": "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c",
+      "constituentKey": "7ddf754f-d193-4cc9-b351-99906754a03b",
+      "nubKey": 3532,
+      "parentKey": 3210,
+      "parent": "Animalia",
+      "kingdom": "Animalia",
+      "phylum": "Acanthocephala",
+      "kingdomKey": 1,
+      "phylumKey": 3532,
+      "scientificName": "Acanthocephala",
+      "canonicalName": "Acanthocephala",
+      "authorship": "",
+      "nameType": "SCIENTIFIC",
+      "taxonomicStatus": "ACCEPTED",
+      "rank": "PHYLUM",
+      "origin": "SOURCE",
+      "numDescendants": 1911,
+      "numOccurrences": 0,
+      "extinct": false,
+      "habitats": [
+        "FRESHWATER",
+        "MARINE",
+        "TERRESTRIAL"
+      ],
+      "nomenclaturalStatus": [],
+      "threatStatuses": [
+        "NOT_EVALUATED"
+      ],
+      "descriptions": [],
+      "vernacularNames": [
+        {
+          "vernacularName": "Kradsere",
+          "language": "dan"
+        },
+        {
+          "vernacularName": "spiny-headed worms",
+          "language": "eng"
+        },
+        {
+          "vernacularName": "thorny-headed worms",
+          "language": "eng"
+        },
+        {
+          "vernacularName": "acantocéfalo",
+          "language": "por"
+        },
+        {
+          "vernacularName": "Kratzer",
+          "language": "deu"
+        },
+        {
+          "vernacularName": "Kratzwürmer",
+          "language": "deu"
+        },
+        {
+          "vernacularName": "acanthocephalans",
+          "language": "eng"
+        },
+        {
+          "vernacularName": "haakwormen",
+          "language": "nld"
+        },
+        {
+          "vernacularName": "hakmaskar",
+          "language": "swe"
+        },
+        {
+          "vernacularName": "spiny-headed worms",
+          "language": "eng"
+        },
+        {
+          "vernacularName": "thorny-headed worms",
+          "language": "eng"
+        },
+        {
+          "vernacularName": "鉤頭動物門",
+          "language": "jpn"
+        },
+        {
+          "vernacularName": "acanthocephalans"
+        },
+        {
+          "vernacularName": "spiny-headed worms"
+        },
+        {
+          "vernacularName": "thorny-headed worms"
+        },
+        {
+          "vernacularName": "hakmaskar",
+          "language": "swe"
+        },
+        {
+          "vernacularName": "spiny-headed worms",
+          "language": "eng"
+        },
+        {
+          "vernacularName": "thorny-headed worms",
+          "language": "eng"
+        },
+        {
+          "vernacularName": "acantocéfalo",
+          "language": "por"
+        }
+      ],
+      "synonym": false,
+      "higherClassificationMap": {
+        "1": "Animalia"
+      }
+    }
+  ],
+  "facets": []
+}

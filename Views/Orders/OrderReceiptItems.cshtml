@@ -1,0 +1,67 @@
+﻿@using MPCRS.Utilities;
+@using System.Data;
+@model MPCRS.ViewModels.CastingViewModel
+@{
+    // Retrieve the date from ViewBag
+    DateTime? dateValue = ViewBag.ReceiptDate as DateTime?;
+    string dateStringValue = dateValue.HasValue ? dateValue.Value.ToString("yyyy-MM-dd") : "";
+ 
+ 
+
+}
+
+<form method="post" id="CastingReceiptFrom">
+    <input type="hidden" id="ReceiptGuid" value="@ViewBag.ReceiptGuid" />
+    <div class="row">
+        <div class="col-6">
+            <b>Receipt Number</b>
+            <input class="form-control" type="text" id="ReceiptNumber" value="@ViewBag.ReceiptNumber">
+        </div>
+        <div class="col-6">
+            <b>Receipt Date</b>
+            <input class="form-control" type="date" id="ReceiptDate" value="@dateStringValue">
+        </div>
+    </div>
+    <br />
+ 
+    <table class="table table-sm table-over table-bordered">
+        <thead>
+            <tr>
+                <th>Part</th>
+                <th>Qty Received</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                foreach (var item in Model.CastingItemViewModel)
+                {
+                    var CastingReceiptDbkey = 0;
+                    var Qty = 0.0;
+
+                    var receipt = Model.castingReceiptViewModel.Where(x => x.CastingItemKey == item.CastingItemKey && x.ReceiptGuid == @ViewBag.ReceiptGuid).FirstOrDefault();
+                    if (receipt != null)
+                    {
+                        CastingReceiptDbkey = receipt.CastingReceiptDbkey;
+                        Qty = receipt.Qty??0;
+                    }
+                    <tr>
+                        <td>
+                            <b>@item.PartName</b>
+                            <p>@item.Vendor_Name</p>
+                            <input type="hidden" class="CastingReceiptDbkey" value="@CastingReceiptDbkey">
+                            <input type="hidden" class="CastingItemKey" asp-for="@item.CastingItemKey">
+                            <input type="hidden" asp-for="@item.CastingItemKey" >
+                        </td>
+                        <td><input type="number" class="form-control CastRcpQty" asp-for="@Qty" /></td>
+                    </tr>
+                }
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td></td>
+                <td><input class="btn btn-sm btn-success float-end" type="button" value="Submit" onclick="SubmitCastingReceipt()"/></td>
+            </tr>
+        </tfoot>
+    </table>
+</form>

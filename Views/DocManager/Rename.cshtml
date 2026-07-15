@@ -1,0 +1,91 @@
+﻿@model MPCRS.ViewModels.DocumentsViewModel
+
+<style>
+    .tag-container {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 8px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        min-height: 42px;
+        cursor: text;
+        background: #fff;
+        transition: border-color 0.15s;
+    }
+    .tag-container:focus-within {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
+    }
+    .tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        background: #e7f1ff;
+        color: #0d6efd;
+        border: 1px solid #b6d4fe;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        white-space: nowrap;
+        animation: tagFadeIn 0.15s ease;
+    }
+    @@keyframes tagFadeIn { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+    .tag-pill .tag-remove {
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        color: #6c757d;
+        font-weight: bold;
+        margin-left: 2px;
+    }
+    .tag-pill .tag-remove:hover { color: #dc3545; }
+    .tag-input {
+        border: none;
+        outline: none;
+        flex: 1;
+        min-width: 80px;
+        font-size: 0.85rem;
+        background: transparent;
+        padding: 2px 0;
+    }
+    .tag-input::placeholder { color: #adb5bd; }
+</style>
+
+<div class="col-md-12">
+    <form id="RenameForm" class="needs-validation" novalidate="novalidate">
+        <input asp-for="Document_Dbkey" type="hidden" value="@Model.Document_Dbkey" />
+
+        <div class="form-floating mb-3">
+            <input class="form-control" asp-for="Refrence_Title" type="text">
+            <label asp-for="Refrence_Title">Title</label>
+        </div>
+        <div class="form-floating mb-3">
+            <input class="form-control" asp-for="Description" type="text">
+            <label asp-for="Description">Description</label>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" style="font-size:0.85rem; color:#6c757d;">Search Tags</label>
+            <div class="tag-container" id="tagContainerRename" onclick="this.querySelector('.tag-input').focus()">
+                <input type="text" class="tag-input" id="tagInputRename" placeholder="Type and press Enter to add..." />
+            </div>
+            <input type="hidden" asp-for="SearchTags" id="SearchTags" />
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+            <button type="button" class="btn btn-primary px-4" onclick="SaveDocDetail()">
+                <i class="fas fa-save me-1"></i> Save
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    (function () {
+        var existingTags = document.getElementById('SearchTags').value || '';
+        initTagInput('tagContainerRename', 'tagInputRename', 'SearchTags', existingTags);
+    })();
+</script>

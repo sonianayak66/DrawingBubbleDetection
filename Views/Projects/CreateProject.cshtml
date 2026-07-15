@@ -1,0 +1,141 @@
+﻿@model MPCRS.ViewModels.ProjectVM
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "Projects";
+    Layout = null;
+    var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.Projects_Write);
+    var Category_list = Masters.GetMaster_General("Category");
+    var Sec_Classfic_list = Masters.GetMaster_General("Security");
+    var Unique_NameList = Masters.GetAplhabetList();
+    var BaseLineEngineList = Masters.BaseLineEngineLists();
+}
+<div class="col-12">
+    <form id="CreateProject" method="post" class="needs-validation" novalidate="novalidate">
+        <div class="row">
+            <div class="col-6">
+                <h4>@(Model.Project_Dbkey == 0 ? "Create " : "Edit ")Project </h4>
+            </div>
+            <div class="col-6 pull-right">
+                <a class="btn btn-secondary float-end" href="/Projects/Index">Back</a>
+                @if (Permission_Write)
+                {
+                    <button type="button" class="btn btn-primary float-end" style="margin-right:10px;" onclick="Save()">Save</button>
+                }
+            </div>
+        </div>
+        <hr />
+        <input asp-for="Project_Dbkey" type="hidden" value="@Model.Project_Dbkey" />
+        <div class="form-group row">
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Title" type="text">
+                    <label asp-for="Title"></label>
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Display_title" type="text">
+                    <label asp-for="Display_title"></label>
+                    <span asp-validation-for="Display_title" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Project_Number" type="text">
+                    <label asp-for="Project_Number"></label>
+                    <span asp-validation-for="Project_Number" class="text-danger"></span>
+                </div>
+            </div>
+       
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <select asp-for="Category_Dbkey" class="form-select form-select-sm" asp-items="@Category_list"></select>
+                    <label asp-for="Category_Dbkey"></label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <select asp-for="Sec_Classfic_Dbkey" class="form-select form-select-sm" asp-items="@Sec_Classfic_list"></select>
+                    <label asp-for="Sec_Classfic_Dbkey"></label>
+                </div>
+            </div>
+      
+            <div class="col-md-6">
+                <div class="form-floating mb-2">
+                    <input class="form-control" asp-for="DOS" type="date">
+                    <label asp-for="DOS"></label>
+                    <span asp-validation-for="DOS" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-md-6">
+                <div class="form-floating mb-2">
+                    <input class="form-control" asp-for="EDO" type="date">
+                    <label asp-for="EDO"></label>
+                    <span asp-validation-for="EDO" class="text-danger"></span>
+                </div>
+            </div>
+       
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="EstimatedCost" type="text">
+                    <label asp-for="EstimatedCost"></label>
+                    <span asp-validation-for="EstimatedCost" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="No_of_Engines" type="text">
+                    <label asp-for="No_of_Engines"></label>
+                    <span asp-validation-for="No_of_Engines" class="text-danger"></span>
+                </div>
+            </div>
+       
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <select asp-for="Unique_Name" class="form-select form-select-sm" asp-items="@Unique_NameList"></select>
+                    <label asp-for="Unique_Name"></label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <select asp-for="BL_Engine_Dbkey" class="form-select form-select-sm" asp-items="@BaseLineEngineList"></select>
+                    <label asp-for="BL_Engine_Dbkey"></label>
+                </div>
+            </div>
+        </div>
+
+
+        @*     <div class="form-group row">
+
+        <div class="col-6">
+        <div class="form-floating mb-3">
+        <input type="file" name="Attachment" id="Attachment"  class="form-control" />
+        </div>
+
+        </div>
+
+        </div> *@
+     
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <textarea class="form-control" asp-for="Description" type="text"></textarea>
+                    <label asp-for="Description"></label>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+            </div>
+       
+    </form>
+</div>
+

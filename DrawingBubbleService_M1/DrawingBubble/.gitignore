@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.env
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Test caches
+.pytest_cache/
+
+# Offline wheels
+wheels/
+
+# Preprocessed temp images
+pre.jpeg
+
+# OS files
+Thumbs.db
+.DS_Store

@@ -1,0 +1,238 @@
+﻿@model MPCRS.ViewModels.ProcurementDemandInfo
+@using MPCRS.Utilities
+@{
+	Layout = null;
+	var DemandReceiptWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write_Receipts);
+	var DemandWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write);
+	var DemandReceiptDeleteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Receipt_Delete);
+}
+<style>
+	#ViewDemandItems td {
+	white-space: nowrap;
+	}
+
+	.demand-item-table td, th {
+	padding: 10px !important;
+	border: 1px solid lightgrey;
+	color: black;
+	font-size: small !important;
+	padding: 2px !important;
+	}
+
+
+	body {
+	font-size: small;
+	background-color: white;
+	}
+
+	/* Center-align the buttons */
+	.dataTables_wrapper .dataTables_filter {
+	float: left;
+	}
+
+	.dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate {
+	float: right;
+	}
+
+	/* Add margin between search box and buttons */
+	.dataTables_wrapper .dataTables_filter {
+	margin-right: 20px;
+	white-space: nowrap;
+	}
+
+	.buttons-html5 {
+	padding: 0.25rem 0.5rem; /* Adjust padding to make the button smaller */
+	font-size: 0.675rem; /* Adjust font size to make the text smaller */
+	line-height: 1.5;
+	}
+
+	/* Custom styles for smaller paging dropdown */
+
+	.buttons-excel, .buttons-html5, .btn-smaller {
+	padding: 0.25rem 0.5rem; /* Adjust padding to make the button smaller */
+	font-size: 0.675rem; /* Adjust font size to make the text smaller */
+	line-height: 1.5; /* Adjust line height for proper text alignment */
+	}
+
+
+
+	.dataTables_length select {
+	padding: 0.225rem 0.35rem; /* Adjust padding to make the dropdown smaller */
+	font-size: 0.65rem; /* Adjust font size to make the text in the dropdown smaller */
+	}
+
+	.form-control-sm {
+	min-height: calc(1.39em + 0.65rem + 2px);
+	padding: 0.175rem 0.35rem;
+	font-size: 0.6rem;
+	border-radius: 0.375rem;
+	}
+
+	.receiptCols {
+	display: none;
+	}
+
+
+	.dataTable > thead > tr > th[class*="sort"]:before,
+	.dataTable > thead > tr > th[class*="sort"]:after {
+	content: "" !important;
+	}
+
+	p {
+	margin-bottom: 2px !important;
+	}
+
+
+	table.dataTable th {
+	vertical-align: top;
+	}
+</style>
+@* @{
+    if (DemandWriteAccess)
+    {
+        <i class="text-primary uil uil-edit fs-3 float-end" style="cursor:pointer" onclick="EditDemandItemDetail()" data-bs-toggle="tooltip" data-bs-placement="top" title="Add/Edit Demand Items"></i>
+    }
+
+    if (DemandReceiptWriteAccess)
+    {
+        <i onclick="AddNewReciptColumn(this)" class="text-success uil uil-plus-square fs-3 float-end" data-bs-toggle="tooltip" data-bs-placement="top" title="Add New Receipt"></i>
+    }
+} *@
+
+@{
+	string OrderNoColDisplay = "";
+	if (ViewBag.HasManyOrderNumbers)
+	{
+		OrderNoColDisplay = "display:none";
+	}
+}
+
+
+<div class="row">
+	@{
+		if (Model.procurement_Demand_Items_VMs.Count() != 0)
+		{
+			<table class="table table-sm table-hover demand-item-table" id="ViewDemandItems">
+				<thead>
+					<tr>
+						@*<th style="display:none">Order No</th>*@
+						<th style="min-width:100px">Item</th>
+						<th>Qty</th>
+						@{
+							if (Model.DemandData.IsShortClosure == true)
+							{
+								<th>S.Closure Qty</th>
+							}
+						}
+						<th>UOM</th>
+						<th >Adjustment</th>
+						<th>Received</th>
+						<th>
+							Balance
+							@{
+								if (ViewBag.ViewType != "Readonly")
+								{
+									<i onclick="OpenReceiptCols('receiptCols')" id="open-receipt-items" style="color:green" class="uil uil-plus-circle fs-1"> </i>
+									<i onclick="CloseReceiptCols('receiptCols')" id="close-receipt-items" style="display:none;color:red" class="uil uil-minus-circle fs-1"> </i>
+
+
+								}
+							}
+						</th>
+						@{
+							foreach (var item in Model.procurement_Demand_Receipts.Select(x => new { x.Receipt_No, x.Receipt_Date, x.Index_No }).Distinct().OrderBy(x => x.Index_No))
+							{
+								<th class="receiptCols" style="min-width:120px;vertical-align:top">
+									<p class="receipItemDisplay_@item.Index_No">@item.Receipt_No<br />[@item.Receipt_Date.ToString("dd-MM-yyyy")]</p>
+
+									<input type="text" value="@item.Receipt_No" class="receipheaderEdit_@item.Index_No" style="display:none">
+									<input type="date" value="@item.Receipt_Date.ToString("yyyy-MM-dd")" class="receipheaderEdit_@item.Index_No" style="display:none">
+
+									@{
+										if (DemandReceiptWriteAccess)
+										{
+											<a id="editControl-@item.Index_No" onclick="EditDemandReceipts(@item.Index_No)" style="cursor:pointer; color:cornflowerblue">Edit</a>
+											<i style="display:none;color:green;" id="SaveEditControl-@item.Index_No" onclick="SaveDemandReceiptItems(@item.Index_No)" class="uil uil-save fs-1"> </i>
+
+										}
+										if (DemandReceiptDeleteAccess)
+										{
+											<a id="deletecontrol-@item.Index_No" onclick="DeleteDemandReceipts(@item.Index_No)" style="cursor:pointer; color:cornflowerblue">Delete</a>
+
+										}
+
+									}
+								</th>
+							}
+						}
+
+					</tr>
+				</thead>
+				<tbody id="demandItemstbl">
+					@{
+						//var reciptCount = Model.procurement_Demand_Receipts.Select(x => new { x.Receipt_No, x.Receipt_Date, x.Index_No, x.Receipt_dbkey }).Distinct().Count();
+						foreach (var item in Model.procurement_Demand_Items_VMs)
+						{
+							var reciptSum = Model.procurement_Demand_Receipts.Where(x => x.DemandItemKey == item.DemandItemKey).Sum(x => x.Receiving_inventory);
+							//var BalanceSplit = item.Qty - reciptSum - @item.ShortCloseQty;
+							var BalanceSplit = (item.Qty + item.TotalAdjustment) - reciptSum - @item.ShortCloseQty;
+							<tr>
+								@*	<td style="display:none">
+									@item.MMGOrderNumber
+									<input type="number" style="display:none" data-demandDbKey="@item.DemandDbKey" data-demandItemKey="@item.DemandItemKey" data-receiptIndex="0" data-receiptDbkey="0" value="0">
+				</td> *@
+								<td>
+									@item.Itemtype
+									<input type="number" style="display:none" data-demandDbKey="@item.DemandDbKey" data-demandItemKey="@item.DemandItemKey" data-receiptIndex="0" data-receiptDbkey="0" value="0">
+								</td>
+								<td>@item.Qty</td>
+								@{
+									if (Model.DemandData.IsShortClosure == true)
+									{
+										<td>@item.ShortCloseQty</td>
+									}
+								}
+								<td>@item.UOM</td>
+								<td style="cursor:pointer;" onclick="openAdjustmentPopup(@item.DemandItemKey)">
+									@item.TotalAdjustment
+								</td>
+								<td>@reciptSum</td>
+								@* <td>@(item.Qty - reciptSum - @item.ShortCloseQty)</td> *@
+								<td>@BalanceSplit?.ToString("0.00")</td>
+								@foreach (var receiptItems in Model.procurement_Demand_Receipts.Select(x => new { x.Receipt_No, x.Receipt_Date, x.Index_No }).Distinct().OrderBy(x => x.Index_No))
+								{
+									var reciptItem = Model.procurement_Demand_Receipts.Where(x => x.DemandItemKey == item.DemandItemKey && x.Index_No == receiptItems.Index_No).FirstOrDefault();
+									var receiptDbKey = 0;
+									var receivedInventryQty = 0.00;
+									var j = receiptItems.Index_No;
+									<td class="receiptCols">
+										@{
+											if (reciptItem != null)
+											{
+												receiptDbKey = reciptItem.Receipt_dbkey;
+												receivedInventryQty = reciptItem.Receiving_inventory;
+												if (reciptItem.Receiving_inventory == 0)
+												{
+													<p class="receipItemDisplay_@j">@reciptItem.Receiving_inventory</p>
+												}
+												if (reciptItem.Receiving_inventory > 0)
+												{
+													<a class="receipItemDisplay_@j" onclick="GetDemandSplitPopUp(@receiptDbKey)" style="cursor:pointer">@reciptItem.Receiving_inventory</a>
+												}
+
+											}
+										}
+										<input type="number" class="receipItemEdit_@j" min="0" style="display:none" data-demandDbKey="@item.DemandDbKey" data-demandItemKey="@item.DemandItemKey" data-receiptIndex="@j" data-receiptDbkey="@receiptDbKey" value="@receivedInventryQty" />
+									</td>
+								}
+							</tr>
+						}
+					}
+				</tbody>
+			</table>
+		}
+	}
+</div>
+
+
+

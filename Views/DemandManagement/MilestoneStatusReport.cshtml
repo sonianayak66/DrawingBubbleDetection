@@ -1,0 +1,213 @@
+﻿@model List<MPCRS.ViewModels.MilestoneSummaryVM>
+@using MPCRS.Utilities
+
+@{
+	Layout = null;
+	var viewMode = ViewBag.viewMode;
+}
+
+<style>
+	.numbersCol {
+		/* width:15%; */
+		text-align: right;
+		padding-right: 15px !important;
+	}
+
+	.textCols {
+		width: 15%;
+	}
+
+	.duedetails {
+		display: grid;
+		gap: 2px;
+	}
+
+	.duedetails__line {
+		display: grid;
+		grid-template-columns: 72px auto;
+		column-gap: 8px;
+	}
+
+	.duedetails__k {
+		font-size: 12px;
+		color: #6B7280;
+	}
+
+	.duedetails__v {
+		font-size: 13px;
+		color: #111827;
+	}
+
+	.duedetails__v--strong {
+		font-weight: 600;
+	}
+
+	.milestone-table-wrapper {
+		max-height: calc(100vh - 250px); /* adjust 250px based on your page header/filter height */
+		overflow-y: auto;
+		scroll-behavior: smooth;
+	}
+ 
+
+	#MilestoneSummaryTbl {
+		border-collapse: separate;
+		border-spacing: 0;
+	}
+
+		#MilestoneSummaryTbl thead th {
+			position: sticky;
+			top: 0;
+			background: #fff;
+			z-index: 5;
+			border-bottom: 2px solid #dee2e6;
+		}
+
+		/* Optional: hide tiny gaps between headers */
+		#MilestoneSummaryTbl thead tr {
+			background: #fff;
+		}
+
+</style>
+
+<div class="milestone-table-wrapper">
+
+	<table class="table table-bordered table-hover" id="MilestoneSummaryTbl">
+		<thead>
+			<tr>
+				@{
+					if (viewMode != "DemandScreen")
+					{
+						<th>Project</th>
+						<th>Demanding Officer </th>
+						<th>MMG Number</th>
+						<th>Description</th>
+						<th>Vendor</th>
+					}
+				}
+
+				<th>Milestone</th>
+				<th>Milestone Remarks</th>
+				<th>Due Date</th>
+				<th>Status</th>
+				<th class="numbersCol">Due in (day(s))</th>
+			</tr>
+		</thead>
+		<tbody>
+			@{
+				if (Model != null && Model.Any())
+				{
+					foreach (var item in Model)
+					{
+						<tr class="p-0">
+							@{
+								if (viewMode != "DemandScreen")
+								{
+									<td class="p-2 ">
+										@item.ProjectTitle
+										<a class="fas fa-angle-double-down float-end" id="icon-Open-@item.MilestoneID" style="cursor:pointer; color:#3874ffe3" onclick="showMilestoneItems(@item.DemandDbKey,@item.MilestoneID, 'Open')"></a>
+										<a class="fas fa-angle-double-up float-end" id="icon-Close-@item.MilestoneID" style="cursor:pointer; display:none;color:#3874ffe3" onclick="showMilestoneItems(@item.DemandDbKey,@item.MilestoneID,'Close')"></a>
+
+									</td>
+									<td class="textCols">
+										@item.DemandingOfficerName
+									</td>
+									<td>@item.MMG_File_No</td>
+									<td> @item.Item_Description</td>
+									<td>@item.VendorName</td>
+								}
+							}
+
+
+							<td>
+								@item.MilestoneName
+								@if (viewMode == "DemandScreen")
+								{
+									<a class="fas fa-angle-double-down float-end" id="icon-Open-@item.MilestoneID" style="cursor:pointer; color:#3874ffe3" onclick="showMilestoneItems(@item.DemandDbKey,@item.MilestoneID, 'Open')"></a>
+									<a class="fas fa-angle-double-up float-end" id="icon-Close-@item.MilestoneID" style="cursor:pointer; display:none;color:#3874ffe3" onclick="showMilestoneItems(@item.DemandDbKey,@item.MilestoneID,'Close')"></a>
+
+								}
+							</td>
+							<td class="text-wrap ">@item.MilestoneRemarks</td>
+							<td>
+								@{
+									var isExtended = item.OriginalDueDate != null
+									&& item.DueDate != null
+									&& item.OriginalDueDate.Value.Date != item.DueDate.Value.Date;
+								}
+								@if (isExtended)
+								{
+									<div>@MPGlobals.GetFormattedDate(item.DueDate)</div>
+									<small class="text-muted">
+
+										Original Due date @MPGlobals.GetFormattedDate(item.OriginalDueDate)
+									</small>
+								}
+								else
+								{
+									@MPGlobals.GetFormattedDate(item.DueDate)
+								}
+							</td>
+
+
+							<td>
+								<span class="badge badge-phoenix fs--2 badge-phoenix-@(item.MilestoneStatus == "Completed" ? "success" : (item.MilestoneStatus == "Overdue" ? "danger" : "warning"))">
+									<span class="badge-label">
+										@item.MilestoneStatus
+									</span>
+								</span>
+								<br />
+								@{
+									if (item.MilestoneStatus == "Overdue" && item.RemainingDays < 0)
+									{
+										<a onclick="extendMileStone(@item.DemandDbKey,@item.MilestoneID)" style="cursor:pointer;text-decoration:underline" class="text-primary">Mark Extension</a>
+									}
+								}
+							</td>
+							@*@{
+						var remainingDaysInWords = item.RemainingDays < 0 ? $"{item.RemainingDays * -1} days past due date" : item.RemainingDays.ToString();
+						<td class="numbersCol">@remainingDaysInWords</td>
+					}*@
+
+							@{
+								string remainingDaysInWords = "";
+
+								if (item.MilestoneStatus == "Completed")
+								{
+									remainingDaysInWords = "-";
+								}
+								else if (item.RemainingDays < 0)
+								{
+									remainingDaysInWords = $"{Math.Abs(item.RemainingDays)} day(s) past due date";
+								}
+								else if (item.RemainingDays == 0)
+								{
+									remainingDaysInWords = "Due today";
+								}
+								else
+								{
+									remainingDaysInWords = $"Due in {item.RemainingDays} day(s)";
+								}
+								<td class="numbersCol">@remainingDaysInWords</td>
+							}
+
+						</tr>
+						<tr style="display:none; padding:0px!important" id="Demannd_@item.MilestoneID">
+							<td style="padding:0px!important" colspan="10"></td>
+						</tr>
+					}
+				}
+				else
+				{
+					<tr>
+						<td colspan="10" class="text-center text-muted p-4">
+							No milestones found for the selected filters.
+						</td>
+					</tr>
+				}
+
+
+			}
+		</tbody>
+	</table>
+
+</div>

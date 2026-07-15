@@ -1,0 +1,47 @@
+﻿@model MPCRS.ViewModels.Procurement_Demand_History_VM
+@{
+    Layout = null;
+    SelectList Procurement_StatusList = MPCRS.Utilities.Masters.GetMaster_General_Text("Procurement_Status");
+}
+
+@using (Html.BeginForm("EditDemandHistory", "DemandManagement", FormMethod.Post, new { onsubmit = "return SaveDemandHistory(this)" }))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Demand_Procurement_History_Key">
+    <input type="hidden" asp-for="Do_Review">
+    <div class="col-12">
+        <div class="col-11 offset-1">
+
+            <div class="form-floating mb-3">
+                <input class="form-control" asp-for="ActionDate" type="date">
+                <label asp-for="ActionDate">Action Date</label>
+                <span asp-validation-for="ActionDate" class="text-danger"></span>
+            </div>
+
+            <div class="form-floating mb-3">
+                <select asp-for="ActionStatus" class="form-select form-select-sm" asp-items="@Procurement_StatusList"></select>
+                <label asp-for="ActionStatus">Action Status</label>
+                <span asp-validation-for="ActionStatus" class="text-danger"></span>
+            </div>
+
+            <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="DO_Review" @(Model.Do_Review == true ? "checked" : "") onchange="ChangeDOStatus()" />
+                <label asp-for="Do_Review">DO Review?</label>
+            </div>
+
+            <div class="form-floating mb-3">
+                <textarea class="form-control" asp-for="Remarks" type="text" rows="2" ></textarea>
+                <label asp-for="Remarks"></label>
+                <span asp-validation-for="Remarks" class="text-danger"></span>
+            </div> 
+
+            <div class="form-group mt-2">
+                <div class="col-md-offset-2 col-md-10">
+                    <input type="submit" value="Submit" class="btn btn-success btn-sm pull-left" />
+                </div>
+            </div>
+        </div> 
+    </div>
+}
+
+ 

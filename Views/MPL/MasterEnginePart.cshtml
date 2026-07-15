@@ -1,0 +1,395 @@
+﻿@model MPCRS.ViewModels.MasterPartViewModel
+@using MPCRS.Utilities 
+@{
+	var UserList_For_RevisionManagement_DropDown = Masters.Get_UserList_For_RevisionManagement_DropDown();
+}
+
+<style>
+	/* Custom styles to make the modal fit the screen */
+	.custom-modal .modal-dialog {
+		width: 100%;
+		max-width: 100%;
+		height: 100%;
+		margin: 0;
+	}
+
+	.custom-modal .modal-content {
+		height: 100%;
+		border: none; /* Optional: Remove border if desired */
+	}
+
+	.custom-modal .modal-body {
+	}
+
+	.modal-header {
+		background-color: black;
+	}
+
+	.bootbox-close-button {
+		background-color: white;
+	}
+
+	.modal-title {
+		font-size: 1.25rem;
+		color: #fff;
+	}
+</style>
+
+
+
+<form asp-controller="MPL" asp-action="MasterEnginePart" id="EnginePartMasterForm">
+	<input asp-for="Engine_Part_Dbkey" type="hidden" />
+	<input asp-for="Engine_Dbkey" type="hidden" />
+	<input asp-for="Parent_id" type="hidden" />
+	<input asp-for="is_active" type="hidden" />
+	<input asp-for="RevisionApplied" type="hidden" />
+	<input asp-for="rm_verified_by" type="hidden" />
+	<input asp-for="Part_relation_dbkey" type="hidden" />
+	<input asp-for="Count_of_PendingApproving" type="hidden" />
+	<input asp-for="rm_updated_on" type="date" style="display:none" />
+	<input asp-for="Reporting_Type" type="hidden" />
+	<input asp-for="Execution_Resp" type="hidden" />
+	<input asp-for="Execution_Resp_additionalLevel" type="hidden" />
+	<input asp-for="ReportDisplayOrder" type="hidden" />
+	<input asp-for="AssemblyReportingType" type="hidden" />
+	<input asp-for="Reporting_Parent" type="hidden" />
+	<input asp-for="AssemblyDisplayOrder" type="hidden" />
+	<input type="hidden" id="DisplayType" value="@ViewBag.DisplayType" />
+	<div id="CreatePartsMain">
+		<div class="row">
+			<div class="col-md-7">
+				@{
+					if (Model.Engine_Part_Dbkey == 0)
+					{
+						<h4>Create Engine Parts :<br /> @Html.Raw(@Model.Engine_Title)</h4>
+					}
+					else
+					{
+						<h4>Edit Engine Parts :<br /> @Html.Raw(@Model.Engine_Title)</h4>
+						<br />
+						if (Model.Count_of_PendingApproving != 0)
+						{
+							<label style="color:red">Note : You cannot update this Part; because there are changes awaiting approval
+							<br/>
+								<label>Last Updated By : @Model.approvalRequestDetail.Requested_By</label><br/>
+							<label>Last Updated On : @Model.approvalRequestDetail.Requested_On</label>
+							
+							</label>
+						
+						}
+
+					}
+				}
+				<p>Note: Changes made here requires approval. </p>
+			</div>
+			<div class="col-md-4">
+				<label class="required"> Please select an approriate approver to proceed:</label>
+				<select asp-for="Approver_ID" asp-items="UserList_For_RevisionManagement_DropDown" class="form-select form-sm"></select>
+				<span asp-validation-for="Approver_ID" class="text-danger"></span>
+			</div>
+			<div class="col-md-1">
+				@{
+					if (Model.Count_of_PendingApproving != 0)
+					{
+						<input type="button" value="Save" class="btn btn-success" disabled />
+					}
+					else
+					{
+						<input type="button" value="Save" class="btn btn-success" id="lnk_save_mpl" onclick="SaveEnginePart()" />
+					}
+				}
+
+			</div>
+		</div>
+
+
+		<hr />
+		<ul class="nav nav-pills" id="myTab" role="tablist">
+			<li class="nav-item"><a class="nav-link active" id="Engine-tab" data-bs-toggle="tab" href="#tab-Engine" role="tab" aria-controls="tab-Engine" aria-selected="true">Engine</a></li>
+			<li class="nav-item"><a class="nav-link" id="RM-tab" data-bs-toggle="tab" href="#tab-RM" role="tab" aria-controls="tab-RM" aria-selected="false">Raw Material</a></li>
+			@*<li class="nav-item"><a class="nav-link" id="Additional-tab" data-bs-toggle="tab" href="#tab-Additional" role="tab" aria-controls="tab-Additional" aria-selected="false">Additional Info</a></li>*@
+			<li class="nav-item"><a class="nav-link" id="Atth-tab" data-bs-toggle="tab" href="#tab-Atth" role="tab" aria-controls="tab-Atth" aria-selected="false">Attachments</a></li>
+			<li class="nav-item"><a class="nav-link" id="Statistics-tab" data-bs-toggle="tab" href="#tab-Statistics" role="tab" aria-controls="tab-Statistics" aria-selected="false">Usage Statistics</a></li>
+			<li class="nav-item"><a class="nav-link" id="Changes-tab" data-bs-toggle="tab" href="#tab-Changes" role="tab" aria-controls="tab-Changes" aria-selected="false" onclick="AdjustauditlogDatatable()">Recent Changes</a></li>
+			<li class="nav-item"><a class="nav-link" id="MaterialIssue-tab" data-bs-toggle="tab" href="#tab-MaterialIssue" role="tab" aria-controls="tab-MaterialIssue" aria-selected="false">Material Issues</a></li>
+		</ul>
+		<div class="tab-content mt-3" id="myTabContent">
+			<div class="tab-pane fade show active" id="tab-Engine" role="tabpanel" aria-labelledby="Engine-tab">
+
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Type_Dbkey"></label>
+					<div class="col-md-4">
+						<select asp-for="Type_Dbkey" asp-items="Model.partstypes" class="form-select form-sm"></select>
+						<span asp-validation-for="Type_Dbkey" class="text-danger"></span>
+					</div>
+				</div>
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Draw_part_no"></label>
+					<div class="col-md-4">
+						<input asp-for="Draw_part_no" class="form-control" />
+						<span asp-validation-for="Draw_part_no" class="text-danger"></span>
+					</div>
+				</div>
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Revision"></label>
+					<div class="col-md-4">
+						<select asp-for="Revision" asp-items="Model.RevisionList" class="form-select form-sm"></select>
+						<span asp-validation-for="Revision" class="text-danger"></span>
+					</div>
+				</div>
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Quantity"></label>
+					<div class="col-md-4">
+						<input asp-for="Quantity" class="form-control" />
+						<span asp-validation-for="Quantity" class="text-danger"></span>
+					</div>
+				</div>
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Manufacturing_Duration"></label>
+					<div class="col-md-4">
+						<input asp-for="Manufacturing_Duration" class="form-control" />
+						<span asp-validation-for="Manufacturing_Duration" class="text-danger"></span>
+					</div>
+				</div>
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Module_Responsibility"></label>
+					<div class="col-md-4">
+						<select asp-for="Module_Responsibility" asp-items="Model.Module_ResponsibilityList" class="form-select form-sm"></select>
+						<span asp-validation-for="Module_Responsibility" class="text-danger"></span>
+					</div>
+				</div>
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Raw_Material"></label>
+					<div class="col-md-4">
+						<select asp-for="Raw_Material" asp-items="Model.Raw_MaterialList" class="form-select form-sm"></select>
+						<span asp-validation-for="Raw_Material" class="text-danger"></span>
+					</div>
+				</div>
+				@* fcbp *@
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="FCBP"></label>
+					<div class="col-md-4">
+						<select asp-for="FCBP" asp-items="Model.manufacturingprocess" class="form-select form-sm">
+						</select>
+						<span asp-validation-for="FCBP" class="text-danger"></span>
+					</div>
+					<div class="col-md-2 align-content-center justify-content-center ">
+						@{
+							if (Model.FCBP == "Casting")
+							{
+								<a href="#" onclick="ManufacturingProcessDocumentList()">Casting files checklist</a>
+							}
+						}
+						
+					</div>
+					
+				</div>
+
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Description"></label>
+					<div class="col-md-4">
+						<textarea asp-for="Description" class="form-control"></textarea>
+						<span asp-validation-for="Description" class="text-danger"></span>
+					</div>
+				</div>
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Comments"></label>
+					<div class="col-md-4">
+						<textarea asp-for="Comments" class="form-control"></textarea>
+						<span asp-validation-for="Comments" class="text-danger"></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="tab-pane fade" id="tab-RM" role="tabpanel" aria-labelledby="RM-tab">
+
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label">Raw Material Verified</label>
+					<div class="col-md-4">
+						<input asp-for="is_rm_verified" type="checkbox" style="height:18px;width:18px" />
+						<span asp-validation-for="is_rm_verified" class="text-danger"></span>
+					</div>
+				</div>
+
+
+				@*  <div class="row mb-1">
+				<label class="col-md-2 col-form-label" asp-for="FCBP"></label>
+				<div class="col-md-4">
+				<input asp-for="FCBP" class="form-control" />
+				<span asp-validation-for="FCBP" class="text-danger"></span>
+				</div>
+				</div> *@
+
+
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="is_vendor_material"></label>
+					<div class="col-md-4">
+						<select asp-for="is_vendor_material" class="form-select">
+							<option value="true">Yes</option>
+							<option value="false">No</option>
+						</select>
+						<span asp-validation-for="is_vendor_material" class="text-danger"></span>
+					</div>
+				</div>
+
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Bar_pipe_Dia_OD"></label>
+					<div class="col-md-4">
+						<input asp-for="Bar_pipe_Dia_OD" class="form-control" type="number" />
+						<span asp-validation-for="Bar_pipe_Dia_OD" class="text-danger"></span>
+					</div>
+				</div>
+
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Bar_pipe_Length"></label>
+					<div class="col-md-4">
+						<input asp-for="Bar_pipe_Length" class="form-control" type="number" />
+						<span asp-validation-for="Bar_pipe_Length" class="text-danger"></span>
+					</div>
+				</div>
+
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Bar_pipe_Thickness"></label>
+					<div class="col-md-4">
+						<input asp-for="Bar_pipe_Thickness" class="form-control" type="number" />
+						<span asp-validation-for="Bar_pipe_Thickness" class="text-danger"></span>
+					</div>
+				</div>
+
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Plate_length"></label>
+					<div class="col-md-4">
+						<input asp-for="Plate_length" class="form-control" type="number" />
+						<span asp-validation-for="Plate_length" class="text-danger"></span>
+					</div>
+				</div>
+
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Plate_Width"></label>
+					<div class="col-md-4">
+						<input asp-for="Plate_Width" class="form-control" type="number" />
+						<span asp-validation-for="Plate_Width" class="text-danger"></span>
+					</div>
+				</div>
+
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Quantity"></label>
+					<div class="col-md-4">
+						<input asp-for="Quantity" class="form-control" type="number" />
+						<span asp-validation-for="Quantity" class="text-danger"></span>
+					</div>
+				</div>
+
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Plate_Thickness"></label>
+					<div class="col-md-4">
+						<input asp-for="Plate_Thickness" class="form-control" type="number" />
+						<span asp-validation-for="Plate_Thickness" class="text-danger"></span>
+					</div>
+				</div>
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="weight_in_kg"></label>
+					<div class="col-md-4">
+						<input asp-for="weight_in_kg" class="form-control" type="number" />
+						<span asp-validation-for="weight_in_kg" class="text-danger"></span>
+					</div>
+				</div>
+				<div class="row mb-1">
+					<label class="col-md-2 col-form-label" asp-for="Density"></label>
+					<div class="col-md-4">
+						<input asp-for="Density" class="form-control" type="number" />
+						<span asp-validation-for="Density" class="text-danger"></span>
+					</div>
+				</div>
+			</div>
+			@*    <div class="tab-pane fade" id="tab-Additional" role="tabpanel" aria-labelledby="Changes-tab" style="overflow-y:scroll">
+
+
+			</div>*@
+			<div class="tab-pane fade" id="tab-Atth" role="tabpanel" aria-labelledby="Atth-tab" style="overflow-y:scroll">
+
+				<div class="col-md-12 col-sm-12 col-lg-12" style="margin-left:10px!important">
+					<table class="table table-striped table-bordered table-condensed" cellspacing="0" style="width:100%">
+						<thead>
+							<tr>
+								<th>Select File Type</th>
+								<th>Upload File</th>
+								<th>Revision</th>
+								<th style="display:none">DVD Number</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>
+									<select class="form-select" id="filetype">
+										<option value="Drawing_File">Drawing File</option>
+										<option value="2D_Model_Drawing_File">2D Model Drawing File</option>
+										<option value="3D_Model_Drawing_File">3D Model Drawing File</option>
+										<option value="ACSN">ACSN File</option>
+										<option value="Casting_Forging_File">Casting / Forging File</option>
+									</select>
+								</td>
+								<td>
+									<input type="file" class="form-control" id="uploadedFile" />
+								</td>
+								<td>
+									<select class="form-control" id="filerevision">
+
+										@{
+											foreach (var item in Model.RevisionList)
+											{
+												<option value="@item.Value">@item.Text</option>
+											}
+										}
+									</select>
+								</td>
+								<td style="display:none">
+									<input type="text" class="form-control" placeholder="DVD Number" id="dvdnumber" />
+								</td>
+								<td>
+									@{
+										if (Model.Engine_Part_Dbkey != 0 && Model.Count_of_PendingApproving == 0)
+										{
+											<input type="button" class="btn btn-secondary btn-small" style="margin-top:10px!important" value="Upload" id="uploadattcahment" onclick="UploadFile(@Model.Engine_Part_Dbkey,'@Model.Revision')" />
+										}
+									}
+
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<br />
+				<div class="col-md-12 col-sm-12 col-lg-12" id="attachments" style="margin-top:10px!important">
+				</div>
+			</div>
+			<div class="tab-pane fade" id="tab-Statistics" role="tabpanel" aria-labelledby="Statistics-tab" style="overflow-y:scroll">
+				<div class="col-md-12 col-sm-12 col-lg-12" id="Statistics">
+				</div>
+			</div>
+			<div class="tab-pane fade" id="tab-Changes" role="tabpanel" aria-labelledby="Changes-tab" style="overflow-y:scroll">
+				<div class="col-md-12 col-sm-12 col-lg-12" id="RecentChanges">
+				</div>
+			</div>
+			<div class="tab-pane fade" id="tab-MaterialIssue" role="tabpanel" aria-labelledby="MaterialIssue-tab" style="overflow-y:scroll">
+				<div class="col-md-12 col-sm-12 col-lg-12" id="MaterialIssues">
+				</div>
+			</div>
+		</div>
+
+
+	</div>
+
+
+</form>
+<script>
+
+	$(function () {
+
+		CallPreLoadDatas();
+		/* $('#Raw_Material').selectize();*/
+	});
+
+
+</script>

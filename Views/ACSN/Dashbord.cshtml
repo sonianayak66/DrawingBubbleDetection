@@ -1,0 +1,27 @@
+﻿@using MPCRS.Utilities;
+@model List<MPCRS.ViewModels.AcsnDashbord>
+@{
+    Layout = null;
+    var hasWritePermission = UserData.IsAuthorized(User, Constants.UserPermissions.ACSN_Write);
+}
+
+ <div class="row">
+     <div class="col-5">
+        <figure class="highcharts-figure">
+            <div id="container"></div>
+
+        </figure>
+     </div>
+     
+     <div class="col-7" id="StatusSummary">
+         
+    </div>
+
+ </div>
+   
+
+ 
+
+
+ 
+

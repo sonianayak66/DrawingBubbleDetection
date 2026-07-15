@@ -1,0 +1,30 @@
+﻿
+
+@{
+    ViewData["Title"] = "Search batch number";
+}
+
+<div class="row">
+    <h2>Search result of batch / heat number - @ViewBag.batchnumber</h2>
+    <hr />
+    @{
+        if (@ViewBag.batchnumber != "NOT FOUND")
+        {
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="card">
+                        <div class="card-body">
+                            <partial name="../Home/_batchHeatDetails.cshtml" model="@ViewBag.batchnumber" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="col-md-12">
+                <h4>No data available for batch number - @ViewBag.batchnumber</h4>
+            </div>
+        }
+    }
+</div>

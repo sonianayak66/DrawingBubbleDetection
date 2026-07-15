@@ -1,0 +1,189 @@
+﻿@model Tuple<List<MPCRS.ViewModels.ProcurementReceiptItemSplitViewModel>, List<MPCRS.Models.Attachment> >
+@using System.Data;
+@using MPCRS.Utilities;
+
+@{
+    var DemandReceiptWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write_Receipts);
+    var DemandDelete = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Delete);
+    DataTable doctypes = MPGlobals.GetDataForDatalist("SELECT [Master_Dbkey],[Master_Name] FROM [dbo].[Master_General] where [Master_Type] = 'Procurement_Doument_Type'");
+    SelectList DocumentList = Masters.DemandReciptDocsReference(ViewBag.Receipt_dbkey);
+    Layout = null;
+   // string mattype = Model.Item1[0].Master_Name;
+    // <input type="hidden" value="@mattype" id="SplitItemType" />
+    string[] attachkeys;
+    MPCRS.ViewModels.ProcurementReceiptItemSplitViewModel modelItem = Model.Item1.FirstOrDefault();
+   
+}
+
+<div class="col-12  row" style="min-height:350px">
+
+    <div class="col-10">
+        <form id="SplitModelData">
+            <input type="hidden" asp-for="@modelItem.SplitId" class="SplitId" name="SplitId" />
+            <input type="hidden" asp-for="@modelItem.Receipt_dbkey" class="Receipt_dbkey" name="Receipt_dbkey" />
+            <input type="hidden" asp-for="@modelItem.UOM" name="UOM" />
+            <input type="hidden" asp-for="@modelItem.Attachment_Db_Key" name="Attachment_Db_Key" />
+
+            <table class="table table-bordered  table-condensed table-sm">
+                <tbody>
+                    <tr>
+                        <td><b>Item</b></td>
+                        <td>
+                            @modelItem.Raw_material_Name
+                            <input type="hidden" class="form-control" asp-for="@modelItem.Raw_material_Name" name="Raw_material_Name" />
+                        </td>
+                    </tr>
+                    <tr style="@(modelItem.Master_Name != "Others" ? "display:none" : "")">
+                        <td><b>Revision</b></td>
+                        <td>
+                            <input class="form-control" asp-for="@modelItem.Revision" name="Revision" />
+                            <span asp-validation-for="@modelItem.Revision" class="text-danger"></span>
+                        </td>
+                    </tr>
+@*                     <tr style="@(modelItem.Master_Name == "Others" ? "display:none" : "")">
+                        <td><b>Dia</b></td>
+                        <td>
+                            <input class="form-control" asp-for="@modelItem.Outer_Dia_mm" name="Outer_Dia_mm" />
+                            <span asp-validation-for="@modelItem.Outer_Dia_mm" class="text-danger"></span>
+                        </td>
+                    </tr>
+                    <tr style="@(modelItem.Master_Name == "Others" ? "display:none" : "")">
+                        <td><b>Thickness</b></td>
+                        <td> <input type="text" class="form-control" asp-for="@modelItem.Thickness" name="Thickness" /></td>
+                    </tr> *@
+                    <tr>
+                        <td><b>UOM</b></td>
+                        <td style="padding-left:20px!important"> @modelItem.UOM </td>
+                    </tr>
+                    <tr style="@(modelItem.Master_Name == "Others" ? "display:none" : "")">
+                        <td><b>Weight(kg)</b></td>
+                        <td> <input type="text" class="form-control" asp-for="@modelItem.Weight" name="Weight" /></td>
+                    </tr>
+                    <tr>
+                        <td><b> @(modelItem.Master_Name == "Others" ? "Qty" : "Act.length(mm)")</b></td>
+                        <td> <input type="text" class="form-control" asp-for="@modelItem.Measurement" name="Measurement" /></td>
+                    </tr>
+                    <tr style="@(modelItem.Master_Name == "Others" ? "display:none" : "")">
+                        <td><b>Act.Breadth</b></td> 
+                        <td> <input type="text" class="form-control" asp-for="@modelItem.Measurement_breadth" name="Measurement_breadth" /></td>
+                    </tr>
+                    <tr>
+                        <td><b>Bar No / Sheet No / Serial No (CSV) <br /> (Use comma "," separated values) </b></td>
+                        <td> <textarea type="text" rows="2" class="form-control" asp-for="@modelItem.Material_Reference_No" name="Material_Reference_No"></textarea>
+                        </td>
+                      
+                    </tr>
+                    <tr style="@(modelItem.Master_Name == "Others" ? "display:none" : "")">
+                        <td><b>Heat No</b></td>
+                        <td> <input type="text" class="form-control" asp-for="@modelItem.Heat_No" name="Heat_No" /></td>
+                    </tr>
+                    <tr>
+                        <td><b>Batch No</b></td>
+                        <td> <input type="text" class="form-control" asp-for="@modelItem.Batch_No" name="Batch_No" /></td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </form>
+    </div>
+    <div class="col-2">
+        <input type="button" value="Save" onclick="SaveSplitItemModel(@modelItem.Receipt_dbkey)" class="btn btn-success btn-sm" />
+    </div>
+</div>
+
+<div class="col-12  row" style="min-height:350px">
+    <div class="col-10">
+        <b>Documents</b>
+        <table  id="SplitDocumentsTable" style="width:100%">
+            <thead>
+                <tr>
+                    <th style="width:50%!important">Document Type</th>
+                    <th style="width:40%">Reference No. & File</th>
+                    <th></th> 
+                </tr>
+            </thead>
+            <tbody id="SplitModelDocTablbdy">
+                <tr style="display:none">
+                    <td >
+                        <select class="form-select fileAttachmentType">
+                            <option value="0">Select</option>
+                            @foreach (DataRow drtype in doctypes.Rows)
+                            {
+                                <option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" class="splitUploadfileRefNum" placeholder="Reference Number" />
+                        <br>
+                        <input type="file" class="splitUploadFiles" />
+                    </td>
+                    <td>
+                        <i class="uil uil-trash-alt fs-1" style="color:red;text-align:center; font-size:xx-small; cursor:pointer" onclick="DeleteUnsavedDocs(this)"></i>
+                    </td>
+                </tr>
+                @{
+                    foreach (var item in Model.Item2)
+                    {
+                        <tr>
+                            <td>
+                                <select asp-for="@item.File_DVD_Num" class="form-select fileAttachmentType" onchange="UpdateDocumentType(@item.Attachment_Db_Key,this)">
+                                    <option value="0">Select</option>
+                                    @foreach (DataRow drtype in doctypes.Rows)
+                                    {
+                                        <option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+                                    }
+                                </select>
+                            </td>
+                            <td>@item.File_Revision
+                            <br>
+                                @{
+                                    string fileNameDisplay = item.Orginal_File_Name;
+                                    if (item.Orginal_File_Name.Length > 15)
+                                    {
+                                        string firstPart = item.Orginal_File_Name.Substring(0, 7);
+                                        string lastPart = item.Orginal_File_Name.Substring(item.Orginal_File_Name.Length - 7);
+                                        fileNameDisplay = $"{firstPart}...{lastPart}";
+                                    }
+                                     
+                                }
+                                <a target="_blank" href="@item.Attachment_location@item.Attachment_FileName">@fileNameDisplay</a>
+                            </td>
+                            <td>
+                                @{
+                                    if (DemandDelete)
+                                    {
+                                        <i class="uil uil-trash-alt fs-1" style="color:red;text-align:center; font-size:xx-small; cursor:pointer" onclick="DeleteDemandReceiptDocs(@item.Attachment_Db_Key,@modelItem.SplitId,this)"></i>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                    <tr>
+                        <td>
+                            <select class="form-select fileAttachmentType">
+                                <option value="0">Select</option>
+                                @foreach (DataRow drtype in doctypes.Rows)
+                                {
+                                    <option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="splitUploadfileRefNum" placeholder="Reference Number" />
+                        <br> 
+                        <input type="file" class="splitUploadFiles" /></td>
+                        <td> 
+                            <i class="uil uil-trash-alt fs-1" style="color:red;text-align:center; font-size:xx-small; cursor:pointer" onclick="DeleteUnsavedDocs(this)"></i> 
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4"> <button onclick="CloneSplitDocumentRow()" class="btn btn-dark btn-sm">More Files</button> </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>

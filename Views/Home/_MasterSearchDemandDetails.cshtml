@@ -1,0 +1,50 @@
+﻿@model string
+@using System.Data
+@using MPCRS.Utilities
+
+@{
+    var dt = MPGlobals.GetDataForDatalist($"[dbo].[MasterSearch_DemandDetails] @PartNumber = '{Model}'");
+}
+<label> Demand Details </label>
+@if (dt != null && dt.Rows.Count > 0)
+{
+    <table class="table table-bordered table-striped table-sm">
+        <thead>
+            <tr>
+                <th>Item Type</th>
+                <th>Item Sub Type</th>
+                <th>Qty</th>
+                <th>Short Close Qty</th>
+                <th>UOM</th>
+                <th>MMG Order Number</th>
+                <th>Demand No</th>
+                <th>Demanding Officer</th>
+                <th>Vendor Name</th>
+                <th>Receiving Inventory</th>
+                <th>Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (DataRow row in dt.Rows)
+            {
+                <tr>
+                    <td>@row["Itemtype"]</td>
+                    <td>@row["Item_Sub_Type"]</td>
+                    <td>@row["Qty"]</td>
+                    <td>@row["ShortCloseQty"]</td>
+                    <td>@row["UOM"]</td>
+                    <td>@row["MMGOrderNumber"]</td>
+                    <td>@row["Demand_No"]</td>
+                    <td>@row["DemandingOfficerName"]</td>
+                    <td>@row["Vendor_Name"]</td>
+                    <td>@row["Receiving_Inventory"]</td>
+                    <td>@row["balance"]</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No records found.</p>
+}

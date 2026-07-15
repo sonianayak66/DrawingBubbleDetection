@@ -1,0 +1,260 @@
+﻿@model MPCRS.ViewModels.Procurement_Demands_VM
+@using MPCRS.Utilities
+@{
+    Layout = null;
+    var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write);
+    var Projects_List = Masters.ProjectsList();
+    var UOM_list = Masters.GetMaster_General_Text("UOM");
+    var Item_list = Masters.GetMaster_General_Text("Procurement_Item_Type");
+    var TenderModeList = Masters.GetMaster_General_Text("Tender_Mode");
+    var DemandingOfficersList = Masters.GetDemandingOfficersList();
+    var Procurement_StatusList = Masters.GetMaster_General_Text("Procurement_Status");
+    var vendorslist = Masters.GetVendorsList();
+    var OrderTypeList = Masters.GetDemandOrderType("DemandOrderType");
+}
+
+ <div class="col-12">
+    <form id="CreateDemand" method="post">
+        <input asp-for="DemandDbKey" type="hidden" />
+        <input asp-for="Project_Head" type="hidden"  />
+        <input asp-for="DO_Review" type="hidden"  /> 
+        <input asp-for="ShortClosedBy" type="hidden"  />
+        <input asp-for="IsShortClosure" type="hidden"  />
+         <input asp-for="ShortClosedOn" type="hidden" />
+         <input asp-for="ShortCloseReason" type="hidden" />
+
+        <div class="row">
+             <div class="col-8">
+                 <div class="form-floating mb-3">
+                     <select asp-for="Project_Dbkey" class="form-select form-select-sm" asp-items="@Projects_List" ></select>
+                     <label asp-for="Project_Head"></label>
+                 </div>
+             </div>
+            <div class="col-4">
+                @if (Model.IsShortClosure != true)
+                {
+                    <input class="btn btn-sm btn-success float-end" style="cursor:pointer" type="button" value="Submit" onclick="SaveDemandDetail()" />
+                } 
+            </div>
+            @if (Model.IsShortClosure == true)
+            {
+                <div class="col-12 text-center"> 
+
+                    <h4 class="text-danger">This demand is short closed. Demand information cannot be edited. Please revert short-closure if you wish to make changes. </h4>
+                </div> 
+            }
+        </div>
+
+
+        <div class="row">
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Demand_No" type="text" >
+                    <label asp-for="Demand_No"></label>
+                </div>
+                    <span asp-validation-for="Demand_No" class="text-danger"></span>
+            </div>
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="MMG_File_No" type="text" >
+                    <label asp-for="MMG_File_No"></label>
+                </div>
+                    <span asp-validation-for="MMG_File_No" class="text-danger"></span>
+            </div>
+        </div>
+
+
+
+        <div class="row">
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <textarea class="form-control" asp-for="Item_Description" type="text" style="height: 50px"></textarea>
+                    <label asp-for="Item_Description"></label>
+                    <span asp-validation-for="Item_Description" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <textarea class="form-control" asp-for="OrderNumbers" type="text" style="height: 50px"></textarea>
+                    <label asp-for="OrderNumbers">Order Numbers (Use "," for multiple order numbers) </label>
+                    <span asp-validation-for="OrderNumbers" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-3">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Quantity" type="text">
+                    <label asp-for="Quantity"></label>
+                    <span asp-validation-for="Quantity" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="form-floating mb-3">
+                    <select asp-for="UOM" class="form-select form-select-sm" asp-items="@UOM_list"></select>
+                    <label asp-for="UOM"></label>
+                </div>
+            </div>
+
+            @* <div class="col-3">
+                <div class="form-floating mb-3">
+                    <select asp-for="Item_Type" class="form-select form-select-sm" asp-items="@Item_list"></select>
+                    <label asp-for="Item_Type"></label>
+                </div>
+
+            </div> *@
+
+            
+            <div class="col-3">
+                        <div class="form-floating mb-3">
+                    @{
+                        if (Model.DemandDbKey == 0)
+                        {
+                            <select asp-for="Item_Type" class="form-select form-select-sm" asp-items="@Item_list" ></select>
+                        }
+                        else{
+                            <input class="form-control" asp-for="Item_Type" type="Item_Type" readonly>
+                        }
+                     }
+
+                            <label asp-for="Item_Type"></label>
+                            <span asp-validation-for="Item_Type" class="text-danger"></span>
+                        </div>
+               
+             
+            </div>
+            <div class="col-3">
+                <div class="form-floating mb-3">
+                    <select asp-for="OrderType" class="form-select form-select-sm" asp-items="@OrderTypeList"></select>
+                    <label asp-for="OrderType">Order Type</label>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="row">
+            <div class="col-3">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="EstimatedCost" type="text">
+                    <label>Estimated Cost</label>
+                    <span asp-validation-for="EstimatedCost" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="ActualCost" type="text">
+                    <label>Actual Cost</label>
+                    <span asp-validation-for="ActualCost" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="PaymentMadeTillDate" type="text">
+                    <label asp-for="PaymentMadeTillDate"></label>
+                    <span asp-validation-for="PaymentMadeTillDate" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="AdvancePaid" type="text">
+                    <label>Advance Paid</label>
+                    <span asp-validation-for="AdvancePaid" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-3">
+                <div class="form-floating mb-3">
+                    <select asp-for="TenderMode" class="form-select form-select-sm" asp-items="@TenderModeList"></select>
+                    <label asp-for="TenderMode"></label>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row">
+            <div class="col-4">
+                <div class="form-floating mb-3">
+                    <select asp-for="DemandingOfficer" class="form-select form-select-sm" asp-items="@DemandingOfficersList"></select>
+                    <label asp-for="DemandingOfficer"></label>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="form-floating mb-3">
+                    <select asp-for="CurrentStatus" class="form-select form-select-sm" asp-items="@Procurement_StatusList"></select>
+                    <label asp-for="CurrentStatus"></label>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="form-check form-switch mb-2">
+                    @* <input class="form-check-input" name="DO_Review" type="checkbox" id="@Model.DO_Review" @(Model.DO_Review == true ? "checked" : "") onchange="ChangeDOStatus()" /> *@
+                    <input class="form-check-input" name="DO_Review" type="checkbox" id="DO_review_checkbox" @(Model.DO_Review == true ? "checked" : "") onchange="ChangeDOStatus()" />
+                    <label asp-for="DO_Review"></label>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="row">
+            <div class="col-4">
+                <div class="form-floating mb-2">
+                    <input class="form-control" asp-for="StatusDate" type="date">
+                    <label asp-for="StatusDate"></label>
+                    <span asp-validation-for="StatusDate" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="form-floating mb-2">
+                    <input class="form-control" asp-for="EstimatedOrderDate" type="date">
+                    <label asp-for="EstimatedOrderDate">Supply Order Date</label>
+                    <span asp-validation-for="EstimatedOrderDate" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Planned_Date_of_receipt" type="date">
+                    <label asp-for="Planned_Date_of_receipt">Planned Date of completion</label>
+                    <span asp-validation-for="Planned_Date_of_receipt" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+
+
+
+        <div class="row">
+            <div class="col-4">
+                <div class="form-floating mb-2">
+                    <select asp-for="Vendor_Dbkey" class="form-select form-select-sm" asp-items="@vendorslist"></select>
+                    <label asp-for="Vendor_Dbkey">Vendor</label>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="form-floating mb-3">
+                    <input class="form-control" asp-for="Delivery_Schedule" type="text">
+                    <label asp-for="Delivery_Schedule"></label>
+                    <span asp-validation-for="Delivery_Schedule" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="form-floating mb-3">
+                    <textarea class="form-control" asp-for="Remarks" type="text" style="height: 100px"></textarea>
+                    <label asp-for="Remarks"></label>
+                    <span asp-validation-for="Remarks" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+    </form>
+ </div>
+
+ 
+
+ 
+          
+
+ 
+ 

@@ -1,0 +1,96 @@
+﻿@model List<MPCRS.ViewModels.AttachmentVM>
+@using MPCRS.Utilities
+@using System.Data;
+@{
+	Layout = null;
+
+	DataTable doctypes = MPGlobals.GetDataForDatalist("SELECT [Master_Dbkey],[Master_Name] FROM [dbo].[Master_General] where [Master_Type] = 'Material_Issue_Document'");
+	var MaterialIssueDocumentDelete = UserData.IsAuthorized(User, Constants.UserPermissions.MaterialIssue_Delete);
+}
+<h5>Documents</h5>
+<table class="table table-hover table-bordered" id="MaterialIssueDocumentTable" style="width:100%">
+	<thead>
+		<tr>
+			<th>Document type</th>
+			<th>Remarks</th>
+			@{
+				if (MaterialIssueDocumentDelete && ViewBag.Type != "View")
+				{
+					<th></th>
+					
+				}
+			}
+		</tr>
+	</thead>
+	<tbody id="MaterialIssueDocTableBody">
+
+		<tr style="display:none">
+			<td class="p-1 m-1">
+				<select class="form-select fileAttachmentType">
+					<option value="0">Select</option>
+					@foreach (DataRow drtype in doctypes.Rows)
+					{
+						<option value="@drtype["Master_Dbkey"]">@drtype["Master_Name"]</option>
+					}
+				</select>
+			</td>
+			<td class="p-1 m-1">
+				<input type="text" class="MaterialIssueUploadfileRefNum form-control" placeholder="Remarks" />
+			</td>
+			<td colspan="2" class="d-flex p-1 m-1">
+				<input type="file" class="MaterailIssueDocUploadFiles form-control" />
+				<i class="uil uil-trash-alt fs-1 float-end" style="color:red; font-size:xx-small; cursor:pointer" onclick="DeleteUnsavedDocs(this)"></i>
+
+			</td>
+		</tr>
+
+		@foreach (var item in Model)
+		{
+			<tr>
+				<td class="p-1 m-1">
+
+					@foreach (DataRow drtype in doctypes.Rows)
+					{
+						try
+						{
+							int fileDvdNum = int.Parse(item.File_DVD_Num);
+							if ((int)drtype["Master_Dbkey"] == fileDvdNum)
+							{
+								<a class="badge badge-phoenix badge-phoenix-success" target="_blank" href="@item.Attachment_location@item.Attachment_FileName" style="margin-left:10px;">@drtype["Master_Name"]</a>
+							}
+						}
+						catch (FormatException ex) { ErrorHandler.LogException(ex); }
+					}
+
+				</td>
+				<td>
+					<span class="p-1 m-1">@item.File_Revision</span>
+				</td>
+				@{
+					if (MaterialIssueDocumentDelete && ViewBag.Type != "View")
+					{
+						<td class="p-1 m-1 text-center">
+
+							<i class="uil uil-trash-alt fs-1 float-end" style="color:red;text-align:center; font-size:xx-small; cursor:pointer" onclick="DelMaterialIssueDocData(@item.Attachment_Db_Key,@item.Source_table_key)"></i>
+
+						</td>
+					}
+				}
+			</tr>
+		}
+	</tbody>
+	<tfoot>
+		<tr>
+			@if (ViewBag.Type != "View")
+			{
+				<td class="m-1 p-1" colspan="3"> <button onclick="CloneMaterialIssueDocumentRow()" style="color:blue" class="btn btn-dark btn-sm">Add Files</button> </td>
+			}
+		</tr>
+	</tfoot>
+</table>
+<div>
+	@if (ViewBag.Type != "View")
+	{
+		<button class="btn btn-small btn-success float-end" onclick="SaveMaterialIssueDocuments(@ViewBag.IssueDbKey)">Save Files</button>
+	}
+</div>

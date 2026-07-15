@@ -1,0 +1,191 @@
+﻿@model List<MPCRS.ViewModels.ProcurementReceiptItemSplitViewModel>
+@using MPCRS.Utilities;
+
+@{
+
+    var DemandReceiptWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write_Receipts);
+    var DemandDelete = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Delete);
+    SelectList DocumentList = Masters.DemandReciptDocsReference(ViewBag.Receipt_dbkey);
+    Layout = null;
+    string mattype = Model[0].Master_Name;
+    <input type="hidden" value="@mattype" id="SplitItemType" />
+    string[] attachkeys;
+    string SourceTbl = "Procurement_Demand_Receipts";
+
+}
+
+<style>
+    .select2-selection--multiple {
+        overflow: hidden !important;
+        height: auto !important;
+    }
+
+    .table-sm td {
+        padding: 10px !important;
+        white-space: nowrap;
+    }
+
+    .table-sm th {
+        padding: 10px !important;
+    }
+    .table-sm {
+        padding: 10px !important;
+    }
+
+    .table-sm input,
+    .table-sm select {
+            border-radius: 0;
+            border: none;
+    }
+</style>
+
+
+
+<div class="row">
+    <div class="col-6">
+        <h5>Split</h5>
+    </div>
+    <div class="col-6">
+     @*   @{
+            if (DemandReceiptWriteAccess)
+            {
+                <button class="btn btn-success float-end btn-small" onclick="SaveRawMaterialSplit(@Model.FirstOrDefault().Receipt_dbkey)">Save</button>
+            }
+        }*@
+
+    </div>
+</div>
+
+<table class="table table-bordered  table-condensed table-sm" id="ReciptItemSplitTbl" style="width:100%;border:1px!important;">
+    <thead>
+        <tr>
+            <th style="display:none"></th>
+            <th>Item</th>
+            @{
+                if (mattype != "Others")
+                {
+                    // <th class="NonRM">Dia</th>
+                    // <th class="NonRM">Thick</th>
+                    <th class="NonRM">Act.length(mm)</th>
+                    <th class="NonRM">Act.Breadth(mm)</th>
+                    <th class="NonRM">Weight(kg) [@ViewBag.ReceiptSplitWeight.ToString("0.00")]</th>
+                    <th class="NonRM">@Model[0].Master_Name Nos (CSV)</th>
+                    <th class="NonRM">Heat No</th>
+                }
+                else{ 
+                    <th class="NonRM">Revision</th>
+                    <th class="NonRM">Qty</th>
+                    <th style="max-width:150px!important" class="NonRM">Serial Nos (CSV)</th>
+                }
+             }  
+            <th> Ref# / Batch #  </th>
+            <th>Doc Reference</th> 
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="SpliTblBody">
+        @{
+            var dummyArraItem = Model.FirstOrDefault();            
+        }
+        @foreach (var item in Model)
+        {
+            var attachmentIdentifier = 0;
+            <tr>
+                <td style="display:none">
+                    <input type="hidden" asp-for="@item.SplitId" class="SplitId" />
+                    <input type="hidden" asp-for="@item.Receipt_dbkey" class="Receipt_dbkey" />
+                </td>
+                <td>@item.Raw_material_Name</td>
+                @{
+                    if (mattype != "Others")
+                    {
+                        // <td class="NonRM">@item.Outer_Dia_mm</td>
+                        // <td class="NonRM">@item.Thickness</td>
+                        <td class="NonRM">@item.Measurement</td>
+                        <td class="NonRM">@item.Measurement_breadth</td>
+                        <td class="NonRM" >@item.Weight</td>
+                        <td class="NonRM text-wrap">@item.Material_Reference_No</td>
+                        <td class="NonRM">@item.Heat_No</td>
+                    }
+                    else
+                    {
+                        <th class="NonRM">@item.Revision</th>
+                        <th class="NonRM">@item.Measurement</th>
+                        <td class="NonRM text-wrap">@item.Material_Reference_No</td>
+                    }
+                }   
+                <td>@item.Batch_No</td>
+                <td style="word-wrap: break-word; max-width: 450px;">
+                    <div class="input-group" id="selec2div">
+                        
+                            @{
+                                if (!string.IsNullOrEmpty(item.Attachment_Db_Key))
+                                {
+                                    attachkeys = item.Attachment_Db_Key.Split(",");
+                                }
+                                else
+                                {
+                                    attachkeys = new string[0];
+                                }
+
+                                foreach (var uploadedFile in DocumentList.Where(x => x.Text != "Select"))
+                                {
+                                    if (Array.Exists(attachkeys, element => element == uploadedFile.Value))
+                                    {
+                                        <a class="badge badge-phoenix fs--2 badge-phoenix-success mb-1" target="_blank" style="margin-left:3px" href="/Attachment/DownloadfileWithKey?id=@uploadedFile.Value">
+                                            @(uploadedFile.Text.Split(" [")[0])
+                                        </a>
+                                    } 
+                                }
+                            }
+                        
+                    </div>
+                </td> 
+                <td>
+                    @{
+                        if (item.SplitId > 0)
+                        {
+                            <a class="fas fa-info-circle fs-1" style="color:blue; cursor:pointer;text-align:center;" onclick="GetAdditionalInfoReciptSplit(this, @item.Receipt_dbkey,@item.SplitId)"></a>
+                        }
+                        if (DemandDelete)
+                        {
+                            <i class="uil uil-trash-alt fs-1" style="color:red;text-align:center;cursor:pointer" onclick="DelDemandReciptSplit(@item.SplitId,this)"></i>
+                        }
+                        if (DemandReceiptWriteAccess)
+                        {
+                            <a class="uil uil-edit-alt fs-1" style="color:blue;text-align:center;cursor:pointer" onclick="GetViewDemandItemReciptSplitModel(@dummyArraItem.Receipt_dbkey, @item.SplitId )"></a>
+                        } 
+                    } 
+                </td>
+            </tr>
+
+            attachmentIdentifier = attachmentIdentifier + 1;
+           
+        }
+    </tbody>
+    @if (DemandReceiptWriteAccess)
+    {
+        <tfoot>
+            <tr>
+                <td colspan="11">
+                    <a class="btn btn-secondary btn-small"  onclick="GetViewDemandItemReciptSplitModel(@dummyArraItem.Receipt_dbkey,-1)" style="cursor:pointer">Add New</a>
+                </td>
+            </tr>
+        </tfoot>
+    }
+    @*   @{
+    if (DemandReceiptWriteAccess)
+    {
+    <tfoot>
+    <tr>
+
+    <td colspan="11">
+    <button onclick="AddSplitRows()" class="btn"><i class="bi bi-plus-circle"></i>Add Rows</button>
+    </td>
+    </tr>
+    </tfoot>
+    }
+    } *@
+
+</table>
+

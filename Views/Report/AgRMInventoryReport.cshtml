@@ -1,0 +1,169 @@
+﻿@model List<MPCRS.ViewModels.RMInventory>
+@{
+    ViewBag.Title = "Inventory Report";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<style>
+    .dataTable > thead > tr > th[class*="sort"]:before,
+    .dataTable > thead > tr > th[class*="sort"]:after {
+        content: "" !important;
+    }
+
+    table td {
+        word-wrap: break-word;
+        max-width: 250px;
+    }
+
+    #inventbl {
+        font-size: 10px; /* Adjust the font size as needed */
+    }
+
+    .highlight {
+        background-color: red; /* Choose your desired highlight color */
+    }
+
+    .buttons-excel, .buttons-html5, .btn-smaller {
+        padding: 0.25rem 0.5rem; /* Adjust padding to make the button smaller */
+        font-size: 0.675rem; /* Adjust font size to make the text smaller */
+        line-height: 1.5; /* Adjust line height for proper text alignment */
+    }
+</style>
+
+
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-md-10">
+                <h4>Raw-Material Inventory</h4>
+            </div>
+            <div class="col-md-2 text-end">
+                <a href="/Report/ProcurementReports" style="margin-left: 4px;" class="btn btn-secondary  btn-smaller float-end">Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr />
+<div class="col-12 card">
+    <div class="card-body">
+        <table class="table table-bordered table-hover table-sm" id="inventbl" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Sl</th>
+                    <th>Date</th>
+                    <th>Reference</th>
+                    <th>Material</th>
+                    <th>UOM</th>
+                    <th>Type</th>
+                    <th>Received </th>
+                    <th>Issued </th>
+                    <th>Balance </th>
+                    <th>Received From/Issued To </th>
+                    <th>Issued For </th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    foreach (var rmIdentity in Model.Select(x => x.Raw_material_Dbkey).Distinct().ToList())
+                    {
+                        double ReceivedTotal = 0;
+                        double issuedTotal = 0;
+                        double TotalBalance = 0;
+                        var slno = 1;
+                        var materialName = "";
+                        foreach (var Inventory in Model.Where(x => x.Raw_material_Dbkey == rmIdentity).ToList().OrderBy(x => x.Receipt_Date).ThenBy(x => x.TransType).ToList())
+                        {
+                            <tr onclick="highlightRow(this,'inventbl')">
+                                <td>@slno</td>
+                                <td style="white-space:nowrap">@Inventory.Receipt_Date</td>
+                                <td style="white-space:break-spaces">@Inventory.MMGOrderNumber</td>
+                                <td>@Inventory.Raw_material_Name</td>
+                                <td>@Inventory.UOM</td>
+                                <td>@Inventory.RMType</td>
+                                <td style="text-align:right">
+                                    @{
+                                       
+                                        if (@Inventory.TransType == "Recieved")
+                                        {
+                                            <span><b>@Inventory.Qty</b></span>
+                                            ReceivedTotal = @ReceivedTotal + @Inventory.Qty ?? 0;
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    }
+                                </td>
+                                <td style="text-align:right">
+                                    @{
+                                        if (@Inventory.TransType == "Issued")
+                                        {
+                                            double issinven = Math.Abs(@Inventory.Qty ?? 0);
+                                            issuedTotal = @issuedTotal + @issinven;
+                                            <span><b>@issinven</b></span>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    }
+                                </td>
+                                <td style="text-align:right">@Inventory.RunningBalance</td>
+                                <td>@Inventory.Vendor_Name</td>
+                                <td>@Inventory.IssuePurpose</td>
+                            </tr>
+                            slno = @slno + 1;
+                            materialName = @Inventory.Raw_material_Name;
+                        }
+                        TotalBalance = ReceivedTotal - issuedTotal;
+                        <tr style="background-color:lightgray">
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td><b>Total- @materialName</b></td>
+                         
+                            <td></td>
+                            <td></td>
+                            <td style="text-align:right"><b>@ReceivedTotal.ToString("0.00")</b></td>
+                            <td style="text-align:right"><b>@issuedTotal.ToString("0.00")</b></td>
+                            <td style="text-align:right"><b>@TotalBalance.ToString("0.00")</b> </td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    }
+                }
+
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#inventbl').DataTable({
+                sorting:false,
+                paging:false,
+                scrollY: (window.innerHeight * 0.6),
+                scrollX: true,
+              //  searching: false,
+
+                dom: 'Bfrtip',
+                buttons: [{
+                    extend: 'excel',
+                    title: 'Raw Material Inventory',
+                    //exportOptions: {
+                    //    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8] //Your Colume value those you want
+                    //}
+                }],
+
+            });
+        });
+    </script>
+}
+
+
+

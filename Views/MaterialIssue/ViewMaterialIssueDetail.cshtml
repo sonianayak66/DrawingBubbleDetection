@@ -1,0 +1,269 @@
+﻿@model MPCRS.ViewModels.MaterialIssueVM
+@using MPCRS.Utilities
+@{
+	//   Layout = null;
+	var MIWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.MaterialIssue_Write);
+}
+
+<style>
+	#ViewDemand {
+		border: 1px solid;
+		color: black;
+		white-space: nowrap;
+	}
+
+	.material-Issue-detail-table td, th {
+		padding: 4px !important;
+		border: 1px solid lightgrey;
+		color: black;
+		font-size: small !important;
+	}
+
+	.material-Issue-items-table td, th {
+		padding: 4px !important;
+		border: 1px solid lightgrey;
+		color: black;
+		font-size: small !important;
+	}
+
+	body {
+		font-size: small;
+		background-color: white;
+	}
+
+</style>
+
+<div class="row">
+	<h3 class="col-11">Mateial Issue Details</h3>
+	<a class="col-1 btn btn-secondary" href="/MaterialIssue/MaterialIssueTree">Back</a>
+</div>
+
+@*<i class="text-danger uil uil-trash-alt fs-3 float-end" style="cursor:pointer" onclick="DeleteDemand(@Model.DemandDbKey)"></i>*@
+@{
+	if (MIWriteAccess)
+	{
+		<i class="text-primary uil uil-edit fs-2 float-end" style="cursor:pointer" onclick="EditMaterialIssue(@ViewBag.Id)"></i>
+	}
+}
+
+<i class="text-secondary uil uil-print fs-2 float-end" style="cursor:pointer" onclick="PrintDiv('contentToPrint')"></i>
+
+<div id="contentToPrint">
+	<div class="col-12">
+		<h5>Issue Note</h5>
+		<table id="ViewDemand" class="material-Issue-detail-table table table-hover">
+			<thead>
+				<tr>
+					<th style="min-width:200px!important">Engine Name</th>
+					<td style="min-width:300px!important">@Model.Engine_Name</td>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<th>Demand No</th>
+					<td>@Model.Demand_No</td>
+				</tr>
+				<tr>
+					<th>Order Reference Number</th>
+					<td>@Model.Order_Ref_No</td>
+				</tr>
+				<tr>
+					<th>Order Reference Date</th>
+					<td>@Model.Order_Ref_Date?.ToString("dd-MM-yyyy")</td>
+				</tr>
+				@* <tr>
+				<th>PMO Reference Number</th>
+				<td>@Model.PMO_Ref_No</td>
+				</tr> *@
+				@* <tr>
+				<th>PMO Reference Date</th>
+				<td>@Model.PMO_Ref_Date?.ToString("dd-MM-yyyy")</td>
+				</tr> *@
+				<tr>
+					<th>Vendor</th>
+					<td>@Model.Vendor_Name</td>
+				</tr>
+				<tr>
+					<th>Returnable</th>
+					<td>@Model.Returnable</td>
+				</tr>
+				<tr>
+					<th>Issue Purpose</th>
+					<td>@Model.Issue_Purpose_text</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<hr />
+	<h5>Issue Items</h5>
+	<table class="material-Issue-items-table table table-hover" id="MI_Items_Table">
+		<thead>
+			<tr>
+				<th>PartNo</th> 
+				<th>Part Qty</th>
+				<th>Raw Material</th>
+				<th>Raw Material Vendor</th>
+				@*  <th>Dia</th>
+				<th>thickness</th> *@
+				<th>Serial No</th>
+				<th>Size(L x B)</th>
+				<th>RM Qty Issued</th>
+				@* <th>Unit</th> *@
+				<th>Heat No / Batch No</th>
+				<th>Raw Material Weight (Kg)</th>
+				<th>JobCard No#</th>
+				<th>JobCard Doc</th>	
+				@*  <th>Split Mappings</th> *@
+			</tr>
+		</thead>
+		<tbody>
+			@{
+				foreach (var item in Model.material_Issue_Items)
+				{
+					<tr>
+						<td>
+							@{
+								var PartNames = item.Drawing_no.Split(',');
+								@foreach (var PartName in PartNames)
+								{
+									<p>@PartName</p>
+								}
+							}
+						</td>
+						<td>
+							@item.Qty
+							@if (item.PartQty_EngineWise > 0)
+							{
+								<br />
+								<small><i>@item.PartQty_EngineWise Engine</i></small>
+							}
+						
+						</td>
+						<td>@item.Raw_material_Name</td>
+						<td>@item.Vendor_Name</td>
+						@* <td>@item.outer_dia</td>
+						<td>@item.thickness</td>*@
+						<td style="max-width:300px;overflow:auto;word-wrap: break-word">@item.SerialNo</td>
+						<td>@item.Size</td>
+						<td>@item.Qty_Issue</td>
+						@* <td>@item.Denom</td>*@
+						<td>@(item.Heat_No ?? "-")</td>
+						<td>@item.Weight_Kg</td>
+						<td>@item.JobCardNumber</td>
+						<td>
+							@{
+								if (item.JCFileLocation != null && item.JCFileName != null && item.JobCardNumber != null && item.JCFileName != "" && item.JCFileName != "-")
+								{
+									<a target="_blank" href="@item.JCFileLocation"><i class="uil uil-cloud-download fs-1" aria-hidden="true"></i></a>
+								}
+							}
+						</td>
+						@* <td>
+				<a style="cursor:pointer" href="#" onclick="GetSplitItemMapping(@item.Issue_Item_Dbkey,1)"><i class="uil uil-left-indent fs-1" aria-hidden="true"></i></a>
+				</td>*@
+					</tr>
+				}
+			}
+
+		</tbody>
+	</table>
+</div>
+
+
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+
+	<script src="~/js/jstree.min.js" asp-append-version="true"></script>
+	<script src="~/mpi/materialissue.js" asp-append-version="true"></script>
+	<script>
+		$(document).ready(function () {
+			$('#MI_Items_Table').dataTable({
+				scrollY: 510,
+				paging: false,
+				dom: 'Bfrtip',
+					buttons: [
+						'excel', 
+			{
+				extend: 'print',
+				title: '',
+				exportOptions: {
+					columns: [0, 2, 7, 8]
+				},
+				customize: function (win) {
+					var table = $(win.document.body).find('table');
+
+					// Custom header names (S/N is prepended, rest map to exported columns)
+					var headers = ['S/N', 'Part No', 'Raw Material',  'Heat No / Batch No' , 'Raw Material Weight (Kg) '];
+
+					// Prepend S/N header
+					table.find('thead tr').prepend('<th>S/N</th>');
+
+					// Rename all headers
+					table.find('thead th').each(function (i) {
+						$(this).text(headers[i]);
+					});
+
+					// Process body rows
+					table.find('tbody tr').each(function (i) {
+						// Prepend S/N cell
+						$(this).prepend('<td>' + (i + 1) + '</td>');
+
+						// Strip description from Part No (index 1 after S/N prepend)
+						var partCell = $(this).find('td').eq(1);
+						var partPs = partCell.find('p');
+						if (partPs.length > 0) {
+							var partNos = [];
+							partPs.each(function () {
+								var t = $(this).text().trim();
+								var slashIdx = t.indexOf('/');
+								partNos.push(slashIdx > -1 ? t.substring(0, slashIdx).trim() : t);
+							});
+							partCell.html(partNos.join('<br>'));
+						} else {
+							var t = partCell.text().trim();
+							var slashIdx = t.indexOf('/');
+							if (slashIdx > -1) partCell.text(t.substring(0, slashIdx).trim());
+						}
+					});
+
+					// Print styling
+					$(win.document.body).find('table').css({
+						'border-collapse': 'collapse',
+						'width': '100%',
+						'font-size': '12px'
+					});
+					$(win.document.body).find('th, td').css({
+						'border': '1px solid #333',
+						'padding': '5px 8px',
+						'text-align': 'left'
+					});
+					$(win.document.body).find('th').css({
+						'background-color': '#f0f0f0',
+						'font-weight': 'bold'
+					});
+				}
+			}
+		],
+				stateSave: true,
+				stateSaveCallback: function (settings, data) {
+					localStorage.setItem(
+						'DataTables_' + settings.sInstance,
+						JSON.stringify(data)
+					);
+				},
+				stateLoadCallback: function (settings) {
+					return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+				},
+
+			});
+		});
+	</script>
+}
+
+
+
+
+

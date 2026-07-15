@@ -1,0 +1,251 @@
+﻿@model MPCRS.ViewModels.Procurement_Demands_VM
+@using MPCRS.Utilities
+@using System.Globalization
+@{
+    Layout = null;
+
+    var DemandingOfficersList = Masters.GetDemandingOfficersList();
+    var DemandWriteAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Write);
+    var DemandShortCloseAccess = UserData.IsAuthorized(User, Constants.UserPermissions.Demand_Short_Closure);
+    CultureInfo India = new CultureInfo("hi-IN");
+}
+
+<style>
+    #ViewDemand {
+        border:1px solid;
+        color: black;
+        white-space: nowrap;
+    }
+
+
+    .demand-table td, th {
+        padding: 4px !important;
+        border: 1px solid lightgrey;
+        color: black;
+        font-size: small !important;
+    }
+
+
+/*
+    td {
+    border: 1px solid;
+    color: black;
+    padding: 2px !important;
+    font-size: small !important;
+    }
+
+    th {
+    border: 1px solid;
+    color: black;
+    font-size: small !important;
+    }*/
+
+    body {
+    font-size: small;
+    background-color: white;
+    }
+
+    .textWarp {
+        word-wrap: break-word !important; /* Break long words and wrap them to the next line */
+        word-break: break-all !important;
+        white-space: normal !important; /* Allow text to wrap to the next line */
+    }
+</style>
+
+@*<i class="text-danger uil uil-trash-alt fs-3 float-end" style="cursor:pointer" onclick="DeleteDemand(@Model.DemandDbKey)"></i>*@
+@{
+    if (DemandWriteAccess)
+    {
+        <i class="text-primary uil uil-edit fs-2 float-end" style="cursor:pointer" onclick="EditDemandDetail(@Model.DemandDbKey)" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Demand"></i>
+    }
+
+
+}
+
+<i class="text-secondary uil uil-print fs-2 float-end" style="cursor:pointer" onclick="PrintDiv('contentToPrint')" data-bs-toggle="tooltip" data-bs-placement="top" title="Print this"></i>
+<i class="text-danger uil uil-trash-alt fs-2 float-end" style="cursor:pointer" onclick="createRecordDeletionRequest(@Model.DemandDbKey,'Procurement_Demands', 'Demand')" data-bs-toggle="tooltip" data-bs-placement="top" title="Raise Delete Demand Request" ></i>
+
+<div id="contentToPrint">
+    <div class="col-12" >
+        <table id="ViewDemand" class="table table-sm table-hover demand-table">
+            <thead>
+                <tr>
+                    <th style="min-width:200px!important">Project</th>
+                    <td style="min-width:300px!important">
+                        @if (Model.Project_Dbkey != 0)
+                        {
+                           string dsplay =  Model.IsShortClosure == true ? @ViewBag.ProjectName + " (Short Closed)" : @ViewBag.ProjectName;
+                            <span>@dsplay</span>
+                        }
+
+                    </td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>Demand No</th>
+                    <td>@Model.Demand_No</td>
+                </tr>
+                <tr>
+                    <th>Item Description</th>
+                    <td>@Model.Item_Description</td>
+                </tr>
+                <tr>
+                    <th>Order Nos</th>
+                    <td>@Model.OrderNumbers</td>
+                </tr>
+                   <tr>
+                    <th>Vendor</th>
+                    <td>@ViewBag.vendor</td>
+                </tr>
+                <tr>
+                    <th>Quantity</th>
+                    <td>@Model.Quantity</td>
+                </tr>
+                <tr>
+                    <th>UOM</th>
+                    <td>@Model.UOM</td>
+                </tr>
+                <tr>
+                    <th>Item Type</th>
+                    <td>@Model.Item_Type</td>
+                </tr>
+                <tr>
+                    <th>Order Type</th>
+                    <td>@Model.OrderType</td>
+                </tr>
+                <tr>
+                    <th>Tender Mode</th>
+                    <td>@Model.TenderMode</td>
+                </tr>
+                <tr>
+                    <th>Demanding Officer</th>
+                    <td>
+                        @if (Model.DemandingOfficer != 0)
+                        {
+                            @ViewBag.DemandingOfficer
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <th>Status Date</th>
+                    <td>@MPGlobals.GetFormattedDate(Model.StatusDate)</td>
+                </tr>
+                <tr>
+                    <th>Current Status</th>
+                    <td>@Model.CurrentStatus</td>
+                </tr>
+                <tr>
+                    <th>DO Review</th>
+                    <td>@Model.DO_Review</td>
+                </tr>
+                <tr>
+                    @if (Model.EstimatedOrderDate >= DateTime.Now)
+                    {
+                        <th>Estimated Order Date</th>
+                    }
+                    else
+                    {
+                        <th>Supply Order Date</th>
+                        
+                    }
+
+                    <td>
+                        <input id="EstimatedOrderDate" value="@MPGlobals.GetFormattedDate(Model.EstimatedOrderDate)" hidden />
+                        @MPGlobals.GetFormattedDate(Model.EstimatedOrderDate)
+                       </td>
+                </tr> 
+                <tr>
+                    <th>Planned Date of Completion</th>
+                    <td>
+                        <input id="plannedDateOfReceipt" value="@Model.Planned_Date_of_receipt" hidden />
+                        @MPGlobals.GetFormattedDate(Model.Planned_Date_of_receipt)
+                    </td>
+                </tr>
+                <tr>
+                    <th>Remarks</th>
+                    <td class="textWarp">
+                        @Model.Remarks
+                    </td>
+                </tr>
+                <tr>
+                    <th>MMG File No</th>
+                    <td>@Model.MMG_File_No</td>
+                </tr>
+                <tr>
+                    <th>Estimated Cost </th>
+                    <td>@string.Format(India, "{0:#,#}", Model.EstimatedCost)</td>
+                </tr>
+                <tr>
+                    <th>Actual Cost</th>
+                    <td>@string.Format(India, "{0:#,#}", Model.ActualCost)</td>
+                </tr>
+                <tr>
+                    <th>Advance Paid</th>
+                    <td>@string.Format(India, "{0:#,#}", Model.AdvancePaid)</td>
+                </tr>
+
+                <tr>
+                    <th>Payment Made Till Date</th>
+                    <td>@string.Format(India, "{0:#,#}", Model.PaymentMadeTillDate)</td>
+                </tr>
+
+
+                @{
+                    if(Model.IsShortClosure == true)
+                    {
+                        <tr>
+                            <th>Short Closure</th>
+                            <td>@(Model.IsShortClosure == false ? "No" : "Yes")</td>
+                        </tr>
+                        <tr>
+                            <th>Short Closure On</th>
+                            <td>@MPGlobals.GetFormattedDate(Model.ShortClosedOn)</td>
+                        </tr>
+
+                        if (DemandShortCloseAccess)
+                        {
+                            <tr>
+                                <th>Revert Short Closure</th>
+                                <td><a class="btn btn-sm" onclick="ShortClosureDemand(1)">Click here</a></td>
+                            </tr>
+                        }
+                    }
+                }
+                <tr> 
+                    <td colspan="2">
+                        <b>Delivery Schedule</b>
+                        <div class="row">
+                            <div style="width:80%">
+                                @Model.Delivery_Schedule Days
+                            </div>
+                            <div class="exclude-print text-right" style="width:20%">
+                                @{
+                                    if (DemandWriteAccess)
+                                    {
+                                        <a class="float-end link-primary p-2" style="cursor:pointer" onclick="GetViewMilestoneDetails(true);">Edit</a>
+
+                                        <a class="float-end link-primary p-2" style="cursor:pointer"  onclick="extendMileStone(@Model.DemandDbKey,0)">Extend Milestone</a>
+                                        //<i class="uil uil-plus fs-1 float-end" style="color:green ;text-align:center;cursor:pointer" onclick="addMilestonecol()"></i>
+                                        <a class="float-end link-primary p-2" style="cursor:pointer" onclick="createMilestone('@Model.DemandDbKey','@Model.EstimatedOrderDate')">Create Milestone</a>
+                                        
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <div id="MilestoneDetail">
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+
+
+
+
+

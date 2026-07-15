@@ -1,0 +1,67 @@
+﻿@model bool
+@{
+    // model will be false by default. True will be passed for view rendering without dropdown CSS (example called from home page for limited user access)
+    var userMenuItems = MPCRS.Utilities.UserData.GetUserMenuItems(User);
+
+    // ── Interim: inject "Bubble Annotation" beneath "Bubble Detection"
+    //    until the dbo.NavigationMenuControl row exists in this DB.
+    //    Run the SQL block in the controller comments to make this row
+    //    DB-resident and remove the need for this block.
+    var bubbleDetect = userMenuItems
+        .FirstOrDefault(m => string.Equals(m.DisplayName, "Bubble Detection",
+            System.StringComparison.OrdinalIgnoreCase));
+    if (bubbleDetect != null
+        && !userMenuItems.Any(m => string.Equals(m.DisplayName, "Bubble Annotation",
+            System.StringComparison.OrdinalIgnoreCase)))
+    {
+        userMenuItems.Add(new MPCRS.Models.NavigationMenuControl
+        {
+            MenuItemKey      = -9001,                               // synthetic id, won't collide with DB rows
+            DisplayName      = "Bubble Annotation",
+            ParentKey        = bubbleDetect.ParentKey,
+            LandingPage      = "/DrawingBubble/BubbleAnnotation",
+            ClaimRequirement = bubbleDetect.ClaimRequirement,
+            DisplayOrder     = (bubbleDetect.DisplayOrder ?? 0) + 0.1,
+            isActive         = true,
+        });
+    }
+
+    // get main menu items that has at-least one sub-menu
+    var parentMenus = userMenuItems
+    .Where(menu => menu.ParentKey == 0 &&
+        userMenuItems.Any(child => child.ParentKey == menu.MenuItemKey))
+    .ToList().OrderBy(x => x.DisplayOrder);
+
+    string openMenuClass = Model ? "list-group" : "dropdown-menu navbar-dropdown-caret";
+    string openSubMenuClass = Model ? "list-group-item" : "dropdown-item";
+}
+
+<ul class="navbar-nav navbar-nav-top" data-dropdown-on-hover="data-dropdown-on-hover">
+    @{
+        foreach (var item in parentMenus)
+        {
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle lh-1" href="#!" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false"><span class="uil fs-0 me-2 uil-chart-pie"></span>@item.DisplayName</a>
+                <ul class="@openMenuClass">
+                    @{
+                        var subMenuItems = userMenuItems.Where(x => x.ParentKey == item.MenuItemKey).ToList().OrderBy(x => x.DisplayOrder);
+                        foreach (var submenu in subMenuItems)
+                        {
+                            <li>
+                                <a class="@openSubMenuClass" href="@submenu.LandingPage">
+                                    <div class="dropdown-item-wrapper">
+                                        <span class="me-2 uil" data-feather="shopping-cart"></span>@submenu.DisplayName
+                                    </div>
+                                </a>
+                            </li>
+                        }
+                    }
+                </ul>
+            </li>
+        }
+    }
+
+
+</ul>
+
+

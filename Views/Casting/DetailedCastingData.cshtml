@@ -1,0 +1,106 @@
+﻿@model List<MPCRS.ViewModels.DetailedCastingDataVM>
+@using MPCRS.Utilities;
+<style>
+    table {
+        table-layout: fixed;
+    }
+
+        table td {
+            word-wrap: break-word;
+            max-width: 400px;
+        }
+
+    #castinglisttbl td {
+        white-space: inherit;
+    }
+
+    p {
+        margin-bottom: 5px !important;
+    }
+
+    .modal-body{
+        padding:0px!important;
+    }
+
+    .modal-content{
+        width:120%!important;
+    } 
+  
+    .datecol {
+        width: 7% !important; 
+    }
+</style>
+
+@{
+    if (ViewBag.tableOnly)
+    {
+        Layout = null;
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-8">
+                <h4>Detailed Casting Order & Receipt Data</h4>
+            </div>
+            <div class="col-md-4">
+                <a href="/Casting/CastingList" class="btn btn-sm btn-secondary float-end">Back</a>
+            </div>
+        </div>
+        <hr />
+    }
+
+}
+ 
+
+<div class="row col-12" style="margin-left:10px!important">
+    <table class="table table-hover table-bordered table-sm" style="width:100%" id="castinglisttbl">
+        <thead>
+            <tr>
+                <th style="max-width:70px">Order No & Date</th> 
+                <th class="datecol">Receipt No & Date</th>
+                <th style="max-width:100px">Part</th>  
+                <th >Receipt Qty</th>
+                <th >Documents</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                //foreach (var item in Model.Select(x => new { x.CastingDbkey, x.OrderNumber, x.ItemVendor, x.OrderStatus }).Distinct().ToList())
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td> <b>@MPGlobals.GetFormattedDate(@item.OrderDate) </b>  <p class="p-0 m-0">@item.OrderNumber</p> </td>
+                        <td>
+                            <b>@MPGlobals.GetFormattedDate(@item.ReceiptDate) </b>  <p class="p-0 m-0">@item.ReceiptNumber </p>
+                           
+                        </td>
+                        <td> <b>@item.Draw_part_no  -  @item.Description</b>
+                            <p>@item.ItemVendor</p>
+                        </td> 
+                        <td><partial name="../Casting/CastingQtySplit.cshtml" model="@item.SplitId.ToString()"></td>
+                        <td><partial name="../Casting/CastingSplitDocChecklist.cshtml" model="item"></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+
+
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/mpi/casting.js" asp-append-version="true"></script>
+    <script>
+        $(function () {
+            $('#castinglisttbl').DataTable({
+                paging: false,
+            });
+
+        });
+    </script>
+
+}
+

@@ -1,0 +1,153 @@
+﻿
+@{
+
+    ViewData["Title"] = "NCRLog";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<style>
+    /* Center-align the buttons */
+    .dataTables_wrapper .dataTables_filter {
+        float: left;
+    }
+
+    .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate {
+        float: right;
+    }
+
+    /* Add margin between search box and buttons */
+    .dataTables_wrapper .dataTables_filter {
+        margin-right: 20px;
+    }
+</style>
+
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-sm-10">
+                <h4>Non Conformance Reports Change Log</h4>
+            </div>
+
+            <div class="col-sm-2 pull-right">
+                <a class="btn btn-secondary float-end" href="/NCR/Index">Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+<hr />
+<div class="col-md-12 col-sm-12 col-lg-12 divc">
+    @*<input type="hidden" asp-for="@Model.FirstOrDefault().BuildGuid" />*@
+
+    <table class="table table-bordered table-sm fs--1 mb-2" id="demandstbl">
+        <thead>
+            <tr>
+                <th style="display:none">ID</th>
+                <th>Reference Number</th>
+                <th>Received Date</th>
+                <th>Received From</th>
+                <th>Comittee Referred</th>
+                <th>Status</th>
+                <th>Remarks</th>
+                <th>Part No</th>
+                <th>Desc</th>
+                <th>Vendor</th>
+                <th>Action</th>
+                <th>User</th>
+                <th>Time Stamp</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+@section scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        var NCRData;
+
+        $(document).ready(function () {
+            GetNCRdatalist();
+        });
+
+
+        function getNCRData() {
+            $.ajax({
+                type: "Get",
+                url: "/NCR/GetNCRdatalist?getLog=Yes",
+                success: function (data) {
+                    NCRData = data;
+                    GetNCRdatalist()
+                }
+            })
+        }
+
+
+        function GetNCRdatalist() {
+
+            try {
+                dataTable.destroy();
+            } catch (e) {
+            }
+
+            dataTable = $("#demandstbl").DataTable({
+                "ajax": {
+                    "url": "/NCR/GetNCRdatalist?getLog=Yes",
+                    "type": "GET",
+                    "dataSrc": "",
+                    "datatype": "json"
+                },
+                "processing": true,
+                "scrollY": 560,
+                "scrollX": false,
+                data: NCRData,
+                responsive: true,
+                paging: false,
+                "order": [[0, "desc"]],
+                dom: 'Bfrtip',
+                buttons: [{
+                    extend: 'excel',
+                    title: 'Non Conformance Reports',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5, 6] //Your Colume value those you want
+                    }
+                }],
+                "columns": [
+                    { "data": "Id" },
+                    { "data": "ReferenceNumber" },
+                   // { "data": "ReceivedDate" },
+                    {
+                        "data": null,
+                        render: function (data, type, row) {
+                            // Format the date using Moment.js
+                            if (type === 'display') {
+                                return moment(data.ReceivedDate).format('DD/MMM/YYYY'); // Adjust the format as needed
+                            }
+                            // Return the original data for sorting
+                            return data.ReceivedDate;
+                        },
+                        type: 'date-eu' // Specify the type for correct date sorting
+                    },
+                    { "data": "ReceivedFrom" },
+                    { "data": "ComitteeReferred" },
+                    { "data": "ReportStatus" },
+                    { "data": "Remarks" },
+                    { "data": "Draw_part_no" },
+                    { "data": "PartDes" },
+                    { "data": "Vendor_Name" },
+                    { "data": "Action" },
+                    { "data": "UserName" },
+                    { "data": "UpdatedOn" },
+                ],
+                "columnDefs": [
+                    {
+                        target: 0,
+                        visible: false,
+                        searchable: false,
+                    }]
+
+
+            });
+        }
+
+    </script>
+}

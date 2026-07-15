@@ -1,0 +1,113 @@
+﻿
+@model List<MPCRS.ViewModels.AuditLogDisplayMangerVM>
+@using MPCRS.Utilities
+
+
+
+<div class="row">
+    <div class="col-6 col-sm-4 pull-right">
+        <button class="btn btn-success pull-right" onclick="SaveChangesAuditLogDisplayData()">Save</button>
+    </div>
+
+</div>
+
+<br />
+<table class="table table-bordered" style="width:50%">
+    <thead>
+        <tr>
+            <th>
+                Display Name
+            </th>
+            <th>
+                Display Data
+            </th>
+        </tr>
+    </thead>
+    <tbody id="auditdisplaytable">
+
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td style="display:none">
+                    <input type="hidden" value="@item.DisplayManagerKey" />
+                </td>
+                <td>
+                    @if (ViewBag.sourcetble == "Engine_Parts_Master")
+                    {
+                        <input type="text" class="form-control" value="@item.Display_ColumnName" placeholder="@item.ColumnName" />
+                    }
+                    else
+                    {
+                        <input type="hidden" class="form-control" value="@item.Display_ColumnName" placeholder="@item.ColumnName" />
+                        <p>@item.ColumnName</p>
+                    }
+                </td>
+                <td>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="@item.DisplayManagerKey" @(item.DisplayData == true ? "checked" : "") />
+                        </div>
+        
+                </td>
+
+            </tr>
+        }
+
+    </tbody>
+
+</table>
+
+
+ <script>
+
+
+    $(document).ready(function () {
+     
+        
+
+    });
+
+    function SaveChangesAuditLogDisplayData() {
+
+        var table = document.getElementById("auditdisplaytable");
+        var rows = table.getElementsByTagName("tr");
+        var displayArray = new Array();
+        for (var i = 0; i < rows.length; i++) {
+
+            var items = {};
+            items.DisplayManagerKey = table.rows[i].cells[0].children[0].value;
+            items.Display_ColumnName = table.rows[i].cells[1].children[0].value;
+            items.DisplayData = table.rows[i].cells[2].children[0].children[0].checked;
+            displayArray.push(items);
+        }
+
+
+        $.ajax({
+            type: "POST",
+            url: '/Configuration/AuditLogDisplayDataConfig',
+            data: {
+                DisplayDataArray: JSON.stringify(displayArray),
+            },
+            cache: false,
+            success: function (data) {
+                if (data.success) {
+                    bootbox.alert('Updated Successfully');
+                } else {
+                     bootbox.alert('Encountered an error!');                 
+                }
+            }
+        });
+    }
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,246 @@
+﻿@using System.Data
+@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "Builds";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var buildsList = MPGlobals.GetDataForDatalist("SELECT [Id], [BuildGuid], [BuildName] + ' - ' + [Description] as BuildName FROM [dbo].[EngineBuilds] order by ID desc");
+    var Permission_Buid_Write = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Write);
+}   
+
+
+<div class="page-header">
+    <div class="row align-items-center">
+        <div class="col-md-3">
+            <h3>External manufacturing SOP data availability report - BATL</h3>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label mb-0"><b>Build</b></label>
+
+            <div class="input-group">
+                <select class="form-control" id="buildDbKey" onchange="storeBuildGuid()">
+                    @{
+                        foreach (DataRow item in buildsList.Rows)
+                        {
+                            <option value="@item["Id"]" data-buildguid="@item["BuildGuid"]">@item["BuildName"]</option>
+                        }
+                    }
+                </select>
+                <span class="input-group-text" id="basic-addon2" style="cursor:pointer" onclick="GetBatlPartsReport()">
+                    <i class="uil uil-search"></i>
+                </span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="d-flex gap-3">
+                <div class="text-center" style="min-width: 80px; cursor: pointer;" onclick="filterByStatus('all')" id="totalBadge">
+                    <div class="avatar avatar-xl">
+                        <div class="avatar-name rounded-circle" style="border: 2px solid #ddd;" id="totalCircle">
+                            <span id="totalCount" style="color: #0d6efd; font-weight: bold;">0</span>
+                        </div>
+                    </div>
+                    <h6 class="mb-0 mt-1" style="font-size: 0.75rem; color: #6c757d;">TOTAL</h6>
+                </div>
+                <div class="text-center" style="min-width: 80px; cursor: pointer;" onclick="filterByStatus('available')" id="availableBadge">
+                    <div class="avatar avatar-xl">
+                        <div class="avatar-name rounded-circle" style="border: 2px solid #ddd;" id="availableCircle">
+                            <span id="availableCount" style="color: #198754; font-weight: bold;">0</span>
+                        </div>
+                    </div>
+                    <h6 class="mb-0 mt-1" style="font-size: 0.75rem; color: #6c757d;">DATA AVAILABLE</h6>
+                </div>
+                <div class="text-center" style="min-width: 80px; cursor: pointer;" onclick="filterByStatus('pending')" id="pendingBadge">
+                    <div class="avatar avatar-xl">
+                        <div class="avatar-name rounded-circle" style="border: 2px solid #ddd;" id="pendingCircle">
+                            <span id="pendingCount" style="color: #ffc107; font-weight: bold;">0</span>
+                        </div>
+                    </div>
+                    <h6 class="mb-0 mt-1" style="font-size: 0.75rem; color: #6c757d;">PENDING</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label mb-0">&nbsp;</label>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="chkShowOnlyUnique" onchange="GetBatlPartsReport()">
+                <label class="form-check-label" for="chkShowOnlyUnique">
+                    Show only unique parts
+                </label>
+            </div>
+            <button class="btn btn-primary w-100" onclick="ViewBATLHighlightReport()" id="btnViewReport">
+                <i class="uil uil-file-alt"></i> View SOP Report
+            </button>
+        </div>
+     </div>
+ </div>
+
+
+
+
+<div class="col-md-12">
+    <table id="batlReportTbl" class="table table-bordered table-condensed" cellspacing="0" style="width:100%;">
+        <thead>
+            <tr>
+                <th>Build Name</th>
+                <th>Parent</th>
+                <th>Part </th>
+                <th>Part Description</th>
+                <th>Revision </th>
+                <th>Data Available </th>
+                <th>Update Method </th>
+                <th>Serial Number</th>
+                <th>Remarks </th>
+                <th>Updated on</th> 
+            </tr>
+        </thead>
+    </table>
+</div>
+
+
+
+
+
+
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+        <script>
+
+        $(function () {
+            GetBatlPartsReport();
+        });
+              var dataTable;
+         function GetBatlPartsReport() {
+            try {
+                dataTable.destroy();  // Destroy any existing instance of the DataTable
+            } catch (e) { }
+
+            var buildDbKey = document.getElementById("buildDbKey").value;
+            var showOnlyUnique = document.getElementById("chkShowOnlyUnique").checked;
+
+               dataTable = $("#batlReportTbl").DataTable({
+        "ajax": {
+            "url": "/SOPManagement/GEtBATLPartsUpdationData?buildDbkey=" + buildDbKey + "&showOnlyUnique=" + showOnlyUnique,
+            "type": "GET",
+            "dataSrc": function(json) {
+                // Update the count displays
+                $("#totalCount").text(json.counts.total);
+                $("#availableCount").text(json.counts.available);
+                $("#pendingCount").text(json.counts.pending);
+
+                // Return the data array for DataTable
+                return json.data;
+            },
+            "datatype": "json"
+        },
+                "fixedHeader": {
+                    "headerOffset": getNavBarHeight()
+                },
+                scrollY: 510,
+                stateSave: true,
+                stateSaveCallback: function (settings, data) {
+                    localStorage.setItem('DataTables_' + settings.sInstance, JSON.stringify(data));
+                },
+                stateLoadCallback: function (settings) {
+                    return JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+                },
+                       paging: true,
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+
+               dom: 'Blfrtip',
+                buttons: [{
+                    extend: 'excel',
+                    title: 'SOP data report - BATL'
+                }],
+
+                columns: [
+                    { "data": "BuildName" },
+                            { "data": "ParentPart" },
+                    { "data": "Draw_part_no" },
+                    { "data": "Description" },
+                    { "data": "Revision" },
+                    { "data": "DataAvaliable" },
+                    { "data": "UpdateMethod" },
+
+                          {
+            
+            "data": null,
+            render: function (data, type, row) {
+                var splittedSlno = row.SerialNumber.split(",");
+                var html = '';
+
+                splittedSlno.forEach(function (item) {
+                    html += '<span class="badge badge-phoenix fs--2 badge-phoenix-primary text-dark">' + item.trim() + '</span>';
+                });
+
+                return html;
+            }
+        },
+                    { "data": "Remarks" },
+                    { "data": "UpdatedOn" }
+                ]
+            });
+        }
+
+
+                function filterByStatus(status) {
+            // Remove active state from all badges
+            $("#totalCircle").css("border", "2px solid #ddd");
+            $("#availableCircle").css("border", "2px solid #ddd");
+            $("#pendingCircle").css("border", "2px solid #ddd");
+
+            // Apply filter based on status
+            if (status === 'all') {
+                dataTable.column(5).search('').draw();  // Column 5 is DataAvaliable
+                $("#totalCircle").css("border", "3px solid #0d6efd");
+            }
+            else if (status === 'available') {
+                dataTable.column(5).search('Yes').draw();
+                $("#availableCircle").css("border", "3px solid #198754");
+            }
+            else if (status === 'pending') {
+                dataTable.column(5).search('No').draw();
+                $("#pendingCircle").css("border", "3px solid #ffc107");
+            }
+        }
+
+
+                               // Store the current build GUID
+                var currentBuildGuid = '';
+
+                function storeBuildGuid() {
+                    var selectedOption = document.getElementById("buildDbKey").selectedOptions[0];
+                    currentBuildGuid = selectedOption.getAttribute('data-buildguid');
+                }
+
+                function ViewBATLHighlightReport() {
+                    var buildDbKey = document.getElementById("buildDbKey").value;
+
+                    if (!buildDbKey) {
+                        alert('Please select a build first.');
+                        return;
+                    }
+
+                    // Get the BuildGuid from the selected option
+                    var selectedOption = document.getElementById("buildDbKey").selectedOptions[0];
+                    var buildGuid = selectedOption.getAttribute('data-buildguid');
+
+                    if (!buildGuid) {
+                        alert('Build GUID not found.');
+                        return;
+                    }
+
+                    // Open the SOP Report with BATL Highlight in a new tab
+                    var reportUrl = '/SOPReport/SOPReportWithBATLHighlight?buildguid=' + buildGuid;
+                    window.open(reportUrl, '_blank');
+                }
+
+                // Initialize on page load
+                $(document).ready(function() {
+                    storeBuildGuid();
+                });
+        </script>
+
+} 

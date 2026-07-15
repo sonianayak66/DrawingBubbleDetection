@@ -1,0 +1,145 @@
+﻿@using MPCRS.Utilities;
+@model MPCRS.DbJsonModels.managePerson
+@{
+    //Layout = null;
+    var designationList = Masters.GetMasterDropDownList(Constants.MetaMasterCode.Designations, true);
+    var personTypeList = Masters.GetMasterDropDownList(Constants.MetaMasterCode.PersonType, true);
+    var departmentList = Masters.GetMasterDropDownList(Constants.MetaMasterCode.Departments, true);
+    var AspNetRoleList = Masters.GetRolesDropDownList();
+}
+
+<div class="row">
+    <h2>User</h2>
+</div>
+<hr />
+<div class="row">
+    <form method="post" id="ManagePerson" class="needs-validation" novalidate="novalidate">
+
+        <input type="hidden" asp-for="PersonInfo.PersonGUID" />
+        <div class="col-12 col-sm-6 col-md-4 offset-1">
+            <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" asp-for="PersonInfo.name" type="text" placeholder="AA" />
+                <label asp-for="PersonInfo.name"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" asp-for="PersonInfo.phone_number" type="text" placeholder="AA" />
+                <label asp-for="PersonInfo.phone_number"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <input class="form-control form-control-sm" asp-for="PersonInfo.email_address" type="text" placeholder="AA" />
+                <label asp-for="PersonInfo.email_address"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <select asp-for="PersonInfo.designationID" class="form-select form-select-sm" asp-items="@designationList"></select>
+                <label asp-for="PersonInfo.designationID"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <select asp-for="PersonInfo.persontypeId" class="form-select form-select-sm" asp-items="@personTypeList"></select>
+                <label asp-for="PersonInfo.persontypeId"></label>
+            </div>
+            <div class="form-floating mb-3">
+                <select asp-for=" PersonInfo.departmentId" class="form-select form-select-sm" asp-items="@departmentList"></select>
+                <label asp-for="PersonInfo.departmentId"></label>
+            </div>
+
+            <div class="form-floating mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" onchange="manageUserActive()" asp-for="PersonInfo.isactive" type="checkbox" />
+                    <label class="form-check-label" asp-for="PersonInfo.isactive">Active</label>
+                </div>
+            </div>
+            <div class="form-floating mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" asp-for="PersonInfo.allowLogin" type="checkbox" onclick="HideloginAllowed()" />
+                    <label class="form-check-label" asp-for="PersonInfo.allowLogin">Allow Login</label>
+                </div>
+            </div>
+            <div id="loginAllowed">
+                <div class="form-group mb-3">
+                    <label asp-for="roles"></label>
+                    <select asp-for="roles" class="form-select form-select-sm multiselect" multiple asp-items="@AspNetRoleList"></select>
+                    <span asp-validation-for="roles" class="text-danger"></span>
+                </div>
+                <div class="form-floating mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" asp-for="ResetPassword" type="checkbox" />
+                        <label class="form-check-label" asp-for="ResetPassword">Reset Password</label>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="mt-3">
+                <input type="button" class="btn btn-primary" value="Save" onclick="SubmitPerson()" />
+                @*<button type="submit" class="btn btn-primary">Save</button>*@
+                <a class="btn btn-secondary" href="/Users/Index">Back</a>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+
+@section Scripts{
+        
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            applySelect2();
+            HideloginAllowed();
+        });
+        function applySelect2(){
+            $('.multiselect').select2();
+        } 
+        function HideloginAllowed() {
+            var userActivestatus = document.getElementById("PersonInfo_isactive").checked;
+            if (userActivestatus == false) {
+                document.getElementById("PersonInfo_allowLogin").checked = false;
+            }
+
+           
+            var loginStatus = document.getElementById("PersonInfo_allowLogin").checked;
+            var targetDiv = document.getElementById("loginAllowed");
+            targetDiv.style.display = "none";
+            if (loginStatus) {
+                targetDiv.style.display = "";               
+            } 
+        }
+
+        function manageUserActive() {
+            var userActivestatus = document.getElementById("PersonInfo_isactive").checked;
+            if (userActivestatus == false) {
+                document.getElementById("PersonInfo_allowLogin").checked = false;
+            }
+            HideloginAllowed();
+        }
+
+        function SubmitPerson() {
+
+            //Submitform("Master", '/Master/Master', Redirect, '/Master/Index');
+            if (!$('#ManagePerson').valid()) { return false }
+            var data = $("#ManagePerson").serialize();
+            $.ajax({
+                type: 'POST',
+                url: '/Users/ManagePerson',
+                data: data,
+                success: function (data) {
+                    bootbox.alert(data.msg
+                        , function () {
+                            window.location.href = "/Users/Index";
+                        });
+                },
+                error: function (data) {
+                    bootbox.alert(data.msg
+                        , function () {
+                            window.location.href = "/Users/Index";
+                        });
+                }
+            });
+        }
+
+    </script>
+}

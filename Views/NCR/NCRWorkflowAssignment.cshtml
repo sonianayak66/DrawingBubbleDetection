@@ -1,0 +1,98 @@
+﻿@model MPCRS.ViewModels.NCR_WorkflowVM;
+@using MPCRS.Utilities;
+@{
+    Layout = null;
+    var AllModuleResponsibility = Masters.GetMaster_General("Module_Responsibility");
+    var ModuleResponsibility = AllModuleResponsibility
+        .Where(x => x.Text.ToLower() != "tas"
+                 && x.Text.ToLower() != "stress"
+                 && x.Text.ToLower() != "chair");
+    var UserList = Masters.GetUsersForWorkflowAssignment(0);
+}
+
+<style>
+    .ts-wrapper.multi .ts-control [data-value] {
+        background-image: none;
+    }
+
+    .ts-wrapper.multi .ts-control > div {
+        background-color: #e3e6ed; /* Change to your desired color */
+        color: black; /* Ensure text is readable */
+    }
+</style>
+
+@* <table class="table" >
+	<tbody>
+		<tr><th>Referenece No: </th><td class="text-left" >@Model.nonConformanceReport.ReferenceNumber</td></tr>
+		<tr><th>Part No: </th><td>@Model.nonConformanceReport.FileLocation</td></tr>
+	</tbody>
+</table> *@
+<h5>Referenece No: @Model.nonConformanceReport.ReferenceNumber</h5>
+<h5>Part No: @Model.nonConformanceReport.FileLocation</h5>
+<hr />
+<form method="post" , id="AssignWorkflow" novalidate="novalidate">
+    <div class="col">
+        <input asp-for="nonConformanceReport.NCRGuid" id="ncrguid" hidden />
+
+        <div class="row-3 mb-3">
+            <label>Module</label>
+            <select asp-for="assignmentData.ModuleID" asp-items="ModuleResponsibility" id="ModuleID" onchange="filterUsers()" ></select>
+            <span asp-validation-for="assignmentData.ModuleID" class="text-danger"></span>
+        </div>
+        <div class="row-3 mb-3">
+            <label>Users</label>
+            <select asp-for="assignmentData.AssigneeUserGUIDs" id="UsersSelectList" asp-items="UserList" multiple></select>
+            <span asp-validation-for="assignmentData.AssigneeUserGUIDs" class="text-danger"></span>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <table class="table table-bordered table-sm mr-2" id="NCRSerialNoDataTbl">
+                    <thead > 
+                        <tr>
+                            <th style="text-align:center;"><input type="checkbox" id="NCRItemKeys-selectall" onchange="selectAllNCRSerialNumber(this)"  /></th>
+                            <th>Sl No</th>
+                            <th>Serial No in Insp Rep </th>
+                            <th>Serial Number</th>
+                            <th style="max-height:30%">Drawing Dimension</th>
+                            <th style="max-height:30%">Actual Dimension</th>
+                           @*  <th>Status</th>
+                            <th>Engine</th> *@
+                            <th>Drg Zone</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblbody">
+                        @{
+                            foreach (var item in Model.nonConformanceReport_Items)
+                            {
+                                <tr>
+                                    <td style="text-align:center"><input type="checkbox" class="NCRItemKeys" value="@item.NCRItemKey" onclick="checkIndividual(this)" /></td>
+                                    <td style="padding:10px">@item.SlNo</td>
+                                    <td style="padding:10px">@item.Serial_No_in_Inspection_Rep</td>
+                                    <td style="padding:10px">@item.SerialNumber</td>
+                                    <td style="padding:10px">@Html.Raw(item.DrawingDimension)</td>
+                                    <td style="padding:10px">@Html.Raw(item.ActualDimension)</td>
+                                   @* <td style="padding:10px;min-width:100px">@item.Status</td>
+                                    <td style="padding:10px">@item.Engine</td>*@
+                                    <td style="padding:10px">@item.DrgZone</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+        <div class="row-3">
+            <div class="form-floating mb-3">
+                <textarea class="form-control" asp-for="assignmentData.Remarks"></textarea>
+                <label>Remarks</label>
+            </div>
+        </div>
+
+        <div class="row-3">
+            <button type="button" onclick="saveWorkflow()" class="btn btn-success">Assign</button>
+        </div>
+    </div>
+</form>
+

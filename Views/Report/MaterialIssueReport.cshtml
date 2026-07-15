@@ -1,0 +1,123 @@
+﻿@using MPCRS.Utilities
+@model List<MPCRS.ViewModels.ReportMaterialIssueModel>
+@{
+    ViewBag.Title = "Material Issue Report";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+ 
+<style>
+ 
+    table td {
+        word-wrap: break-word;
+        max-width: 250px;
+    }
+
+    #inventbl {
+        font-size: 10px; /* Adjust the font size as needed */
+    }
+
+    .highlight {
+        background-color: red; /* Choose your desired highlight color */
+    }
+
+    .buttons-excel, .buttons-html5, .btn-smaller {
+        padding: 0.25rem 0.5rem; /* Adjust padding to make the button smaller */
+        font-size: 0.675rem; /* Adjust font size to make the text smaller */
+        line-height: 1.5; /* Adjust line height for proper text alignment */
+    }
+</style>
+
+
+<div class="page-header">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-md-10">
+                <h4>Material Issue Report</h4>
+            </div>
+            <div class="col-md-2 text-end">
+                <a href="/Report/ProcurementReports" style="margin-left: 4px;" class="btn btn-secondary  btn-smaller float-end">Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+<hr />
+<div class="col-12 card">
+    <div class="card-body">
+        <table class="table table-bordered table-hover table-sm" id="inventbl" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Issue Purpose</th>
+                    @* <th>Part Number</th> *@
+                    <th>Part Name</th>
+                    <th>Qty/Engine</th>
+                    <th>Raw Material</th>
+@*                  <th>Dia</th>
+                    <th>Thickness</th>*@
+                    <th>Order Ref No</th>
+                    <th>Order Ref Date</th>
+                    <th>For Qty</th>
+                    <th>Qty Issued </th>
+                    <th>Qty Issued in Kg </th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Issue_Purpose</td>
+                            @* <td><span style="margin-left:5px;">@item.PartNumber</span></td>*@
+                            <td><span style="margin-left:5px;">@item.Part_Name</span> </td>
+                            <td>@item.QtyperEngine</td>
+                            <td>@item.Raw_material_Name</td>
+                          @*  <td>@item.outer_dia</td>
+                              <td>@item.thickness</td>*@
+                            <td>@item.Order_Ref_No  [@item.Vendor_Name]</td>
+                            <td>@MPGlobals.GetFormattedDate(@item.Order_Ref_Date)</td>
+                            <td>@item.Qty</td>
+                            <td>@item.Qty_Issue</td>
+                            <td>@item.Weight_Kg</td>
+
+                        </tr>
+
+                        
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+          $('#inventbl').DataTable({
+                paging: false,
+                scrollY: (window.innerHeight * 0.6),
+                scrollX: true,
+                //  searching: false,
+                dom: 'Bfrtip',
+                buttons: [{
+                    extend: 'excel',
+                    title: 'Material Issue Report',
+                    //exportOptions: {
+                    //    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8] //Your Colume value those you want
+                    //}
+                }],
+                rowGroup: {
+                    dataSrc: [0,4] // column that should be grouped
+                },
+                columnDefs: [
+                    {
+                        targets: [0,4],    //making that column invinsible
+                        visible: false
+                    }
+                ],
+               
+            });
+        });
+    </script>
+}

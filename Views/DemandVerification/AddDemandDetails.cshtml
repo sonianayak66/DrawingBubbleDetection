@@ -1,0 +1,116 @@
+﻿@model MPCRS.ViewModels.DemandVerificationVM
+@using MPCRS.Utilities;
+@using System.Data;
+@{
+	bool ItemCheck = Model.Items == null ? false : (Model.Items == true ? true : false);
+	bool ReceiptCheck = Model.Receipt == null ? false : (Model.Receipt == true ? true : false);
+	bool ReceiptDocCheck = Model.Receipt_Docs == null ? false : (Model.Receipt_Docs == true ? true : false);
+	bool VerifiedCheck = Model.Verified == null ? false : (Model.Verified == true ? true : false);
+	var projectList = Masters.ProjectsList();
+	var DemandingOfficersList = Masters.GetDemandingOfficersList();
+}
+<form id="demandVerifyDetails">
+	<div>
+		<input id="Verify_Id" hidden value="@Model.Verification_Id" asp-for="Verification_Id" />
+		<div class="row">
+			<div class="col-5">
+				<div class="form-floating mb-3">
+					<input class="form-control" type="text" id="demand_No" asp-for="Demand_No">
+					<label>Demand Number</label>
+					<span asp-validation-for="Demand_No" class="text-danger"></span>
+				</div>
+
+			</div>
+			<div class="col-7">
+				<div class="form-floating mb-3">
+					<input class="form-control" type="text" id="demand_desc" asp-for="Demand_Desc">
+					<label>Demand Decsription</label>
+					<span asp-validation-for="Demand_Desc" class="text-danger"></span>
+				</div>
+
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-5">
+				<div class ="form-floating mb-3">
+					<input class="form-control" type="text" id="do" asp-for="Demanding_Officer">
+					<label>Demanding Officer</label>
+					
+					@* <select id="do" asp-for="Demanding_Officer" asp-items="DemandingOfficersList" class="form-select"></select> *@
+
+					<span asp-validation-for="Demanding_Officer" class="text-danger"></span>
+				</div>
+
+			</div>
+			<div class="col-7">
+				<div class="form-floating mb-3">
+					<input class="form-control" type="text" id="project" asp-for="Project">
+					<label>Project</label>
+					@* <select id="project" asp-for="Project" asp-items="projectList" class="form-select"></select> *@
+					
+					<span asp-validation-for="Project" class="text-danger"></span>
+				</div>
+			</div>
+		</div>
+
+
+
+		<div class="row">
+			<div class="col-3">
+				<div>
+					<label>Items</label>
+					<input class="form-check" type="checkbox" id="items" asp-for="@ItemCheck">
+				</div>
+				@* <span asp-validation-for="Items" class="text-danger"></span> *@
+			</div>
+			<div class="col-3">
+				<div>
+					<label>Receipts</label>
+					<input class="form-check" type="checkbox" id="receipts" asp-for="@ReceiptCheck">
+				</div>
+				@* <span asp-validation-for="Receipt" class="text-danger"></span> *@
+			</div>
+			<div class="col-3">
+				<div>
+					<label>Receipt Documents</label>
+					<input class="form-check" type="checkbox" id="receipt_docs" asp-for="@ReceiptDocCheck">
+				</div>
+				@* <span asp-validation-for="Receipt_Docs" class="text-danger"></span> *@
+			</div>
+			@if (Model.Verification_Id != 0){
+			<div class="col-3"  id="verifyDiv">
+				<div>
+					<label>Verified</label>
+					<input class="form-check" type="checkbox" id="verified" asp-for="@VerifiedCheck" >
+				</div>
+				@* <span asp-validation-for="Receipt_Docs" class="text-danger"></span> *@
+				</div>
+			}
+			else
+			{
+				<div class="col-3" style="display:none;" id="verifyDiv">
+					<div>
+						<label>Verified</label>
+						<input class="form-check" type="checkbox" id="verified" asp-for="@VerifiedCheck">
+					</div>
+					@* <span asp-validation-for="Receipt_Docs" class="text-danger"></span> *@
+				</div>
+			}
+		</div>
+		<div class="row">
+			<div class="col-12">
+				<div class="form-floating mb-3">
+					<input class="form-control" type="text" id="remarks" asp-for="Remarks">
+					<label>Remarks</label>
+				</div>
+				@* <span asp-validation-for="Project" class="text-danger"></span> *@
+			</div>
+		</div>
+
+		<input class="btn btn-success" onclick="saveVerificationDetails()" value="Save" type="button" />
+	</div>
+
+</form>
+
+
+	<script src="~/mpi/DemandVerification.js" asp-append-version="true"></script>

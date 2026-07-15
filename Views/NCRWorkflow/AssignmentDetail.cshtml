@@ -1,0 +1,583 @@
+﻿@model MPCRS.ViewModels.NCRWorkflowAssignmentDetailVM
+@using MPCRS.ViewModels;
+@using MPCRS.Utilities;
+@using System.Security.Claims;
+
+@{
+	ViewData["Title"] = "NCR Assignment Detail";
+
+	var NCR_Assignments_Admin = ViewBag.NCR_Assignments_Admin;
+	var NCR_Module_User = ViewBag.NCR_Module_User;
+	var UserGuid = ViewBag.UserGuid;
+	var userDBKey = ViewBag.userDBKey;
+
+	bool closeNCR = Model.AssignmentData.CloseNCR == 1;
+
+	// Get all stages for reference
+	var allStages = new[] {
+		new { StageID = 1, StageName = "Module", StageOrder = 1 , StageDesc = "Effect of Deviation on Assembly Aero-thermal Design Performance" },
+		new { StageID = 2, StageName = "TAS", StageOrder = 2 , StageDesc = "Effect of Deviation on Assembly"},
+		new { StageID = 3, StageName = "STRESS", StageOrder = 3 , StageDesc = "Effect of Deviation on Structural Integrity"},
+		new { StageID = 4, StageName = "CHAIR", StageOrder = 4 , StageDesc = "CHAIR"}
+	};
+
+	// Group items by NCRItemKey to organize tracking history
+	var groupedItems = Model.NcrItems
+		.GroupBy(x => x.NCRItemKey)
+		.Select(g => new
+		{
+			NCRItemKey = g.Key,
+			SerialNumber = g.First().SerialNumber,
+			EngineName = g.First().EngineName,
+			DeviationDescription = g.First().DeviationDescription,
+			Disposition = g.First().Disposition,
+			TrackingHistory = g.OrderBy(t => t.StageOrder).ThenBy(t => t.CycleNumber).ToList(),
+			CurrentTracking = g.FirstOrDefault(t => t.IsCurrentStage == 1),
+			CanEdit = g.Any(t => t.IsCurrentStage == 1 && t.CanEdit == 1)
+		})
+		.ToList();
+
+			// Detect if we're in a rework cycle
+	var isReworkCycle = Model.AssignmentData.Status != null && 
+	                    Model.AssignmentData.Status.Contains("Rework Cycle");
+	// Get items marked for rework/trial that need clearing
+	var itemsNeedingClear = Model.ReworkMarkings
+		.Where(r => !r.IsUnmarked && !r.IsCleared && (r.IsRework || r.IsTrialAssembly))
+		.ToList();
+
+			var allReworkItemsCleared = itemsNeedingClear.Count == 0;
+
+	// Get rework markings grouped by item
+	var reworkByItem = Model.ReworkMarkings
+		.Where(r => !r.IsUnmarked && !r.IsCleared)
+		.GroupBy(r => r.NCRItemKey)
+		.ToDictionary(g => g.Key, g => g.ToList());
+
+	// Check completion status for each stage
+	var currentStageItems = groupedItems.Where(g => g.CurrentTracking?.StageID == Model.AssignmentData.CurrentStageID).ToList();
+	bool allCurrentStageRemarksComplete = currentStageItems.All(g => !string.IsNullOrEmpty(g.CurrentTracking?.Remarks));
+
+	// Check if any items have rework markings
+	bool hasActiveRework = reworkByItem.Any();
+}
+
+<style>
+	/* Clean remarks display (not textarea) */
+	/* .remarks-display { */
+	/* 	padding: 8px; */
+	/* 	background-color: #f8f9fa; */
+	/* 	border-radius: 4px; */
+	/* 	min-height: 50px; */
+	/* 	line-height: 1.5; */
+	/* } */
+
+	/* 	.remarks-display em { */
+	/* 		color: #6c757d; */
+	/* 		font-style: italic; */
+	/* 	} */
+
+	/* Editable textarea styling */
+	.remarks-textarea {
+		width: 100%;
+		min-height: 100px;
+		padding: 8px;
+		border: 1px solid #ced4da;
+		border-radius: 4px;
+		font-size: 0.95rem;
+		resize: vertical;
+	}
+
+		.remarks-textarea:focus {
+			border-color: #80bdff;
+			outline: 0;
+			box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+		}
+
+
+
+	/* Badge styling */
+	.rework-badge {
+		margin-right: 5px;
+		font-size: 0.75rem;
+	}
+</style>
+
+ 
+<div class="container-fluid">
+	<!-- Header -->
+	<div class="row mb-3">
+		<div class="col-6">
+			<h4>
+				@if (closeNCR)
+				{
+					<span class="badge bg-success">NCR Closed</span>
+				}
+				else
+				{
+					<span>NCR Assignment Detail</span>
+				}
+			</h4>
+		</div>
+		<div class="col-6 text-end">
+			<a class="btn btn-secondary btn-sm" href="/NCRWorkflow/AssignedNCRList">
+				<i class="fas fa-arrow-left"></i> Back
+			</a>
+		</div>
+	</div>
+
+	<!-- NCR Details Card -->
+	<div class="card mb-3">
+		<div class="card-header bg-primary text-white small-header">
+			<strong>NCR Details</strong>
+		</div>
+		<div class="card-body">
+			<div class="row">
+				<div class="col-md-3">
+					<strong>Reference Number:</strong><br />
+					@Model.AssignmentData.ReferenceNumber
+				</div>
+				<div class="col-md-3">
+					<strong>Part Number:</strong><br />
+					@Model.AssignmentData.Draw_part_no
+				</div>
+				<div class="col-md-3">
+					<strong>Received From:</strong><br />
+					@Model.AssignmentData.ReceivedFromString
+				</div>
+				<div class="col-md-3">
+					<strong>Current Stage:</strong><br />
+					<span class="badge bg-info">@Model.AssignmentData.CurrentStageName</span>
+				</div>
+			</div>
+			<div class="row mt-2">
+				<div class="col-md-3">
+					<strong>Received Date:</strong><br />
+					@Model.AssignmentData.ReceivedDate?.ToString("dd-MMM-yyyy")
+				</div>
+				<div class="col-md-3">
+					<strong>Revision:</strong><br />
+					@Model.AssignmentData.Revision
+				</div>
+				<div class="col-md-3">
+					<strong>Quantity:</strong><br />
+					@Model.AssignmentData.Qty
+				</div>
+				<div class="col-md-3">
+					<strong>Assigned Modules:</strong><br />
+					@Model.AssignmentData.AssignedModules
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Action Buttons -->
+	@if (!closeNCR)
+	{
+
+		var isWorkMarkedComplete = Model.AssignmentData.Status != null &&
+		Model.AssignmentData.Status.Contains("MarkedAsComplete");
+
+
+		<div class="card mb-3">
+			<div class="card-body">
+				<div class="row">
+					<div class="col-md-6">
+						@* Left side buttons - Admin only *@
+						@if (NCR_Assignments_Admin)
+						{
+							<button type="button" class="btn btn-primary btn-sm me-2" onclick="printNCRReport()">
+								<i class="fas fa-print"></i> Print Report
+							</button>
+
+							@if (Model.AssignmentData.CurrentStageOrder == 4 && allCurrentStageRemarksComplete)
+							{
+								<button type="button" class="btn btn-success btn-sm me-2" onclick="closeNCR()">
+									<i class="fas fa-check-circle"></i> Close NCR
+								</button>
+							}
+
+							@if (ViewBag.NCR_Assignments_Admin_Delete)
+							{
+								<button type="button" class="btn btn-danger btn-sm" onclick="deleteAssignment()">
+									<i class="fas fa-trash"></i> Delete Assignment
+								</button>
+							}
+						}
+					</div>
+
+					<div class="col-md-6 text-end">
+						@* Right side buttons *@
+
+						@* MODULE USER BUTTONS - Only show if NOT marked as complete *@
+						@if (NCR_Module_User && !NCR_Assignments_Admin && !isWorkMarkedComplete)
+						{
+							<button type="button" class="btn btn-primary btn-sm me-2" onclick="referItemsToOtherModule()">
+								<i class="fas fa-share"></i> Refer Items to Other Module
+							</button>
+							<button type="button" class="btn btn-success btn-sm" onclick="markAsComplete()">
+								<i class="fas fa-check"></i> Mark Work as Complete
+							</button>
+						}
+
+						@* MODULE USER - Work marked complete message *@
+						@if (NCR_Module_User && !NCR_Assignments_Admin && isWorkMarkedComplete)
+						{
+							<div class="alert alert-success mb-0 d-inline-block py-2 px-3">
+								<i class="fas fa-check-circle"></i>
+								Your work has been marked as complete.
+							</div>
+						}
+
+						@* ADMIN BUTTONS - Forward to next stage *@
+						@if (NCR_Assignments_Admin)
+						{
+							if (allCurrentStageRemarksComplete)
+							{
+								@* Check if at STRESS stage (StageOrder = 3) - need to check for rework *@
+								if (Model.AssignmentData.CurrentStageOrder == 3)
+								{
+									@if (hasActiveRework)
+									{
+										<button type="button" class="btn btn-warning btn-sm" onclick="startReworkCycle()">
+											<i class="fas fa-redo"></i> Start Rework Cycle (Back to Module)
+										</button>
+									}
+									else
+									{
+										<button type="button" class="btn btn-primary btn-sm" onclick="forwardToNextStage()">
+											<i class="fas fa-arrow-right"></i> Forward to CHAIR
+										</button>
+									}
+								}
+
+								else if (Model.AssignmentData.CurrentStageOrder == 4)
+								{
+									<span class="text-success">
+										<i class="fas fa-info-circle"></i> All remarks complete. Click "Close NCR" to finish.
+									</span>
+								}
+								@* At Module or TAS stage - forward to next *@
+								else
+								{
+									var nextStageName = Model.AssignmentData.CurrentStageOrder == 1 ? "TAS" : "STRESS";
+									<button type="button" class="btn btn-primary btn-sm" onclick="forwardToNextStage()">
+										<i class="fas fa-arrow-right"></i> Forward to @nextStageName
+									</button>
+								}
+							}
+							else
+							{
+								<div class="alert alert-warning mb-0 d-inline-block py-2 px-3">
+									<i class="fas fa-exclamation-triangle"></i>
+									All items must have remarks before forwarding.
+								</div>
+							}
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+	<!-- Items Table -->
+	<div class="card">
+		<div class="card-header bg-dark text-white small-header">
+			<strong>Deviations</strong>
+		</div>
+		<div class="card-body p-0">
+			<div class="table-container">
+				<table class="table table-bordered table-hover mb-0" id="itemsTbl">
+					<thead>
+						<tr>
+							<th class="serial-column">Serial Number</th>
+							<th class="serial-column">Engine</th>
+							@foreach (var stage in allStages)
+							{
+								<th class="stage-column">
+									@stage.StageDesc
+
+								</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						@foreach (var item in groupedItems)
+						{
+							var hasRework = reworkByItem.ContainsKey(item.NCRItemKey);
+							var reworkInfo = hasRework ? reworkByItem[item.NCRItemKey] : new List<NCRItemReworkVM>();
+
+							<tr data-item-key="@item.NCRItemKey">
+								<!-- Serial Number -->
+								<td>
+									<strong>@item.SerialNumber</strong>
+									@if (hasRework)
+									{
+										<br />
+										@foreach (var rw in reworkInfo)
+										{
+											if (rw.IsRework && !rw.IsCleared)
+											{
+												<span class="badge bg-danger rework-badge">
+													Rework (@rw.StageName)
+												</span>
+											}
+											if (rw.IsTrialAssembly && !rw.IsCleared)
+											{
+												<span class="badge bg-warning text-dark rework-badge">
+													Trial Assembly (@rw.StageName)
+												</span>
+											}
+											if (rw.IsCleared)
+											{
+												<span class="badge bg-success rework-badge">
+													Cleared by @rw.ClearedByUserName
+												</span>
+											}
+										}
+									}
+									@if (!string.IsNullOrEmpty(item.DeviationDescription))
+									{
+										<br />
+										<small class="text-muted">@item.DeviationDescription</small>
+									}
+								</td>
+
+								<!-- Engine -->
+								<td>@item.EngineName</td>
+
+								<!-- Stage Columns -->
+								@foreach (var stage in allStages)
+								{
+									var stageTracking = item.TrackingHistory
+									.Where(t => t.StageID == stage.StageID)
+									.OrderBy(t => t.TrackingID)
+									.ToList();
+
+									var isCurrentStage = item.CurrentTracking?.StageID == stage.StageID;
+									var isPastStage = stage.StageOrder < Model.AssignmentData.CurrentStageOrder;
+									var isFutureStage = stage.StageOrder > Model.AssignmentData.CurrentStageOrder;
+
+									<td>
+										@if (stageTracking.Any())
+										{
+											@foreach (var tracking in stageTracking)
+											{
+												@* ===== CURRENT STAGE - Check if user can edit ===== *@
+												@if (isCurrentStage && tracking.TrackingID == item.CurrentTracking.TrackingID)
+												{
+													var userCanEditThisItem = item.CanEdit;
+													var isMarkedComplete = tracking.Status == "MarkedAsComplete";
+													var isReferredAway = tracking.Status == "Referred To Other Module";
+													var canEditThisItem = !closeNCR && !isMarkedComplete && !isReferredAway && userCanEditThisItem && (NCR_Assignments_Admin || NCR_Module_User);
+
+													@if (canEditThisItem)
+													{
+														@* ===== EDITABLE SECTION ===== *@
+
+														<!-- ⭐ Show if this is rework cycle -->
+														@if (isReworkCycle)
+														{
+															<div class="alert alert-info py-2 px-3 mb-2">
+																<i class="fas fa-redo"></i> <strong>REWORK CYCLE</strong>
+															</div>
+														}
+
+														<!-- Show previous rework markings info -->
+														@if (reworkInfo.Any(r => !r.IsUnmarked))
+														{
+															<div class="mb-2">
+																@foreach (var prevRework in reworkInfo.Where(r => !r.IsUnmarked).OrderBy(r => r.StageID))
+																{
+																	<small class="text-muted d-block">
+																		<i class="fas fa-info-circle"></i>
+																		@if (prevRework.IsRework)
+																		{
+																			<span class="text-danger fw-bold">Marked for Rework</span>
+																		}
+																		@if (prevRework.IsTrialAssembly)
+																		{
+																			<span class="text-warning fw-bold">Marked for Trial Assembly</span>
+																		}
+																		at @prevRework.StageName stage by @prevRework.MarkedByUserName
+																		@if (prevRework.IsCleared)
+																		{
+																			<span class="badge bg-success ms-2">✓ Cleared</span>
+																		}
+																	</small>
+																}
+															</div>
+														}
+
+														<!-- ⭐ NEW: Clear Rework Button at STRESS Stage in Rework Cycle -->
+														@if (isReworkCycle && stage.StageID == 3)
+														{
+															var userMarkedThisItem = reworkInfo.FirstOrDefault(r =>
+															r.MarkedBy == userDBKey &&
+															!r.IsCleared &&
+															(r.IsRework || r.IsTrialAssembly)
+															);
+
+															@if (userMarkedThisItem != null)
+															{
+																<div class="alert alert-success py-2 px-3 mb-2">
+																	<div class="d-flex justify-content-between align-items-center">
+																		<div>
+																			<i class="fas fa-check-circle"></i>
+																			<strong>You marked this item for @(userMarkedThisItem.IsRework ? "Rework" : "Trial Assembly")</strong>
+																		</div>
+																		<button type="button"
+																				class="btn btn-success btn-sm"
+																				onclick="clearReworkMarking(@item.NCRItemKey)">
+																			<i class="fas fa-check-double"></i> Clear & Approve
+																		</button>
+																	</div>
+																	<small class="d-block mt-1 text-muted">
+																		Click "Clear & Approve" after verifying the rework is satisfactory
+																	</small>
+																</div>
+															}
+															else if (reworkInfo.Any(r => !r.IsCleared))
+															{
+																var otherMarker = reworkInfo.FirstOrDefault(r => !r.IsCleared);
+																<div class="alert alert-warning py-2 px-3 mb-2">
+																	<small>
+																		<i class="fas fa-info-circle"></i>
+																		This item was marked by <strong>@otherMarker.MarkedByUserName</strong>.
+																		Only they can clear it.
+																	</small>
+																</div>
+															}
+														}
+
+														<!-- Rework checkboxes - ONLY for Stages 1-3 AND ONLY if no rework markings exist yet -->
+														@if (stage.StageID <= 3 && !reworkInfo.Any(r => !r.IsUnmarked))
+														{
+															var userMarkedAtThisStage = reworkInfo.FirstOrDefault(r =>
+															r.StageID == stage.StageID &&
+															r.MarkedBy == userDBKey &&
+															!r.IsUnmarked
+															);
+
+															var canUnmark = userMarkedAtThisStage != null;
+															var isReworkChecked = reworkInfo.Any(r => r.IsRework && !r.IsUnmarked && r.StageID == stage.StageID);
+															var isTrialChecked = reworkInfo.Any(r => r.IsTrialAssembly && !r.IsUnmarked && r.StageID == stage.StageID);
+
+															<div class="rework-checkbox-container mb-2">
+																<div class="form-check">
+																	<input class="form-check-input rework-checkbox"
+																		   type="checkbox"
+																		   id="rework_@(item.NCRItemKey)_@(stage.StageID)"
+																		   data-item-key="@item.NCRItemKey"
+																		   data-stage-id="@stage.StageID"
+																		   data-can-unmark="@canUnmark.ToString().ToLower()"
+																		   onchange="handleReworkCheckbox(this, 'rework')"
+																	@(isReworkChecked ? "checked" : "")>
+																	<label class="form-check-label" for="rework_@(item.NCRItemKey)_@(stage.StageID)">
+																		Mark for Rework
+																		@if (canUnmark && userMarkedAtThisStage.IsRework)
+																		{
+																			<small class="text-muted">(click to undo)</small>
+																		}
+																	</label>
+																</div>
+																<div class="form-check">
+																	<input class="form-check-input trial-checkbox"
+																		   type="checkbox"
+																		   id="trial_@(item.NCRItemKey)_@(stage.StageID)"
+																		   data-item-key="@item.NCRItemKey"
+																		   data-stage-id="@stage.StageID"
+																		   data-can-unmark="@canUnmark.ToString().ToLower()"
+																		   onchange="handleReworkCheckbox(this, 'trial')"
+																	@(isTrialChecked ? "checked" : "")>
+																	<label class="form-check-label" for="trial_@(item.NCRItemKey)_@(stage.StageID)">
+																		Mark for Trial Assembly
+																		@if (canUnmark && userMarkedAtThisStage.IsTrialAssembly)
+																		{
+																			<small class="text-muted">(click to undo)</small>
+																		}
+																	</label>
+																</div>
+															</div>
+														}
+
+														<!-- Editable remarks textarea -->
+														<textarea class="remarks-textarea"
+																  data-item-key="@item.NCRItemKey"
+																  data-tracking-id="@tracking.TrackingID"
+																  data-stage-id="@stage.StageID"
+																  placeholder="Enter your remarks here..."
+																  onkeyup="autoSaveRemarks(this)"
+																  onchange="autoSaveRemarks(this)">@tracking.Remarks</textarea>
+
+														@if (NCR_Module_User && !NCR_Assignments_Admin && !string.IsNullOrEmpty(tracking.Remarks))
+														{
+															<small class="text-muted d-block mt-1">
+																<i class="fas fa-info-circle"></i> Leave blank to refer this item to another module
+															</small>
+														}
+													}
+												}
+												else
+												{
+													@* ===== PAST OR OTHER STAGES - Always show as plain HTML ===== *@
+													<div class="remarks-display">
+														@Html.Raw(tracking.Remarks ?? "<em class='text-muted'>No remarks</em>")
+													</div>
+													@if (tracking.UpdatedBy != null)
+													{
+														<small class="text-muted d-block mt-1">
+															— @tracking.UpdatedByUserName
+															(@tracking.UpdatedOn?.ToString("dd-MMM-yyyy HH:mm"))
+														</small>
+													}
+
+													@* Add separator between multiple tracking records *@
+													@if (tracking != stageTracking.Last())
+													{
+														<hr class="my-2" />
+													}
+												}
+											}
+										}
+										else
+										{
+											@* ===== FUTURE STAGES ===== *@
+											<div class="text-muted text-center">
+												<small>Not reached</small>
+											</div>
+										}
+									</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+
+@section Scripts {
+	<script src="~/mpi/NCRWorkflow.js" asp-append-version="true"></script>
+	<script>
+		// Page variables
+		var ncrGuid = '@Model.AssignmentData.NCRGUID';
+		var workflowGuid = '@Model.AssignmentData.NCRWorkflowGUID';
+		var currentStageID = @Model.AssignmentData.CurrentStageID;
+		var currentStageOrder = @Model.AssignmentData.CurrentStageOrder;
+		var userGuid = '@UserGuid';
+		var isAdmin = @(NCR_Assignments_Admin ? "true" : "false");
+
+		$(document).ready(function() {
+			console.log('Assignment Detail page loaded');
+			console.log('Current Stage:', '@Model.AssignmentData.CurrentStageName');
+		});
+
+		// function startReworkCycle() {
+		// 	alert('Start rework cycle function - to be implemented');
+		// }
+
+		function closeNCR() {
+			alert('Close NCR function - to be implemented');
+		}
+	</script>
+}

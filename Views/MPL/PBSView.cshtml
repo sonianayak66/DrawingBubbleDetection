@@ -1,0 +1,595 @@
+﻿@using static MPCRS.Controllers.MPLController
+@model List<PBSModuleSummary>
+@{
+    ViewData["Title"] = "Part Breakdown Structure (PBS)";
+    
+}
+
+<style>
+    /* Professional color scheme */
+    :root {
+        --primary-color: #2c3e50;
+        --secondary-color: #34495e;
+        --accent-color: #3498db;
+        --light-bg: #f8f9fa;
+        --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        --hover-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        --border-color: #e9ecef;
+        --text-primary: #2c3e50;
+        --text-secondary: #6c757d;
+        /* New colors for stat rows */
+        --assembly-bg: #e3f2fd;
+        --subassembly-bg: #e8f5e9;
+        --component-bg: #fff3e0;
+    }
+
+    /* Main heading */
+    .pbs-main-title {
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 2rem;
+    }
+
+    /* Engine name section */
+    .engine-section {
+        background: linear-gradient(135deg, #4c51bf, #5a67d8);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 0px;
+        box-shadow: var(--card-shadow);
+        position: relative;
+    }
+
+    .engine-title {
+        color: white;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.25rem;
+    }
+
+    /* Connection lines container */
+    .connection-lines-container {
+        position: relative;
+        margin-bottom: 40px;
+        min-height: 60px;
+    }
+
+    .connection-svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    /* Module cards */
+    .pbs-module-card {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: var(--card-shadow);
+        transition: all 0.2s ease;
+        height: 100%;
+        position: relative;
+        z-index: 2;
+    }
+
+        .pbs-module-card:hover {
+            box-shadow: var(--hover-shadow);
+            transform: translateY(-2px);
+        }
+
+    .card-header {
+        background: linear-gradient(135deg, #5a67d8, #667eea);
+        border-bottom: 1px solid var(--border-color);
+        padding: 16px 20px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .module-title {
+        color: white;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    /* Statistics display */
+    .pbs-stats {
+        margin: 0;
+    }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
+    }
+
+        .stat-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Colored backgrounds for stat rows */
+        .stat-row.assembly-row {
+            background-color: var(--assembly-bg);
+            border-left: 4px solid #2196F3;
+        }
+
+        .stat-row.subassembly-row {
+            background-color: var(--subassembly-bg);
+            border-left: 4px solid #4CAF50;
+        }
+
+        .stat-row.component-row {
+            background-color: var(--component-bg);
+            border-left: 4px solid #FF9800;
+        }
+
+        .stat-row:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+    .stat-label {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+    }
+
+    .stat-value {
+        font-weight: 600;
+        color: var(--primary-color);
+        font-size: 1.1rem;
+    }
+
+    /* Summary section - keeping for reference */
+    .summary-section {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        margin-top: 40px;
+    }
+
+    .summary-title {
+        color: white;
+        font-weight: 600;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .summary-stats {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .summary-stat {
+        text-align: center;
+        color: white;
+        min-width: 150px;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .stat-label-summary {
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
+
+    /* No data section */
+    .no-data-section {
+        background: white;
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 60px 30px;
+        text-align: center;
+        margin-top: 40px;
+    }
+
+    .no-data-title {
+        color: var(--text-secondary);
+        font-weight: 500;
+        margin-bottom: 16px;
+    }
+
+    .no-data-text {
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 992px) {
+        .summary-stat
+
+    {
+        min-width: 120px;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+    }
+
+    }
+
+    @@media (max-width: 768px) {
+        .connection-lines-container
+
+    {
+        display: none; /* Hide connection lines on tablets and mobile */
+    }
+
+    .engine-section,
+    .pbs-module-card {
+        margin-bottom: 20px;
+    }
+
+    .summary-stats {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    }
+
+    @@media (max-width: 576px) {
+        .engine-section, .summary-section, .no-data-section
+
+    {
+        margin-left: -15px;
+        margin-right: -15px;
+    }
+
+    }
+</style>
+
+<style>
+/* Print Styles */
+@@media print {
+    /* Hide unnecessary elements */
+    .btn, button, .navbar, .sidebar, nav, footer {
+        display: none !important;
+    }
+
+    /* Full width for print */
+    .container-fluid {
+        width: 100%;
+        max-width: 100%;
+        padding: 10px;
+        margin: 0;
+    }
+
+    body {
+        font-size: 10px;
+    }
+
+    /* Adjust main title */
+    .pbs-main-title {
+        font-size: 18px;
+        margin-bottom: 10px;
+        page-break-after: avoid;
+    }
+
+    /* Engine section - smaller */
+    .engine-section {
+        page-break-after: avoid;
+        margin-bottom: 5px;
+        padding: 10px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .engine-title {
+        font-size: 14px;
+    }
+
+    /* Connection lines container - smaller */
+    .connection-lines-container {
+        margin-bottom: 10px;
+        min-height: 40px;
+        page-break-inside: avoid;
+    }
+
+    /* Module cards - compact */
+    .pbs-module-card {
+        page-break-inside: avoid;
+        margin-bottom: 10px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .card-header {
+        padding: 8px 10px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .module-title {
+        font-size: 12px;
+    }
+
+    .card-body {
+        padding: 10px;
+    }
+
+    /* Stat rows - compact */
+    .stat-row {
+        padding: 6px 10px;
+        margin-bottom: 4px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    .stat-value {
+        font-size: 12px;
+    }
+
+    .stat-row.assembly-row,
+    .stat-row.subassembly-row,
+    .stat-row.component-row {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Ensure SVG lines print */
+    .connection-svg {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .connection-svg line {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Fit all modules on one page */
+    .row#modulesGrid {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .row#modulesGrid > div {
+        width: 25%;
+        padding: 0 5px;
+    }
+
+    /* Force single page */
+    @@page {
+        size: A4 landscape;
+        margin: 0.5cm;
+    }
+
+    /* Remove shadows for print */
+    .pbs-module-card,
+    .engine-section {
+        box-shadow: none;
+        border: 1px solid #333;
+    }
+
+    /* Ensure everything stays on one page */
+    body {
+        page-break-inside: avoid;
+    }
+}
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-10">
+            <h3 class="text-center pbs-main-title">Part Breakdown Structure (PBS)</h3>
+        </div>
+        @* <div class="col-2 text-right"> *@
+        @*     <button class="btn btn-primary btn-sm" onclick="printPBS()"> *@
+        @*         <i class="fas fa-print"></i> Print PBS *@
+        @*     </button> *@
+        @* </div> *@
+    </div>
+
+    <!-- Engine Name Section -->
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="engine-section text-center">
+                <h4 class="engine-title">Small Turbo Fan Engine</h4>
+            </div>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <!-- Connection Lines Container -->
+        <div class="connection-lines-container">
+            <svg class="connection-svg" id="connectionSvg">
+                <!-- Lines will be drawn here by JavaScript -->
+            </svg>
+        </div>
+
+        <!-- Modules Grid -->
+        <div class="row" id="modulesGrid">
+            @foreach (var module in Model.OrderBy(m => m.DisplayOrder))
+            {
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="card pbs-module-card" 
+                    data-module-id="@module.ModuleId"
+                         data-row-index="@module.RowIndex"
+                         data-col-index="@module.ColumnIndex"
+                         data-module-index="@module.ModuleIndex">
+                        <div class="card-header">
+                            <h5 class="module-title">@module.ModuleName</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="pbs-stats">
+                                <div class="stat-row assembly-row">
+                                    <span class="stat-label">Assemblies</span>
+                                    <span class="stat-value">@module.AssemblyCount</span>
+                                </div>
+                                <div class="stat-row subassembly-row">
+                                    <span class="stat-label">Sub-assemblies</span>
+                                    <span class="stat-value">@module.SubAssemblyCount</span>
+                                </div>
+                                <div class="stat-row component-row">
+                                    <span class="stat-label">Components</span>
+                                    <span class="stat-value">@module.PartCount</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+  }
+
+</div>
+
+<script>
+    
+    function drawConnectionLines() {
+        // Check if we're on mobile/tablet - don't draw lines
+        if (window.innerWidth < 768) {
+            return;
+        }
+
+        const svg = document.getElementById('connectionSvg');
+        if (!svg) return;
+
+        // Clear existing lines
+        svg.innerHTML = '';
+
+        const engineSection = document.querySelector('.engine-section');
+        const moduleCards = document.querySelectorAll('.pbs-module-card');
+
+        if (!engineSection || moduleCards.length === 0) return;
+
+        const containerRect = svg.parentElement.getBoundingClientRect();
+        const engineRect = engineSection.getBoundingClientRect();
+
+        // Starting point (center bottom of engine box)
+        const engineCenterX = engineRect.left + engineRect.width / 2 - containerRect.left;
+       // const engineBottomY = engineRect.bottom - containerRect.top ;
+      const engineBottomY = 0;
+
+        // Group modules by rows
+        const rowsMap = new Map();
+        moduleCards.forEach(card => {
+            const cardRect = card.getBoundingClientRect();
+            const cardTopY = cardRect.top - containerRect.top;
+
+            if (!rowsMap.has(cardTopY)) {
+                rowsMap.set(cardTopY, []);
+            }
+
+            rowsMap.get(cardTopY).push({
+                centerX: cardRect.left + cardRect.width / 2 - containerRect.left,
+                topY: cardTopY,
+                element: card
+            });
+        });
+
+        // Convert to array and sort by Y position (top to bottom)
+        const rows = Array.from(rowsMap.entries())
+            .sort((a, b) => a[0] - b[0])
+            .map(entry => entry[1]);
+
+        if (rows.length === 0) return;
+
+        // Calculate main vertical line length
+        const firstRowY = rows[0][0].topY;
+        const mainVerticalLength = firstRowY - engineBottomY - 40; // 60px gap before first row
+        const mainVerticalEndY = engineBottomY + mainVerticalLength;
+
+        // Draw main vertical line from engine
+        drawLine(svg, engineCenterX, engineBottomY, engineCenterX, mainVerticalEndY);
+
+        // For each row, draw horizontal line and vertical connections
+        rows.forEach((rowCards, rowIndex) => {
+            // Calculate horizontal line Y position for this row
+            const horizontalY = rowCards[0].topY - 15; 
+
+            // Find leftmost and rightmost cards in this row
+            const leftmostX = Math.min(...rowCards.map(c => c.centerX));
+            const rightmostX = Math.max(...rowCards.map(c => c.centerX));
+
+            // Draw horizontal distribution line for this row
+            drawLine(svg, leftmostX, horizontalY, rightmostX, horizontalY);
+
+            // Draw vertical connector from main line to this row's horizontal line
+            drawLine(svg, engineCenterX, mainVerticalEndY, engineCenterX, horizontalY);
+
+            // Draw vertical lines from horizontal line to each card in this row
+            rowCards.forEach(card => {
+                drawLine(svg, card.centerX, horizontalY, card.centerX, card.topY);
+            });
+        });
+
+        // Adjust SVG height
+        const maxY = Math.max(...Array.from(moduleCards).map(card => {
+            const cardRect = card.getBoundingClientRect();
+            return cardRect.top - containerRect.top;
+        }));
+        svg.style.height = (maxY + 20) + 'px';
+    }
+
+    // Helper function to draw a line
+    function drawLine(svg, x1, y1, x2, y2) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('stroke', '#5a67d8');
+        line.setAttribute('stroke-width', '2');
+        svg.appendChild(line);
+    }
+
+    // Draw lines when page loads
+    window.addEventListener('load', function() {
+        setTimeout(drawConnectionLines, 300);
+    });
+
+    // Redraw lines on window resize
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(drawConnectionLines, 250);
+    });
+
+        // Print PBS function
+       // Print PBS function
+    function printPBS() {
+        // Redraw connection lines before printing
+        setTimeout(function() {
+            drawConnectionLines();
+            // Wait a bit more for lines to render, then print
+            setTimeout(function() {
+                window.print();
+            }, 100);
+        }, 100);
+    }
+
+        // Add this to your script section
+    window.addEventListener('beforeprint', function() {
+        setTimeout(drawConnectionLines, 50);
+    });
+
+    window.addEventListener('afterprint', function() {
+        setTimeout(drawConnectionLines, 50);
+    });
+</script>

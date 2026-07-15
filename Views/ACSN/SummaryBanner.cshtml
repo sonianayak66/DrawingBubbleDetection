@@ -1,0 +1,80 @@
+﻿@using MPCRS.Utilities;
+
+@{
+    var statusList = DataCaching.getCachedACSNList();
+}
+
+<div class="row">
+
+    @{
+        var AllSeriestotal = statusList.Count();
+        var AllSeriesopenCount = statusList.Where(x => x.ACSN_Status.ToLower() != "closed").Count();
+        var AllSeriesclosedCount = statusList.Where(x => x.ACSN_Status.ToLower() == "closed").Count();
+        var AllopenPercentage = (((double)AllSeriesopenCount / (double)AllSeriestotal)) * 100;
+        var AllclosedPercentage = ((double)((double)AllSeriesclosedCount / (double)AllSeriestotal)) * 100;
+
+        foreach (var series in statusList.Select(x=>x.Series).Distinct())
+        {
+            var totalList = statusList.Where(x => x.Series == series);
+            var totalCount = totalList.Count();
+            var openCount = totalList.Where(x=>x.ACSN_Status.ToLower() != "closed").Count();
+            var closedCount = totalList.Where(x => x.ACSN_Status.ToLower() == "closed").Count();
+            var openPercentage = (((double)openCount / (double)totalCount)) * 100;
+            var closedPercentage = ((double)((double)closedCount / (double)totalCount)) * 100;
+             
+            <div class="col-4">
+                <div class="col-12">
+                    <b>@series</b>
+                </div>
+                <div class="col-12">
+                    <div class="w-100">
+                        <div class="d-flex flex-start">
+                            <p class="mb-2 text-700 fw-semi-bold fs--1" style="width: @(closedPercentage)%; display:@(closedCount < 1 ? "none" : "block")">
+                                <span class="badge badge-phoenix fs--2 badge-phoenix-success">
+                                    Closed  (@closedCount)
+                                </span>
+                            </p>
+                            <p class="mb-2 text-700 fw-semi-bold fs--1" style="width: @(openPercentage)%; display:@(openCount < 1 ? "none" : "block")">
+                                <span class="badge badge-phoenix fs--2 badge-phoenix-warning">
+                                    Open  (@openCount)
+                                </span>
+                            </p>
+                            
+                        </div>
+                        <div class="progress mb-3 rounded-3" style="height: 10px;">
+                            <div class="progress-bar border-end border-white border-2" role="progressbar" style="width: @(closedPercentage)%" aria-valuenow="20.72" aria-valuemin="0" aria-valuemax="100" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Appointment" data-bs-original-title="Appointment"></div>
+                            <div class="progress-bar bg-warning-300 border-end border-white border-2" role="progressbar" style="width: @(openPercentage)%" aria-valuenow="35.76" aria-valuemin="0" aria-valuemax="100" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Qualified" data-bs-original-title="Qualified"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+         
+        <div class="col-12"> 
+            <div class="col-12">
+                <div class="w-100">
+                    <div class="d-flex flex-start">
+                        <p class="mb-2 text-700 fw-semi-bold fs--1" style="width: @(AllclosedPercentage)%; display:@(AllSeriesclosedCount < 1 ? "none" : "block")">
+                            <span class="badge badge-phoenix fs--2 badge-phoenix-success">
+                                Closed  (@AllSeriesclosedCount)
+                            </span>
+                        </p>
+                        <p class="mb-2 text-700 fw-semi-bold fs--1" style="width: @(AllopenPercentage)%; display:@(AllSeriesopenCount < 1 ? "none" : "block")">
+                            <span class="badge badge-phoenix fs--2 badge-phoenix-warning">
+                                Open  (@AllSeriesopenCount)
+                            </span>
+                        </p>
+
+                    </div>
+                    <div class="progress mb-3 rounded-3" style="height: 10px;">
+                        <div class="progress-bar border-end border-white border-2" role="progressbar" style="width: @(AllclosedPercentage)%" aria-valuenow="20.72" aria-valuemin="0" aria-valuemax="100" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Appointment" data-bs-original-title="Appointment"></div>
+                        <div class="progress-bar bg-warning-300 border-end border-white border-2" role="progressbar" style="width: @(AllopenPercentage)%" aria-valuenow="35.76" aria-valuemin="0" aria-valuemax="100" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Qualified" data-bs-original-title="Qualified"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+     
+</div>
+
+

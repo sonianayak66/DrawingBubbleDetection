@@ -1,0 +1,678 @@
+﻿@using MPCRS.Utilities
+@{
+    ViewData["Title"] = "Masters";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var Permission_Write = UserData.IsAuthorized(User, Constants.UserPermissions.Configuration_Write);
+    var Permission_Read = UserData.IsAuthorized(User, Constants.UserPermissions.Configuration_Read);
+}
+
+<div class="col-12">
+    <div class="row">
+        <div class="col-8">
+            <h3>Masters</h3>
+        </div>
+
+        <div class="col-4 pull-right">
+            <a class="btn btn-secondary float-end" href="/Home/Index">Back</a>
+
+        </div>
+    </div>
+</div>
+<hr/>
+<div class="col-md-12 col-sm-12 col-lg-12 col-xs-12">
+    <input type="text" id="search" placeholder="Search..." class="form-control" />
+    <div class="accordion" id="accordionExample" >
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingOne">
+
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                Master Category
+            </button>
+             </h4>
+
+          <div class="accordion-collapse collapse " id="collapseOne" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+            <div class="accordion-body pt-0">
+                <div id="Category">
+
+                </div>
+            </div>
+        </div>
+       </div>
+       <div class="accordion-item border-top border-300">
+        <h4 class="accordion-header" id="headingTwo">
+
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+                Master Security Classification
+
+            </button>
+        </h4>
+        <div class="accordion-collapse collapse " id="collapseTwo" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+            <div class="accordion-body pt-0">
+
+                <div id="Security">
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingThree" >
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="true" aria-controls="collapseThree">
+                    Module Responsibility
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse " id="collapseThree" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Module_Responsibility">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingFour">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="true" aria-controls="collapseFour">
+                    User Additional Roles
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseFour" aria-labelledby="headingFour" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="User_Addtional_Roles">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingFive">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="true" aria-controls="collapseFive">
+                    Tender Mode
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseFive" aria-labelledby="headingFive" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Tender_Mode">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingSix">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="true" aria-controls="collapseSix">
+                    Unit Of Measurement (UOM)
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseSix" aria-labelledby="headingSix" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="UOM">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingSeven">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeven" aria-expanded="true" aria-controls="collapseSeven">
+                    Procurement Status
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseSeven" aria-labelledby="headingSeven" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Procurement_Status">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingEight">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEight" aria-expanded="true" aria-controls="collapseEight">
+                    Procurement Item Type
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseEight" aria-labelledby="headingEight" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Procurement_Item_Type">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingNine" >
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNine" aria-expanded="true" aria-controls="collapseNine">
+                    Raw Material Type
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseNine" aria-labelledby="headingNine" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Raw_Material_Type">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingTen" >
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTen" aria-expanded="true" aria-controls="collapseTen">
+                    Procurement Document Type
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseTen" aria-labelledby="headingTen" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Procurement_Doument_Type">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingEleven">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEleven" aria-expanded="true" aria-controls="collapseEleven">
+                    Utilization Tasks
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseEleven" aria-labelledby="headingEleven" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Utilization_Tasks">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingTwelve">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwelve" aria-expanded="true" aria-controls="collapseTwelve">
+                     Supervisor
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseTwelve" aria-labelledby="headingTwelve" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Utilization_Supervisor">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingThirteen">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThirteen" aria-expanded="true" aria-controls="collapseThirteen">
+                    Designation
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseThirteen" aria-labelledby="headingThirteen" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Designation">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingFourteen">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFourteen" aria-expanded="true" aria-controls="collapseFourteen">
+                    Section
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseFourteen" aria-labelledby="headingFourteen" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Section">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingFifteen">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFifteen" aria-expanded="true" aria-controls="collapseFifteen">
+                    Material Issue Purpose
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseFifteen" aria-labelledby="headingFifteen" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Issue_Purpose">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+  
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingSixteen">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSixteen" aria-expanded="true" aria-controls="collapseSixteen">
+                    Procurement Sub Item Type
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseSixteen" aria-labelledby="headingSixteen" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Procurement_SubItem_Type">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingSeventeen">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeventeen" aria-expanded="true" aria-controls="collapseSeventeen">
+                    Project Management Category
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseSeventeen" aria-labelledby="headingSeventeen" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Project_Category">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingEightteen">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEightteen" aria-expanded="true" aria-controls="collapseEightteen">
+                    Demand Document Type
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseEightteen" aria-labelledby="headingEightteen" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Demand_Document">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingNineteen">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNineteen" aria-expanded="true" aria-controls="collapseNineteen">
+                    NCR Received From
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseNineteen" aria-labelledby="headingNineteen" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="NCR_Received_From">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingTwenty">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwenty" aria-expanded="true" aria-controls="collapseTwenty">
+                    NCR Document Type
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseTwenty" aria-labelledby="headingTwenty" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="NCR_Document_Type">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingTwentyOne">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwentyOne" aria-expanded="true" aria-controls="collapseTwentyOne">
+                    NCR Report Status
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseTwentyOne" aria-labelledby="headingTwentyOne" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="NCR_Report_Status">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingTwentyTwo">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwentyTwo" aria-expanded="true" aria-controls="collapseTwentyTwo">
+                 NCR Status
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseTwentyTwo" aria-labelledby="headingTwentyTwo" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="NCR_Status">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingTwentyThree">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwentyThree" aria-expanded="true" aria-controls="collapseTwentyThree">
+                    ACSN Status
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseTwentyThree" aria-labelledby="headingTwentyThree" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="ACSN_Status">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingTwentyFour" >
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwentyFour" aria-expanded="true" aria-controls="collapseTwentyFour">
+                    ACSN Steps
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseTwentyFour" aria-labelledby="headingTwentyFour" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="ACSN_Steps">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingTwentyFive">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwentyFive" aria-expanded="true" aria-controls="collapseTwentyFive">
+                    Material Issue Document
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseTwentyFive" aria-labelledby="headingTwentyFive" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Material_Issue_Document">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingTwentySix">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwentySix" aria-expanded="true" aria-controls="collapseTwentySix">
+                    Modules - Part Breakdown Structure
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseTwentySix" aria-labelledby="headingTwentySix" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="Module_Part_Breakdown_Structure">
+                    </div>
+                </div>
+            </div>
+        </div> 
+        
+        
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingTwentySeven">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwentySeven" aria-expanded="true" aria-controls="collapseTwentySeven">
+                    Part type - Part Breakdown Structure
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseTwentySeven" aria-labelledby="headingTwentySeven" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="PartType_Part_Breakdown_Structure">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border-top border-300">
+            <h4 class="accordion-header" id="headingTwentyEight">
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwentyEight" aria-expanded="true" aria-controls="collapseTwentyEight">
+                   SOP - Engine Build Status
+                </button>
+            </h4>
+            <div class="accordion-collapse collapse" id="collapseTwentyEight" aria-labelledby="headingTwentyEight" data-bs-parent="#accordionExample">
+                <div class="accordion-body pt-0">
+
+                    <div id="SOP_ENGINE_BUILD_STATUS">
+                    </div>
+                </div>
+            </div>
+        </div>
+       
+
+    </div>
+</div>
+
+
+
+   
+    
+
+
+@section scripts{
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            Get_Master("Category");
+            Get_Master("Security");
+            Get_Master("Module_Responsibility");
+            Get_Master("User_Addtional_Roles");
+            Get_Master('Tender_Mode');
+            Get_Master('User_Addtional_Roles');
+            Get_Master('Tender_Mode');
+            Get_Master('UOM');
+            Get_Master('Procurement_Status');
+            Get_Master('Procurement_Item_Type');
+            Get_Master('Raw_Material_Type');
+            Get_Master('Procurement_Doument_Type');
+            Get_Master('Utilization_Tasks');
+            Get_Master('Utilization_Supervisor');
+            Get_Master('Designation');
+            Get_Master('Section');
+            Get_Master('Issue_Purpose')
+            Get_Master('Procurement_SubItem_Type');
+            Get_Master('Project_Category');
+            Get_Master('Demand_Document');
+            Get_Master('NCR_Received_From');
+            Get_Master('NCR_Document_Type');
+            Get_Master('NCR_Report_Status');
+            Get_Master('NCR_Status');
+            Get_Master('ACSN_Status');
+            Get_Master('ACSN_Steps');
+            Get_Master('Material_Issue_Document');
+            Get_Master('Module_Part_Breakdown_Structure');
+            Get_Master('PartType_Part_Breakdown_Structure');
+            Get_Master('SOP_ENGINE_BUILD_STATUS');
+           
+        });
+         
+        function Get_Master(DivID) {        
+            $.ajax({
+                url: '/MasterGeneral/MasterGeneral?Type=' + DivID,
+                dataType: 'html',
+                success: function (data) { 
+                    $('#' + DivID).html(data);
+                }
+            });
+        }
+
+
+        document.getElementById('search').addEventListener('input', function () {
+            const searchTerm = this.value.toLowerCase();
+            const accordionItems = document.querySelectorAll('.accordion-item');
+             
+            accordionItems.forEach(function (item) {
+                const tableCells = item.querySelectorAll('.accordion-body table td');
+                let matchFound = false;
+
+                tableCells.forEach(function (cell) {
+                    if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                        matchFound = true;
+                    }
+                });
+
+                
+                if (matchFound) {
+                    item.style.display = '';  
+                } else {
+                    item.style.display = 'none';  
+                }
+            });
+        });
+
+
+
+        function getprompt(title, type, id, content, Miscvalue) {
+
+            bootbox.dialog({
+                message: GetForm(type, content, Miscvalue),
+                title: title.replace("_", " "),
+                buttons: {
+                    success: {
+                        label: "Save",
+                        className: "btn-success",
+                        callback: function () {
+
+                            var name = document.getElementsByClassName('name')[0];
+                            var order = document.getElementsByClassName('order')[0];
+
+                            if (!name.value) {
+                                bootbox.alert({
+                                    message: "provide a valid " + type,
+                                });
+                                return false;
+                            }
+
+                            if (isSpclChar(name.value)) {
+                                return false;
+                            }
+
+                            CreateMasterGeneral(name.value, id, type, order.value);
+                        }
+                    }
+                }
+            });
+ 
+        }
+
+
+        function AddMasterPromt(TypeMaster) {
+            getprompt("Create a " + TypeMaster.replace("_", " ") + "", TypeMaster, 0, "");
+        }
+
+        function EditMasterPromt(id, type, content, Miscvalue) {
+            getprompt("Edit " + type.replace("_", " "), type, id, content, Miscvalue);
+        }
+
+        function GetForm(type, content, Miscvalue) {
+            var form = '' +
+                '<form action="" class="formName">' +
+                '<div class="form-group">';
+
+            //if (type == 'Procurement_Status' || type == 'ACSN_Status' || type == 'ACSN_Steps') {
+                form = form + '<input type="text" placeholder=' + type + ' class="name form-control" value="' + content + '" required />' + '<br/>' + '<input type="number" placeholder="Display Order"  class="order form-control" value="' + Miscvalue + '" required />';
+            //} else {
+            //    form = form + '<input type="text" placeholder=' + type + ' class="name form-control" value="' + content + '" required />';
+            //}
+
+            form = form + '</div>' + '</form>'
+            return form;
+        }
+
+        function CreateMasterGeneral(value, id = 0, type, order) {
+            $.ajax({
+                type: "POST",
+                url: '/MasterGeneral/MasterGeneral',
+                data: "Name=" + value + "&ID=" + id + "&type=" + type + "&Miscvalue=" + order,
+                cache: false,
+                success: function (data) {
+                    if (data.success) {
+
+                        bootbox.alert({
+                            message: 'Saved Successfully'
+                        });
+
+                        Get_Master(type);
+
+                    } else {
+                        bootbox.alert({
+                            message: 'Save Failed'
+                        });
+                    }
+                }
+            });
+        }
+
+        function isSpclChar(val) {
+            var iChars = "!#$%^&*+=;,.{}:<>?";
+            for (var i = 0; i < val.length; i++) {
+                if (iChars.indexOf(val.charAt(i)) != -1) {
+                    bootbox.alert({
+                        message: 'Special characters are not allowed'
+                    });
+
+                    return true;
+                }
+            }
+        }
+        function ChangeMasterStatus(dbkey, state, type) {
+
+            $.ajax({
+                type: "POST",
+                url: '/MasterGeneral/ChangeMasterStatus',
+                data: "dbkey=" + dbkey + "&state=" + state,
+                cache: false,
+                success: function (data) {
+                    if (data.success) {
+                        bootbox.alert({
+                            message: 'Updated Successfully'
+                        });
+
+                        Get_Master(type);
+
+                    } else {
+                        bootbox.alert({
+                            message: 'Save Failed'
+                        });
+                    }
+                }
+            });
+        }
+        </script>
+}

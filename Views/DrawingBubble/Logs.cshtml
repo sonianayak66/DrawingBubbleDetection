@@ -1,0 +1,173 @@
+@{
+    ViewData["Title"] = "Detection Logs";
+    var methodId = (string)ViewBag.MethodId ?? "";
+    var methodName = (string)ViewBag.MethodName ?? methodId;
+    var allMethods = ViewBag.AllMethods as Dictionary<string, string>;
+}
+
+<div class="page-header d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">
+        <i class="fas fa-stream me-2"></i>Detection Logs
+        <small class="text-muted ms-2">@methodName</small>
+    </h4>
+    <a asp-action="Index" asp-controller="DrawingBubble" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Detection
+    </a>
+</div>
+
+<div class="card shadow-sm border-0 mb-3">
+    <div class="card-body py-2">
+        <div class="row g-2 align-items-center">
+            @if (allMethods != null && allMethods.Count > 0)
+            {
+                <div class="col-auto">
+                    <label class="form-label mb-0 me-2 fw-semibold">Service:</label>
+                    <select id="f-method" class="form-select form-select-sm d-inline-block w-auto">
+                        @foreach (var kv in allMethods)
+                        {
+                            if (kv.Key == methodId)
+                            {
+                                <option value="@kv.Key" selected>@kv.Value</option>
+                            }
+                            else
+                            {
+                                <option value="@kv.Key">@kv.Value</option>
+                            }
+                        }
+                    </select>
+                </div>
+            }
+            <div class="col-auto">
+                <label class="form-label mb-0 me-2">Request ID:</label>
+                <input id="f-rid" type="text" class="form-control form-control-sm d-inline-block w-auto"
+                       placeholder="any" style="width: 130px !important;" />
+            </div>
+            <div class="col-auto">
+                <label class="form-label mb-0 me-2">Level:</label>
+                <select id="f-level" class="form-select form-select-sm d-inline-block w-auto">
+                    <option value="">All</option>
+                    <option value="DEBUG">DEBUG</option>
+                    <option value="INFO" selected>INFO</option>
+                    <option value="WARNING">WARNING</option>
+                    <option value="ERROR">ERROR</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="f-tail" checked />
+                    <label class="form-check-label" for="f-tail">Auto-scroll</label>
+                </div>
+            </div>
+            <div class="col-auto">
+                <button id="f-clear" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-eraser me-1"></i>Clear
+                </button>
+            </div>
+            <div class="col text-end">
+                <span id="status" class="badge bg-secondary">connecting…</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div id="log" style="
+            background: #0d1117;
+            color: #c9d1d9;
+            font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace;
+            padding: 12px 16px;
+            min-height: 60vh;
+            max-height: 70vh;
+            overflow-y: auto;
+            border-radius: 0.375rem;
+        "></div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        #log .row-log { display: grid; grid-template-columns: 175px 65px 100px 1fr; column-gap: 12px; padding: 1px 0; word-break: break-word; }
+        #log .row-log .ts  { color: #6e7681; }
+        #log .row-log .lvl { font-weight: 600; }
+        #log .row-log .lvl.INFO     { color: #58a6ff; }
+        #log .row-log .lvl.WARNING  { color: #d29922; }
+        #log .row-log .lvl.ERROR    { color: #f85149; }
+        #log .row-log .lvl.DEBUG    { color: #8b949e; }
+        #log .row-log .rid { color: #d2a8ff; }
+        #log .row-log .msg { white-space: pre-wrap; }
+    </style>
+    <script>
+        (function () {
+            let lastSeq = 0;
+            const $log = document.getElementById('log');
+            const $status = document.getElementById('status');
+            const $rid = document.getElementById('f-rid');
+            const $level = document.getElementById('f-level');
+            const $method = document.getElementById('f-method');
+            const $tail = document.getElementById('f-tail');
+            document.getElementById('f-clear').onclick = () => {
+                $log.innerHTML = '';
+                lastSeq = 0;
+            };
+
+            function escape(s) {
+                return String(s).replace(/[&<>"']/g, c => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[c]));
+            }
+
+            function render(rec) {
+                const div = document.createElement('div');
+                div.className = 'row-log';
+                div.innerHTML =
+                    `<span class="ts">${escape(rec.ts_human)}</span>` +
+                    `<span class="lvl ${escape(rec.level)}">${escape(rec.level)}</span>` +
+                    `<span class="rid">${escape(rec.request_id || '-')}</span>` +
+                    `<span class="msg">${escape(rec.message)}</span>`;
+                $log.appendChild(div);
+            }
+
+            async function poll() {
+                const params = new URLSearchParams();
+                if ($method && $method.value) params.set('method', $method.value);
+                if ($rid.value.trim()) params.set('requestId', $rid.value.trim());
+                if ($level.value) params.set('level', $level.value);
+                if (lastSeq) params.set('sinceSeq', lastSeq);
+                params.set('limit', '500');
+                try {
+                    const r = await fetch('@Url.Action("LogsData", "DrawingBubble")?' + params.toString(), { cache: 'no-store' });
+                    if (!r.ok) throw new Error(r.status);
+                    const data = await r.json();
+                    if (data.error) {
+                        $status.textContent = data.error;
+                        $status.className = 'badge bg-danger';
+                        return;
+                    }
+                    if (data.entries && data.entries.length) {
+                        for (const rec of data.entries) {
+                            render(rec);
+                            if (rec.seq > lastSeq) lastSeq = rec.seq;
+                        }
+                        if ($tail.checked) {
+                            $log.scrollTop = $log.scrollHeight;
+                        }
+                    }
+                    $status.textContent = `connected — seq ${lastSeq}`;
+                    $status.className = 'badge bg-success';
+                } catch (e) {
+                    $status.textContent = 'disconnected: ' + e.message;
+                    $status.className = 'badge bg-danger';
+                }
+            }
+
+            const reset = () => { $log.innerHTML = ''; lastSeq = 0; };
+            $rid.oninput = reset;
+            $level.onchange = reset;
+            if ($method) $method.onchange = reset;
+
+            poll();
+            setInterval(poll, 1500);
+        })();
+    </script>
+}

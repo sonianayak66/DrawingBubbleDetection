@@ -1,0 +1,557 @@
+﻿@model List<MPCRS.ViewModels.ProductionPlanningReportVM>
+
+@{
+    ViewData["Title"] = "Production Planning Report";
+}
+
+<style>
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
+    .shortage {
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .surplus {
+        color: #28a745;
+        font-weight: bold;
+    }
+
+    .balanced {
+        color: #17a2b8;
+        font-weight: bold;
+    }
+
+    .progress-bar-container-new {
+        width: 60px;
+        height: 18px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill-new {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }
+
+    .progress-low {
+        background-color: #dc3545;
+    }
+
+    .progress-medium {
+        background-color: #ffc107;
+    }
+
+    .progress-high {
+        background-color: #28a745;
+    }
+
+    .progress-low-text {
+        color: #dc3545;
+    }
+
+    .progress-medium-text {
+        color: #f39c12;
+    }
+
+    .progress-high-text {
+        color: #28a745;
+    }
+
+    .EngineRMAvailability-text {
+        font-size: 0.85rem;
+        min-width: 45px;
+        text-align: right;
+    }
+
+    .info-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 5px;
+        font-weight: bold;
+        margin: 5px;
+        background-color: #e7f3ff;
+        color: #0066cc;
+        border: 1px solid #b3d9ff;
+    }
+
+    .warning-row {
+        background-color: #fff3cd;
+    }
+
+    .no-requirement-row {
+        background-color: #f8f9fa;
+        font-style: italic;
+        color: #6c757d;
+    }
+
+    th .fa-info-circle {
+        font-size: 0.85em;
+        cursor: help;
+    }
+
+    /* Row expand vendor table look */
+    .vendor-child-table th, .vendor-child-table td {
+        padding: 6px 8px !important;
+        vertical-align: middle;
+    }
+
+    /* Child row section headers */
+    .child-section-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #0d6efd;
+        margin-bottom: 6px;
+        margin-top: 4px;
+    }
+</style>
+
+<div class="page-header row">
+    <div class="col-10">
+        <h3>Raw material stock availability</h3>
+        <p class="text-muted mb-0">Raw Material Requirements vs Availability</p>
+    </div>
+    <div class="col-2 text-end">
+        <a class="btn btn-secondary btn-sm" href="/Report/ConsolidatedInventoryReport">Back</a>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section">
+    <div class="row align-items-end">
+        <div class="col-md-3">
+            <label for="filterMaterial" class="form-label"><i class="fas fa-search"></i> Search Material</label>
+            <input type="text" id="filterMaterial" class="form-control form-control-sm" placeholder="Type to search...">
+        </div>
+
+        <div class="col-md-2">
+            <label for="filterRMType" class="form-label"><i class="fas fa-box"></i> RM Type</label>
+            <select id="filterRMType" class="form-select form-select-sm">
+                <option value="">All</option>
+                @{
+                    var rmTypes = Model
+                    .Where(x => !string.IsNullOrEmpty(x.RMType))
+                    .Select(x => x.RMType)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+                    foreach (var type in rmTypes)
+                    {
+                        <option value="@type">@type</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label for="filterEngineRMAvailability" class="form-label"><i class="fas fa-filter"></i> EngineRMAvailability</label>
+            <select id="filterEngineRMAvailability" class="form-select form-select-sm">
+                <option value="">All</option>
+                <option value="low">Low (0 Engines)</option>
+                <option value="medium">Medium (Partial)</option>
+                <option value="high">High (Sufficient)</option>
+            </select>
+        </div>
+
+        <div class="col-md-3 col-sm-12 text-md-end mt-2 mt-md-0">
+            <div class="d-flex flex-wrap gap-3 justify-content-md-end">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="showNoReq" checked>
+                    <label class="form-check-label small" for="showNoReq">Hide No Req. Materials</label>
+                </div>
+                <button id="btnResetFilters" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr />
+
+<!-- Data Table -->
+<div class="row">
+    <div class="col-12">
+        <table id="productionPlanningTable" class="table table-sm table-bordered table-hover fs--1" style="width:100%;">
+            <thead>
+                <tr>
+                    <!-- Arrow column -->
+                    <th class="text-center" style="width:35px;"></th>
+
+                    <th>Material Name</th>
+                    <th>RM Type</th>
+                    <th class="text-end">Required/Engine</th>
+
+                    <th>Engine</th>
+
+                    <th class="text-end">Ordered</th>
+                    <th class="text-end">Received</th>
+                    <th class="text-end">Issued</th>
+                    <th class="text-end">Current Stock</th>
+
+                    <th class="text-end"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        data-bs-html="true"
+                        title="<strong>Calculation:</strong><br/>Current Stock ÷ Required/Engine<br/><br/><strong>Current Stock:</strong><br/>Received - Issued<br/>">
+                        Engine RM Availability <i class="fas fa-info-circle text-primary"></i>
+                    </th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var rowClass = "";
+                    if (item.RequiredPerEngine == 0) rowClass = "no-requirement-row";
+
+                    var engineRMAvailability = (item.RequiredPerEngine > 0)
+                    ? (item.CurrentStock / item.RequiredPerEngine)
+                    : 0;
+
+                    <tr class="@rowClass"
+                        data-material="@item.MaterialName?.ToLower()"
+                        data-rmtype="@item.RMType"
+                        data-requirement="@item.RequiredPerEngine"
+                        data-enginermavailability="@engineRMAvailability">
+
+                        <!-- 1 Arrow button -->
+                        <td class="text-center">
+                            <button type="button"
+                                    class="btn btn-link p-0 rm-vendor-toggle"
+                                    data-rmdbkey="@item.Raw_material_Dbkey"
+                                    title="Show Demand & Vendor Details">
+                                <i class="fas fa-angle-double-down"></i>
+                            </button>
+                        </td>
+
+                        <!-- 2 Material Name -->
+                        <td onclick="getRMPopUP(@item.Raw_material_Dbkey, '@item.MaterialName')" style="cursor:pointer">
+                            <strong>@item.MaterialName</strong>
+                        </td>
+
+                        <!-- 3 RM Type -->
+                        <td>@item.RMType</td>
+
+                        <!-- 4 Required/Engine -->
+                        <td class="text-end">
+                            @(item.RequiredPerEngine > 0 ? item.RequiredPerEngine.ToString("N1") : "Not Set")
+                        </td>
+
+                        <!-- 5 Engine badges -->
+                        <td>
+                            @{
+                                var engineOptions = (item.EngineList ?? "")
+                                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                .Select(x => x.Trim())
+                                .Where(x => !string.IsNullOrWhiteSpace(x))
+                                .Distinct()
+                                .ToList();
+                            }
+
+                            @if (engineOptions.Any())
+                            {
+                                @foreach (var engine in engineOptions)
+                                {
+                                    <span class="badge badge-phoenix badge-phoenix-primary fs--2 text-dark">@engine</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+
+                        <!-- 6 Ordered -->
+                        <td class="text-end">@item.TotalOrdered.ToString("N1")</td>
+
+                        <!-- 7 Received -->
+                        <td class="text-end">@item.TotalReceived.ToString("N1")</td>
+
+                        <!-- 8 Issued -->
+                        <td class="text-end">@item.TotalIssued.ToString("N1")</td>
+
+                        <!-- 9 Current Stock -->
+                        <td class="text-end">
+                            <span class="@(item.CurrentStock > 0 ? "text-success" : item.CurrentStock < 0 ? "text-danger" : "")">
+                                @item.CurrentStock.ToString("N1")
+                            </span>
+                        </td>
+
+                        <!-- 10 Engine RM Availability (ratio + progress bar) -->
+                        <td class="text-end" style="min-width:140px;">
+                            @if (item.RequiredPerEngine > 0)
+                            {
+                                var displayPercentage = Math.Min(engineRMAvailability * 100, 100);
+
+                                var progressClass = engineRMAvailability >= 1
+                                ? "progress-high"
+                                : engineRMAvailability > 0
+                                ? "progress-medium"
+                                : "progress-low";
+
+                                <div class="d-flex align-items-center justify-content-end gap-2">
+                                    <div class="progress-bar-container-new">
+                                        <div class="progress-bar-fill-new @progressClass" style="width:@(displayPercentage)%"></div>
+                                    </div>
+                                    <span class="EngineRMAvailability-text @(progressClass + "-text")">
+                                        <strong>@engineRMAvailability.ToString("N2")</strong>
+                                    </span>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/mpi/common.js" asp-append-version="true"></script>
+    <script>
+        $(document).ready(function () {
+
+            // Bootstrap tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // DataTable
+            var table = $('#productionPlanningTable').DataTable({
+                dom: 'Bfrtip',
+                buttons: [{
+                    extend: 'excelHtml5',
+                    text: '<i class="fas fa-file-excel"></i> Export to Excel',
+                    className: 'btn btn-success btn-sm',
+                    title: 'Raw material stock availability',
+                    exportOptions: { columns: ':visible' }
+                }],
+                responsive: true,
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                order: [[9, 'desc']],
+                columnDefs: [
+                    { targets: [0], orderable: false, searchable: false, className: "text-center" },
+                    { targets: [3, 5, 6, 7, 8, 9], className: 'text-end' }
+                ]
+            });
+
+            // Default hide no-requirement rows
+            $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+                var row = table.row(dataIndex).node();
+                var requirement = parseFloat($(row).data('requirement')) || 0;
+                return requirement > 0;
+            });
+            table.draw();
+
+            // Filter by Material Name
+            $('#filterMaterial').on('keyup', function () {
+                table.column(1).search(this.value).draw();
+            });
+
+            // Filter by RM Type
+            $('#filterRMType').on('change', function () {
+                var val = $(this).val();
+                table.column(2).search(val ? '^' + val + '$' : '', true, false).draw();
+            });
+
+            // Filter by EngineRMAvailability
+            $('#filterEngineRMAvailability').on('change', function () {
+                $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+                    var filterValue = $('#filterEngineRMAvailability').val();
+                    if (filterValue === '') return true;
+                    var row = table.row(dataIndex).node();
+                    var engAvail = parseFloat($(row).data('enginermavailability')) || 0;
+                    if (filterValue === 'low')    return engAvail <= 0;
+                    if (filterValue === 'medium') return engAvail > 0 && engAvail < 1;
+                    if (filterValue === 'high')   return engAvail >= 1;
+                    return true;
+                });
+                table.draw();
+                $.fn.dataTable.ext.search.pop();
+            });
+
+            // Toggle No Requirement Materials
+            $('#showNoReq').change(function () {
+                $.fn.dataTable.ext.search.pop();
+                if (this.checked) {
+                    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+                        var row = table.row(dataIndex).node();
+                        var requirement = parseFloat($(row).data('requirement')) || 0;
+                        return requirement > 0;
+                    });
+                }
+                table.draw();
+            });
+
+            // Reset Filters
+            $('#btnResetFilters').on('click', function () {
+                $('#filterMaterial').val('');
+                $('#filterRMType').val('').trigger('change');
+                $('#filterEngineRMAvailability').val('').trigger('change');
+                $('#showNoReq').prop('checked', true).trigger('change');
+                table.search('').columns().search('').draw();
+            });
+
+            // ─────────────────────────────────────────────────────────────
+            // UPDATED: Expand/Collapse — now calls GetRawMaterialDemandVendorDetails
+            // Shows Vendor Summary (from Demands) + Demand Line Details
+            // ─────────────────────────────────────────────────────────────
+            $('#productionPlanningTable tbody').on('click', '.rm-vendor-toggle', function () {
+
+                var btn     = $(this);
+                var tr      = btn.closest('tr');
+                var row     = table.row(tr);
+                var rmdbkey = btn.data('rmdbkey');
+
+                // Toggle close if already open
+                if (row.child.isShown()) {
+                    row.child.hide();
+                    tr.removeClass('shown');
+                    btn.find('i').removeClass('fa-angle-double-up').addClass('fa-angle-double-down');
+                    return;
+                }
+
+                // Show loading placeholder
+                row.child('<div class="p-2 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading demand &amp; vendor details...</div>').show();
+                tr.addClass('shown');
+                btn.find('i').removeClass('fa-angle-double-down').addClass('fa-angle-double-up');
+
+                // Fetch from new endpoint — data comes from Procurement_Demands + Vendors + Receipts
+                $.ajax({
+                    url: '/Report/GetRawMaterialDemandVendorDetails',
+                    type: 'GET',
+                    data: { rawMaterialDbkey: rmdbkey },
+                    success: function (data) {
+                        row.child(buildRMExpandHtml(data)).show();
+                    },
+                    error: function () {
+                        row.child('<div class="p-2 text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Error loading demand details.</div>').show();
+                    }
+                });
+            });
+
+        }); // end document.ready
+
+        // ─────────────────────────────────────────────────────────────
+        // Builds the HTML for the expanded child row
+        // Shows two tables: Vendor Summary + Demand Line Details
+        // ─────────────────────────────────────────────────────────────
+        function buildRMExpandHtml(data) {
+
+            var vendorSummary = data.vendorSummary || [];
+            var demandDetails = data.demandDetails || [];
+
+            var html = '<div class="p-3">';
+
+            // ── Section 1: Vendor Summary ─────────────────────────────
+            html += '<p class="child-section-title"><i class="fas fa-truck me-1"></i>Vendor Summary (from Demands)</p>';
+
+            if (vendorSummary.length > 0) {
+                html += '<table class="table table-sm table-bordered mb-3 vendor-child-table">';
+                html += '<thead class="table-light">'
+                     +  '<tr>'
+                     +  '<th>Vendor Name</th>'
+                     +  '<th class="text-end">Ordered Qty</th>'
+                     +  '<th class="text-end">Received Qty</th>'
+                     +  '<th class="text-end">Balance Qty</th>'
+                     +  '</tr></thead><tbody>';
+
+                vendorSummary.forEach(function (v) {
+                    var ordered  = parseFloat(v.orderedQty  || v.OrderedQty  || 0);
+                    var received = parseFloat(v.receivedQty || v.ReceivedQty || 0);
+                    var balance  = parseFloat(v.balanceQty  || v.BalanceQty  || 0);
+                    var balCss   = balance < 0  ? 'text-danger fw-bold'
+                                 : balance === 0 ? 'text-success fw-bold' : '';
+
+                    html += '<tr>'
+                         +  '<td>' + (v.vendorName || v.VendorName || '-') + '</td>'
+                         +  '<td class="text-end">' + ordered.toFixed(2)  + '</td>'
+                         +  '<td class="text-end">' + received.toFixed(2) + '</td>'
+                         +  '<td class="text-end ' + balCss + '">' + balance.toFixed(2) + '</td>'
+                         +  '</tr>';
+                });
+
+                html += '</tbody></table>';
+            } else {
+                html += '<p class="text-muted small mb-3">No vendor information found in any demand for this material.</p>';
+            }
+
+            // ── Section 2: Demand Line Details ───────────────────────
+            html += '<p class="child-section-title"><i class="fas fa-file-alt me-1"></i>Demand Details</p>';
+
+            if (demandDetails.length > 0) {
+                html += '<table class="table table-sm table-bordered mb-0 vendor-child-table">';
+                html += '<thead class="table-light">'
+                     +  '<tr>'
+                     +  '<th>Demand No</th>'
+                     +  '<th>MMG File No</th>'
+                     +  '<th>Description</th>'
+                     +  '<th>Vendor</th>'
+                     +  '<th>Status</th>'
+                     +  '<th class="text-end">Ordered Qty</th>'
+                     +  '<th class="text-end">Received Qty</th>'
+                     +  '<th class="text-end">Balance</th>'
+                     +  '<th>SO Date</th>'
+                     +  '<th>Planned Completion</th>'
+                     +  '</tr></thead><tbody>';
+
+                demandDetails.forEach(function (d) {
+                    var ordered  = parseFloat(d.orderedQty  || d.OrderedQty  || 0);
+                    var received = parseFloat(d.receivedQty || d.ReceivedQty || 0);
+                    var balance  = parseFloat(d.balanceQty  || d.BalanceQty  || 0);
+                    var balCss   = balance < 0  ? 'text-danger fw-bold'
+                                 : balance === 0 ? 'text-success fw-bold' : '';
+
+                    var rawSO = d.estimatedOrderDate   || d.EstimatedOrderDate   || null;
+                    var rawPD = d.planned_Date_of_receipt || d.Planned_Date_of_receipt || null;
+                    var soDate = rawSO ? new Date(rawSO).toLocaleDateString('en-IN') : '-';
+                    var pdDate = rawPD ? new Date(rawPD).toLocaleDateString('en-IN') : '-';
+
+                    var demandKey = d.demandDbKey || d.DemandDbKey || 0;
+
+                    html += '<tr>'
+                         +  '<td>'
+                         +      '<a href="/DemandManagement/DemandTree?id=' + demandKey + '" target="_blank" class="fw-semibold text-decoration-none">'
+                         +          (d.demand_No || d.Demand_No || '-')
+                         +      '</a>'
+                         +  '</td>'
+                         +  '<td>' + (d.mMG_File_No    || d.MMG_File_No    || '-') + '</td>'
+                         +  '<td>' + (d.item_Description || d.Item_Description || '-') + '</td>'
+                         +  '<td>' + (d.vendorName     || d.VendorName     || '-') + '</td>'
+                         +  '<td><span class="badge bg-secondary">' + (d.currentStatus || d.CurrentStatus || '-') + '</span></td>'
+                         +  '<td class="text-end">'                  + ordered.toFixed(2)  + '</td>'
+                         +  '<td class="text-end">'                  + received.toFixed(2) + '</td>'
+                         +  '<td class="text-end ' + balCss + '">'  + balance.toFixed(2)  + '</td>'
+                         +  '<td>' + soDate + '</td>'
+                         +  '<td>' + pdDate + '</td>'
+                         +  '</tr>';
+                });
+
+                html += '</tbody></table>';
+            } else {
+                html += '<p class="text-muted small mb-0">No demand records found for this raw material.</p>';
+            }
+
+            html += '</div>';
+            return html;
+        }
+    </script>
+}
+

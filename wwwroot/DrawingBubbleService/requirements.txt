@@ -1,0 +1,19 @@
+# MPCRS Bubble Detection Service - Python Dependencies
+#
+# ── OFFLINE INSTALL INSTRUCTIONS ────────────────────────────────
+# Step 1 (on a machine WITH internet, same Python version):
+#   pip download -r requirements.txt -d ./wheels
+#
+# Step 2 (on the offline Windows Server):
+#   pip install --no-index --find-links=./wheels -r requirements.txt
+# ────────────────────────────────────────────────────────────────
+
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+python-multipart==0.0.9
+python-dotenv==1.0.1
+opencv-python-headless==4.10.0.84
+numpy>=1.26,<2.0
+rapidocr-onnxruntime>=1.4.0
+scipy>=1.12
+Pillow>=10.0

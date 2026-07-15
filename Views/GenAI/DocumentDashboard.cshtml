@@ -1,0 +1,269 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+<link href="~/css/style.min.css" rel="stylesheet" />
+<style>
+    .scroll {
+        /* // max-height: 500px; */
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .Notupdated {
+        color: black;
+    }
+
+    .accesscheckbox {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .jstree-default .jstree-anchor {
+        line-height: 23px;
+        height: 23px;
+    }
+
+    .jstree-table {
+        table-layout: fixed; /* Use fixed layout for the table */
+        width: 100%; /* Full width */
+    }
+
+        /* Ensure header columns do not change width */
+        .jstree-table th {
+            width: 150px !important; /* Use consistent width for headers, adjust as necessary */
+            overflow: hidden; /* Prevent overflow */
+            text-overflow: ellipsis; /* Add ellipsis for long text */
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+            /* Adjust specific header widths */
+            .jstree-table th:nth-child(1) {
+                width: 300px;
+            }
+            /* Folder column */
+            .jstree-table th:nth-child(2) {
+                width: 150px !important;
+            }
+            /* No. of Files column */
+            .jstree-table th:nth-child(3) {
+                width: 150px !important;
+            }
+            /* File Embedded column */
+            .jstree-table th:nth-child(4) {
+                width: 150px !important;
+            }
+
+    .jstree-table-header, .jstree-table-cell {
+        width: 150px;
+        /* Adjust this width as per requirement */
+    }
+</style>
+<div>
+    <div class="row">
+        <div class="col-md-6">
+            <partial name="DocumentStatusSummary.cshtml">
+        </div>
+        <div class="col-md-2">
+            <input class="btn btn-sm btn-primary" value="Resume Doc Embedding" onclick="ResumeDocEmbeding()" />
+        </div>
+    </div>
+    @* <div id="DocumentStatusTable">
+    <table class="table table-bordered table-sm fs--1 mb-2" id="DocVectorDbtable">
+    <thead>
+    <tr>
+    <th>File</th>
+    <th>Description</th>
+    <th>Folder</th>
+    <th>Execution Time</th>
+    </tr>
+    </thead>
+    </table>
+    </div> *@
+    <div class="card col-8 scroll">
+        <div id="treeview">
+            Search<input type="text" id="search">
+
+            <div id="jstree1">
+                <div id="jstree"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+@section scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/js/jstree.min.js" asp-append-version="true"></script>
+    <script src="~/js/jstreetable.js" asp-append-version="true"></script>
+    <script>
+        var uploadedDoc = [];
+        var DocDBkey = {};
+        var dataTable;
+        $(document).ready(function () {
+            $("#search").keyup(function () {
+                var searchString = $(this).val();
+                $('#jstree').jstree('search', searchString);
+            });
+
+            $("#wrapper").on('click', '.stopclick', function (event) {
+
+                if (event.preventDefault) {
+                    event.preventDefault();
+                }
+                if (event.stopPropagation) {
+                    event.stopPropagation();
+                }
+                if (event.stopImmediatePropagation) {
+                    event.stopImmediatePropagation();
+                }
+            });
+            loadJSTree();
+            // getDocDashBoradDetails();
+            UpdateNavHeading("Document Embedding Status");
+
+        });
+
+
+
+        // function getDocDashBoradDetails() {
+        //     $.ajax({
+        //         type: "Get",
+        //         url: "/GenAI/GetDocDashBoardData",
+        //         success: function (data) {
+        //             uploadedDoc = JSON.parse(data);
+        //            // generateTable();
+        //             GetDocDashBoardlist();
+        //             console.log(uploadedDoc);
+        //         }
+        //     })
+        // }
+
+        // function GetDocDashBoardlist() {
+        //     // Destroy existing DataTable if it exists
+        //     if ($.fn.dataTable.isDataTable('#DocVectorDbtable')) {
+        //         $('#DocVectorDbtable').DataTable().destroy();
+        //     }
+
+        //     dataTable = $("#DocVectorDbtable").DataTable({
+        //         data: uploadedDoc,
+        //         paging: false,
+        //         autoWidth: true,
+        //         ordering: true,
+        //         order: [],
+        //         //dom: 'Bfrtip',
+        //         stateSave: true,
+        //         columns: [
+        //             { data: "Refrence_Title" },
+        //             { data: "Description" },
+        //             { data: "FolderName" },
+        //             { data: "VectorExecutionTime" }
+        //         ],
+        //     });
+        // }
+
+        function ResumeDocEmbeding() {
+            var DocDBkeyJson = JSON.stringify(DocDBkey); // Convert to JSON string
+            console.log("test", DocDBkeyJson);
+
+            $.ajax({
+                url: '/GenAI/ProceedDocForEmbedding?DocJSon=' + DocDBkeyJson,
+                method: 'POST',
+                //data: DocDBkeyJson, 
+                contentType: 'application/json',
+                success: function (data) {
+                    console.log(data);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                }
+            });
+
+        }
+        function filterthisTable() {
+            $("#myInput").on("keyup", function () {
+                var value = $(this).val().toLowerCase();
+                $("#DeclarationTbl tr").filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+        }
+        function loadJSTree() {
+            $('div#jstree').jstree({
+                plugins: ["checkbox", "table", "search"],
+                'core': {
+                    'data': {
+                        'url': '/GenAI/GetDocumentEmbeddingStaus',
+                        'data': function (node) {
+                            console.log(node);
+                            return { 'id': node.id };
+                        }
+                    },
+                    "check_callback": false
+                },
+                "table": {
+                    columns: [
+                        { width: "auto", header: "Folder", title: "_DATA_" },
+                        { width: "200px", value: "totalFileCount", header: "No. of Files", valueClass: "spanclass" },
+                        { width: "200px", value: "embeddedFileCount", header: "File Embedded", valueClass: "spanclass" },
+                        // { width: "100", value: "status_In_VectorDB", header: "Status", valueClass: "spanclass" },
+                        //  { width: "100", value: "vectorExecutionStartTime", header: "Embedding Start Time", valueClass: "spanclass" },
+                        { width: "200px", value: "vectorExecutionEndTime", header: "Embedding End Time", valueClass: "spanclass" },
+                        // Add other columns as needed
+                    ],
+                    resizable: true,      
+                    fixed: true
+                },
+                "search": {
+                    //"case_insensitive": true,
+                    "show_only_matches": true,
+                    //"show_only_matches_children": true
+                },
+
+            }).on("ready.jstree", function () {
+                console.log("Tree is ready.");
+                $('.jstree-table-cell').each(function () {
+                    $(this).css('width', '150px'); // Adjust the width value as needed
+                });
+                // Use setTimeout to ensure the headers are rendered before adding classes
+                setTimeout(function () {
+                    $('div.jstree-table th').eq(1).addClass('header-file-count'); // 2nd header
+                    $('div.jstree-table th').eq(2).addClass('header-file-embedded'); // 3rd header
+                    $('div.jstree-table th').eq(3).addClass('header-embedding-end-time'); // 4th header
+                }, 100); // Adjust the timeout as necessary
+            });
+            // .on("ready.jstree", function () {
+            //     $('div.jstree-table th').eq(1).addClass('header-file-count'); // 2nd header
+            //     $('div.jstree-table th').eq(2).addClass('header-file-embedded'); // 3rd header
+            //     $('div.jstree-table th').eq(3).addClass('header-embedding-end-time'); // 4th header
+            //     // Optionally log the tree data
+            //     var treeData = $('#jstree').jstree(true).get_json('#', { 'flat': true });
+
+            //     console.log(treeData);
+            // });
+
+        }
+        $('#jstree').on('changed.jstree', function (e, data) {
+            var selectedIds = data.selected; // Get selected node IDs
+            console.log("Selected nodes:", selectedIds);
+            uploadedDoc = selectedIds;
+            DocDBkey = {
+                "Document_Dbkey": selectedIds
+            }
+            // If you want to get the full data of the selected nodes
+            var selectedNodes = data.instance.get_node(selectedIds);
+           
+            console.log("Selected nodes data:", selectedNodes);
+        });
+
+
+
+        function GetData(a) {
+            console.log("test", uploadedDoc);
+            console.log("Selected nodes data:", uploadedDoc);
+        }
+
+    </script>
+}

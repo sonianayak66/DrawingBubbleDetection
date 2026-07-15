@@ -1,0 +1,79 @@
+﻿@model List<MPCRS.ViewModels.EngineBuildsVM>
+@using MPCRS.Utilities
+@{
+    Layout = null;
+    var Permission_Buid_Write = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Write);
+    var Permission_Buid_read = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Read);
+    var Permission_Delete = UserData.IsAuthorized(User, Constants.UserPermissions.SOP_Delete);
+    var Permission_Doc_Read = UserData.IsAuthorized(User, Constants.UserPermissions.Sop_Documents_Read);
+}
+
+ 
+<table class="table table-sm fs--1 mb-2" role="grid" id="EngineBuildtbl">
+    <thead>
+        <tr styel="height:2px" role="row">
+            <th data-sortable="true" scope="col">Base Line Engine</th>
+            <th data-sortable="true" scope="col">Build Name</th>
+            <th data-sortable="true" scope="col">Description</th>
+            <th data-sortable="true" scope="col">Reference Number</th>
+            <th data-sortable="true" scope="col">Build Date</th>
+            <th data-sortable="true" scope="col">Build Status</th>
+            <th> Action </th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            foreach (var item in Model)
+            {
+                <input type="hidden" value="@item.Id" id="baseid" />
+                <tr>
+                    <td><a href="#">@item.BaseLineEngineName</a></td>
+                    <td>@item.BuildName</td>
+                    <td>@item.Description</td>
+                    <td>@item.ReferenceNumber</td>
+                    <td>@MPGlobals.GetFormattedDate(@item.BuildDate)</td>
+                    <td>@item.Status</td>
+                    <td>
+                        <div class="font-sans-serif btn-reveal-trigger position-static">
+                            <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs--2" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs--2"></span></button>
+                            <div class="dropdown-menu dropdown-menu-end py-2">
+                                @{
+                                    if (Permission_Buid_Write)
+                                    {
+                                        <a class="dropdown-item" href="/SOPManagement/CreateEngineBuild/?Id=@item.Id" >Edit</a>
+                                        <a class="dropdown-item" style="cursor:pointer" onclick="CloneSOPEngine(@item.Id)" >Clone</a>
+                                    }
+                                    if (Permission_Buid_read)
+                                    {
+                                        <a class="dropdown-item" href="/SOPManagement/BuildComponents?buidguid=@item.BuildGuid">Component Tree</a>
+                                    }
+                                    if (Permission_Delete)
+                                    {
+                                        <a class="dropdown-item" style="cursor:pointer" onclick="DeleteBuild(@item.Id)">Delete</a>
+                                    }
+                                   
+                                    <a class="dropdown-item" target="_blank" href="/SOPReport/Report?buildguid=@item.BuildGuid">Report</a>
+                                     //<a class="dropdown-item" href="/SOPReport/ReportSection?buildguid=@item.BuildGuid">Report Sections</a>
+                                    <a class="dropdown-item" href="/SOPReport/Comparsion?buildguid=@item.BuildGuid">SOP/MPL Comparison</a>
+                                    if (Permission_Doc_Read)
+                                    {
+                                        <button class="dropdown-item" onclick="sopReportDocs('@item.BuildGuid')">Report Section Part-1</button>
+                                    }
+                                   
+
+                                }
+
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+ 
+ 
+
+ 
+
+ 
