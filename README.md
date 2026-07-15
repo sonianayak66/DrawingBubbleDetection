@@ -19,6 +19,20 @@ Validated showcase results:
 
 The system is strongest on clean CAD exports, clean screenshots, and selected dense drawings. Photo/monitor captures remain the main production challenge.
 
+## Screenshots
+
+Pipeline execution with live progress, per-step timings, and request logs:
+
+![Pipeline progress](docs/screenshots/pipeline-progress.png)
+
+Annotated detection result with bubble-to-dimension assignments:
+
+![Auto annotation results](docs/screenshots/auto-annotation-results.png)
+
+Clean drawing result with detected balloons and assigned dimension values:
+
+![Clean drawing detection results](docs/screenshots/detection-results-clean.png)
+
 ## Tech Stack
 
 - Python
